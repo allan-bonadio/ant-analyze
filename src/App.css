@@ -1,0 +1,43 @@
+body {
+	font-size: 14px;
+}
+
+.App {
+	margin: 3em;
+}
+
+
+div.step-widget {
+
+}
+
+div.blurb-box {
+	float: right;
+	width: 17em;
+}
+
+div.nav-bar {
+
+}
+
+/* one of those little square gray buttons, or the Next button which is wider */
+div.nav-bar button {
+	line-height: 1.5em;
+	padding: 1em;
+	margin: .167em;
+	border: 0px none;
+	border-radius: 0;
+	
+	background: #f0f0f0;
+}
+
+div.nav-bar button.selected {
+	font-weight: bold;
+	background: #d6d6d6;
+}
+
+.line-path {
+	fill: none;
+	stroke: #008;
+	stroke-width: 1px;
+}
