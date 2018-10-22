@@ -1,0 +1,10 @@
+.svg-chart {
+	cursor: grab;
+}
+
+.line-path {
+	fill: none;
+	stroke: #008;
+	stroke-width: 1px;
+}
+
