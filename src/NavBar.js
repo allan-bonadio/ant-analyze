@@ -35,7 +35,7 @@ class NavBar extends Component {
 	
 	// human clicks on one of the number buttons
 	clickNumber(ev) {
-		StepWidget.goToStep(+ev.target.getAttribute('key'));
+		StepWidget.goToStep(+ev.target.getAttribute('index'));
 	}
 	
 	// click on the NEXT> button
