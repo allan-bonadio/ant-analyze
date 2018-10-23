@@ -3,8 +3,10 @@ import React, { Component } from 'react';
 import {extent} from 'd3-array';
 import {scaleLinear} from 'd3-scale';
 import {line} from 'd3-shape';
-import {axisBottom, axisLeft} from 'd3-axis';
+import {axisTop, axisBottom, axisLeft, axisRight} from 'd3-axis';
 import {select} from 'd3-selection';
+
+import $ from 'jquery';
 
 import './Svg2D.css';
 
@@ -29,6 +31,13 @@ class Svg2D extends Component {
 		
 		// this constructor sets it up blank; you have to call setScene() to fire it up
 		this.state = {};
+		
+		// these are needed for graph sliding
+		$(document.body)
+				.mousemove(Svg2D.mouseMove)
+				.mouseup(Svg2D.mouseUp)
+				.mouseleave(Svg2D.mouseUp);
+
 		
 		//this.setScene(props.index, props.scene);
 		
@@ -154,14 +163,6 @@ class Svg2D extends Component {
 	render() {
 		// don't immediately use the react state; we have to update it on the fly
 		let state = this.stateForScene(this.props.index, this.props.scene) 
-		
-////		if (this.lastIndex != this.props.index) {
-////			// change of scene!  Have to set a few things.
-////			Svg2D.setScene(this.props.index, this.props.scene);
-////		}
-////		this.lastIndex != this.props.index
-////
-	
 		this.calcPoints(state);
 		
 		// Create a line path of for our data.
@@ -170,17 +171,33 @@ class Svg2D extends Component {
 			.y(d => this.yScale(d.y));
 		const linePath = lineSeries(this.pixelsAr);
 
-		// axis generation
-		const xAxis = axisBottom(this.xScale).ticks(7);
-		const yAxis = axisLeft(this.yScale).ticks(5);
+		// axis generation - choose which side so tic labels don't go off edge
+		let xAxis, yAxis;
+		if  (state.yMin + state.yMax > 0)
+			xAxis = axisTop(this.xScale).ticks(7).tickPadding(9);
+		else
+			xAxis = axisBottom(this.xScale).ticks(7);
 
+		if (state.xMin + state.xMax > 0)
+			yAxis = axisRight(this.yScale).ticks(5).tickPadding(15);
+		else
+			yAxis = axisLeft(this.yScale).ticks(5);
+		
+		// the axes need to still be on the chart.  We'd like zero-zero but figure out the best.
+		let xAxisY = Math.max(state.yMin, Math.min(state.yMax, 0));
+		let yAxisX = Math.max(state.xMin, Math.min(state.xMax, 0));
+		
+		// wait! if some of the tick labels would overlap an axis, get rid of them
+		xAxis.tickFormat(x => Math.abs(x - yAxisX) < 0.1 ? '' : x);
+		yAxis.tickFormat(y => Math.abs(y - xAxisY) < 0.1 ? '' : y);
+		
 		return (
 			<svg className='svg-chart' width={this.width} height={this.height} 
 						onMouseDown={Svg2D.mouseDown} >
 				<g className='xAxis' ref={node => select(node).call(xAxis)}
-						style={{transform: 'translateY('+ this.yScale(0) +'px)'}} />
+						style={{transform: 'translateY('+ this.yScale(xAxisY) +'px)'}} />
 				<g className='yAxis' ref={node => select(node).call(yAxis)}
-						style={{transform: 'translateX('+ this.xScale(0) +'px)'}} />
+						style={{transform: 'translateX('+ this.xScale(yAxisX) +'px)'}} />
 				<g className='line-path'>
 					<path d={linePath} />
 				</g>
@@ -198,6 +215,9 @@ class Svg2D extends Component {
 		// yeah, i'm missing an offset for the svg versus the page; it'll be ok
 		_this.downX = _this.xScale.invert(ev.pageX);
 		_this.downY = _this.yScale.invert(ev.pageY);
+		
+		ev.preventDefault();
+		ev.stopPropagation();
 	}
 
 	static mouseMove(ev) {
@@ -223,12 +243,18 @@ class Svg2D extends Component {
 		
 		_this.xScale.domain([newBounds.xMin, newBounds.xMax]);
 		_this.yScale.domain([newBounds.yMin, newBounds.yMax]);
+
+		ev.preventDefault();
+		ev.stopPropagation();
 	}
 
 	static mouseUp(ev) {
 		const _this = Svg2D.me;
 ////		console.log("moiuse up", ev);
 		_this.dragging = false;
+
+		ev.preventDefault();
+		ev.stopPropagation();
 	}
 }
 
