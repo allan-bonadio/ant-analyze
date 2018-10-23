@@ -215,9 +215,21 @@ class Svg2D extends Component {
 		// yeah, i'm missing an offset for the svg versus the page; it'll be ok
 		_this.downX = _this.xScale.invert(ev.pageX);
 		_this.downY = _this.yScale.invert(ev.pageY);
-		
+		_this.offsetX = _this.offsetY = 0;
+
 		ev.preventDefault();
 		ev.stopPropagation();
+	}
+	
+	shoveByOffset() {
+		const old = this.state;
+		const newBounds = {xMin: old.xMin + this.offsetX, xMax: old.xMax + this.offsetX,
+							yMin: old.yMin + this.offsetY, yMax: old.yMax + this.offsetY};
+		if (isNaN(newBounds.yMax)) debugger;////
+		this.setState(newBounds);
+		
+		this.xScale.domain([newBounds.xMin, newBounds.xMax]);
+		this.yScale.domain([newBounds.yMin, newBounds.yMax]);
 	}
 
 	static mouseMove(ev) {
@@ -231,19 +243,13 @@ class Svg2D extends Component {
 		const hereX = _this.xScale.invert(ev.pageX);
 		const hereY = _this.yScale.invert(ev.pageY);
 		
-		const offsetX = _this.downX - hereX;
-		const offsetY = _this.downY - hereY;
+		// save these; we'll use them for momentum
+		_this.offsetX = _this.downX - hereX;
+		_this.offsetY = _this.downY - hereY;
 		
 		// so shove over the scales so 'here' becomes the mouse down position again
-		const old = {..._this.state};
-		const newBounds = {xMin: old.xMin + offsetX, xMax: old.xMax + offsetX,
-							yMin: old.yMin + offsetY, yMax: old.yMax + offsetY};
-		if (isNaN(newBounds.yMax)) debugger;////
-		_this.setState(newBounds);
+		_this.shoveByOffset();
 		
-		_this.xScale.domain([newBounds.xMin, newBounds.xMax]);
-		_this.yScale.domain([newBounds.yMin, newBounds.yMax]);
-
 		ev.preventDefault();
 		ev.stopPropagation();
 	}
@@ -251,7 +257,24 @@ class Svg2D extends Component {
 	static mouseUp(ev) {
 		const _this = Svg2D.me;
 ////		console.log("moiuse up", ev);
+		if (! _this.dragging)
+			return;
 		_this.dragging = false;
+		
+		// momentum?
+		if (Math.abs(_this.offsetX) + Math.abs(_this.offsetY) > 0.1) {
+			_this.heartbeat = setInterval(() => {
+				_this.shoveByOffset();
+
+				// decaying exponentially
+				_this.offsetX *= .95;
+				_this.offsetY *= .95;
+				
+				// but stop when it gets too slow, or it gets annoying
+				if (Math.abs(_this.offsetX) + Math.abs(_this.offsetY) < 0.01)
+					clearInterval(_this.heartbeat);
+			}, 50);
+		}
 
 		ev.preventDefault();
 		ev.stopPropagation();
