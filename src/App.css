@@ -16,23 +16,21 @@ div.blurb-box {
 	width: 17em;
 }
 
-div.nav-bar {
-
-}
-
 /* one of those little square gray buttons, or the Next button which is wider */
-div.nav-bar button {
+div.nav-bar div {
+	display: inline-block;
 	line-height: 1.5em;
 	padding: 1em;
 	margin: .167em;
 	border: 0px none;
 	border-radius: 0;
+	cursor: pointer;
 	
-	background: #f0f0f0;
+	background: #eee;
 }
 
-div.nav-bar button.selected {
+div.nav-bar div.selected {
 	font-weight: bold;
-	background: #d6d6d6;
+	background: #ddd;
 }
 

@@ -16,15 +16,15 @@ class NavBar extends Component {
 	render() {
 		let buttons = config.scenes.map((scene, ix) => {
 			let sel = (this.props.selectedIndex === ix) ? 'selected' : '';
-			return <button type='button' key={ix} index={ix} className={sel} onClick={this.clickNumber} >
+			return <div key={ix} index={ix} className={sel} onClick={this.clickNumber} >
 				{scene.formula}
-			</button>;
+			</div>;
 		});
 
 		// the next button
-		buttons.push(<button type='button' key='next' onClick={this.clickNext} >
+		buttons.push(<div key='next' onClick={this.clickNext} >
 			NEXT &nbsp; ❯
-		</button>);
+		</div>);
 			
 		return (
 			<div className='nav-bar' >
