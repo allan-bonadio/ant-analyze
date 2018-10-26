@@ -45,7 +45,7 @@ class Svg2D extends Component {
 				.mouseleave(this.mouseUp);
 	}
 	
-	// given a (maybe new) scene, return a pre-autoscale state for it
+	// given a scene the user just switched to, return a default pre-autoscale state for it
 	static startingStateForScene(scene) {
 		const s = scene;
 		
@@ -60,37 +60,28 @@ class Svg2D extends Component {
 	}
 	
 	
-	// given the current scene, the new scene and index, and 'this'
-	// return what we want the state to be to draw it
-	stateForScene(index, scene) {
-			//scene = this.props.scene;
-		let state = this.state;
+	// called before a render, this checks for a new index/scene, and changes stuff
+	// that's needed for this render
+	static getDerivedStateFromProps(props, state) {
+		let index = props.index;
+		let scene = props.scene;
 
-		////config.scenes[this.props.index];
-		if (index != this.index) {
-			// there's been a change in scene.  Reset the bounds & start over
-			state = Svg2D.startingStateForScene(scene);
-
-			this.calcPoints(state);  // calculate points given the x domain
-			this.autoScale(state);  //  default to ymin/max based on xmin/max
-			
-			// i know it's verboten to set state in the render method but i gotta
-			// this is the first I heard of a new scene... not sure how to handle this
-			setTimeout(() => {
-				this.setState(state);
-			}, 0);
-
-		}
-		else
-			state = {...state};
-		this.index = index;
+		// only if user changed scene
+		if (index == state.prevIndex)
+			return null;
 		
+		// there's been a change in scene.  Reset the bounds & start over
+		state = Svg2D.startingStateForScene(scene);
+		state.prevIndex = index;
+
+		Svg2D.calcPoints(state);  // calculate points given the x domain
+		Svg2D.me.autoScale(state);  //  default to ymin/max based on xmin/max
 		return state;
 	}
 	
 	
 	// create the pixel data based on the function.  s
-	calcPoints(state) {
+	static calcPoints(state) {
 		let s = state;
 
 		// x units per k increment.  min, max, n can change upon every redraw.
@@ -105,7 +96,7 @@ class Svg2D extends Component {
 			if (isNaN(y))debugger;
 			pixelsAr[k] = {x: x, y: y};
 		}
-		this.pixelsAr = pixelsAr;
+		Svg2D.me.pixelsAr = pixelsAr;
 	}
 	
 	// derive scalers given the points calculated in calcPoints()
@@ -129,8 +120,8 @@ class Svg2D extends Component {
 	// draw it.  the state must be set up (see constructor)
 	render() {
 		// don't immediately use the react state; we have to update it on the fly
-		let state = this.stateForScene(this.props.index, this.props.scene) 
-		this.calcPoints(state);
+		let state = this.state;
+		Svg2D.calcPoints(state);
 		
 		// Create a line path of for our data.
 		const lineSeries = line()
@@ -158,8 +149,9 @@ class Svg2D extends Component {
 		xAxis.tickFormat(x => Math.abs(x - yAxisX) < 0.1 ? '' : x);
 		yAxis.tickFormat(y => Math.abs(y - xAxisY) < 0.1 ? '' : y);
 		
+		// note i'm including a harmless grave accent to fix bug in debugger
 		return (
-			<svg className='svg-chart' viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+			<svg className='svg-chart' viewBox={`0 0 ${svgWidth} ${svgHeight}`} xx='`'
 						onMouseDown={this.mouseDown} width={svgWidth} height={svgHeight} >
 				<g className='xAxis' ref={node => select(node).call(xAxis)}
 						style={{transform: 'translateY('+ this.yScale(xAxisY) +'px)'}} />
@@ -173,7 +165,7 @@ class Svg2D extends Component {
 	}
 
 	/* ******************************************************* drag move around */
-	
+
 	// handler for mouse down on graph surface
 	mouseDown(ev) {
 		
