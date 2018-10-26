@@ -42,7 +42,7 @@ class Svg2D extends Component {
 		$(document.body)
 				.mousemove(this.mouseMove)
 				.mouseup(this.mouseUp)
-				.mouseleave(this.mouseUp);
+				.mouseleave(this.mouseUp)
 	}
 	
 	// given a scene the user just switched to, return a default pre-autoscale state for it
@@ -152,7 +152,8 @@ class Svg2D extends Component {
 		// note i'm including a harmless grave accent to fix bug in debugger
 		return (
 			<svg className='svg-chart' viewBox={`0 0 ${svgWidth} ${svgHeight}`} xx='`'
-						onMouseDown={this.mouseDown} width={svgWidth} height={svgHeight} >
+						onMouseDown={this.mouseDown}
+						width={svgWidth} height={svgHeight} >
 				<g className='xAxis' ref={node => select(node).call(xAxis)}
 						style={{transform: 'translateY('+ this.yScale(xAxisY) +'px)'}} />
 				<g className='yAxis' ref={node => select(node).call(yAxis)}
@@ -176,8 +177,10 @@ class Svg2D extends Component {
 		this.downY = this.yScale.invert(ev.pageY);
 		this.offsetX = this.offsetY = 0;
 
-		ev.preventDefault();
-		ev.stopPropagation();
+		if (ev.preventDefault) {
+			ev.preventDefault();
+			ev.stopPropagation();
+		}
 	}
 	
 	// call this every time you want to slide the graph over, as a result of some kind of 
@@ -208,8 +211,10 @@ class Svg2D extends Component {
 		// so shove over the scales so 'here' becomes the mouse down position again
 		this.shoveByOffset();
 		
-		ev.preventDefault();
-		ev.stopPropagation();
+		if (ev.preventDefault) {
+			ev.preventDefault();
+			ev.stopPropagation();
+		}
 	}
 
 	mouseUp(ev) {
@@ -232,24 +237,38 @@ class Svg2D extends Component {
 			}, 50);
 		}
 
-		ev.preventDefault();
-		ev.stopPropagation();
+		if (ev.preventDefault) {
+			ev.preventDefault();
+			ev.stopPropagation();
+		}
 	}
+
+	/* ******************************************************* touch events */
+	// nowhere near done
 	
+	/* 						onTouchStart={this.touchStart}  
+					.on('touchMove', this.touchMove)
+				.on('touchEnd', this.touchEnd)
+				.on('touchCancel', this.touchCancel);
+*/
 	touchStart(ev) {
-		console.log("touch Start", ev);
+		console.log("touch Start", ev.targetTouches, ev.touches);
+		this.mouseDown(ev.touches[0]);
 	}
 	
 	touchMove(ev) {
-		console.log("touchMove", ev);
+		console.log("touchMove", ev.targetTouches, ev.touches);
+		this.mouseMove(ev.touches[0]);
 	}
 	
 	touchEnd(ev) {
-		console.log("touchEnd", ev);
+		console.log("touchEnd", ev.targetTouches, ev.touches);
+		this.mouseUp(ev.touches[0]);
 	}
 	
 	touchCancel(ev) {
-		console.log("touchCancel", ev);
+		console.log("touchCancel", ev.targetTouches, ev.touches);
+		this.mouseUp(ev.touches[0]);
 	}
 	
 }
