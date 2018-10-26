@@ -16,13 +16,14 @@ class NavBar extends Component {
 	render() {
 		let buttons = config.scenes.map((scene, ix) => {
 			let sel = (this.props.selectedIndex === ix) ? 'selected' : '';
-			return <div key={ix} index={ix} className={sel} onClick={this.clickNumber} >
+			return <div key={ix} index={ix} className={sel} onClick={this.clickNumber} 
+						onMouseDown={this.killTextSelection}  >
 				{scene.formula}
 			</div>;
 		});
 
 		// the next button
-		buttons.push(<div key='next' onClick={this.clickNext} >
+		buttons.push(<div key='next' onClick={this.clickNext} onMouseDown={this.killTextSelection}>
 			NEXT &nbsp; ❯
 		</div>);
 			
@@ -35,13 +36,19 @@ class NavBar extends Component {
 	
 	// human clicks on one of the number buttons
 	clickNumber(ev) {
+		ev.stopPropagation();
 		StepWidget.goToStep(+ev.target.getAttribute('index'));
 	}
 	
 	// click on the NEXT> button
 	clickNext(ev) {
+		ev.stopPropagation();
 		let stepIndex = (this.props.selectedIndex + 1) % config.scenes.length;
 		StepWidget.goToStep(stepIndex);
+	}
+	
+	killTextSelection(ev) {
+		ev.preventDefault();
 	}
 }
 
