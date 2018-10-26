@@ -15,8 +15,8 @@ class StepWidget extends Component {
 	render() {
 		return (
 			<div className='step-widget'>
-				<BlurbBox  selectedIndex={this.state.selectedIndex} />
 				<SceneDisplay  selectedIndex={this.state.selectedIndex} />
+				<BlurbBox  selectedIndex={this.state.selectedIndex} />
 			</div>
 		);
 	}

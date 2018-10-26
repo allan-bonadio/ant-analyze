@@ -10,6 +10,10 @@ import $ from 'jquery';
 
 import './Svg2D.css';
 
+// the inner size of the svg el
+const svgWidth = 800;
+const svgHeight = 600;
+
 // to make room for axes that may be cut off at the edges
 const axisMargin = 10;
 
@@ -20,36 +24,25 @@ class Svg2D extends Component {
 		Svg2D.me = this;
 		////this.index = props.index;
 		
-		// size of the whole svg element.  Does not change.
-		this.height = this.props.height;
-		this.width = this.props.width;
-		
-		// where data drawn
+		// where data drawn; slightly inside the full svg
 		this.marginLeft = this.marginTop = axisMargin;
-		this.marginRight = this.width - axisMargin;
-		this.marginBottom = this.height - axisMargin;
+		this.marginRight = svgWidth - axisMargin;
+		this.marginBottom = svgHeight - axisMargin;
 		
 		// this constructor sets it up blank; you have to call setScene() to fire it up
 		this.state = {};
 		
-		// these are needed for graph sliding
+		// too tedious
+		['mouseDown', 'mouseMove', 'mouseUp', 'touchStart', 'touchMove', 'touchEnd', 'touchCancel',]
+			.forEach(evName => this[evName] = this[evName].bind(this));
+	}
+	
+	componentDidMount() {
+		// these are needed for graph sliding & other touch events
 		$(document.body)
-				.mousemove(Svg2D.mouseMove)
-				.mouseup(Svg2D.mouseUp)
-				.mouseleave(Svg2D.mouseUp);
-
-		
-		//this.setScene(props.index, props.scene);
-		
-////		this.state = Svg2D.startingStateForScene(props.scene);
-////		this.calcPoints();  // calculate points given the x domain
-////		this.autoScale();  //  default ymin/max based on xmin/max
-////		////this.setScene(props.scene, state => );
-////		
-////		// and we can set the default y domain
-////		const yd = this.yScale.domain();
-////		this.state.yMin = yd[0];
-////		this.state.yMax = yd[1];
+				.mousemove(this.mouseMove)
+				.mouseup(this.mouseUp)
+				.mouseleave(this.mouseUp);
 	}
 	
 	// given a (maybe new) scene, return a pre-autoscale state for it
@@ -93,34 +86,8 @@ class Svg2D extends Component {
 		this.index = index;
 		
 		return state;
-}
-	
-	
-	// set a new scene and autorange and sortof reset the whole thing
-	setScene(index, scene) {
-		//scene = this.props.scene;
-		let state = this.state;
-
-		////config.scenes[this.props.index];
-		if (index != this.index) {
-			// there's been a change in scene.  Reset the bounds & start over
-			state = Svg2D.startingStateForScene(scene);
-
-			this.calcPoints(state);  // calculate points given the x domain
-			this.autoScale();  //  default to ymin/max based on xmin/max
-		}
-		else
-			state = {...state};
-		this.index = index;
-
-////		// if this is called from the constructor, state is undefined.  Must be filled directly.
-////		// if called later, it is filled in.  so must do setState()
-////		setStateCallback(state);
-		
-
-		// now that we've calculated it all, order up a render
-		this.setState(state);
 	}
+	
 	
 	// create the pixel data based on the function.  s
 	calcPoints(state) {
@@ -192,8 +159,8 @@ class Svg2D extends Component {
 		yAxis.tickFormat(y => Math.abs(y - xAxisY) < 0.1 ? '' : y);
 		
 		return (
-			<svg className='svg-chart' width={this.width} height={this.height} 
-						onMouseDown={Svg2D.mouseDown} >
+			<svg className='svg-chart' viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+						onMouseDown={this.mouseDown} width={svgWidth} height={svgHeight} >
 				<g className='xAxis' ref={node => select(node).call(xAxis)}
 						style={{transform: 'translateY('+ this.yScale(xAxisY) +'px)'}} />
 				<g className='yAxis' ref={node => select(node).call(yAxis)}
@@ -206,21 +173,22 @@ class Svg2D extends Component {
 	}
 
 	/* ******************************************************* drag move around */
-	static mouseDown(ev) {
-		const _this = Svg2D.me;
-////		console.log("moiuse down", ev);
+	
+	// handler for mouse down on graph surface
+	mouseDown(ev) {
 		
-		_this.dragging = true;
+		this.dragging = true;
 		
 		// yeah, i'm missing an offset for the svg versus the page; it'll be ok
-		_this.downX = _this.xScale.invert(ev.pageX);
-		_this.downY = _this.yScale.invert(ev.pageY);
-		_this.offsetX = _this.offsetY = 0;
+		this.downX = this.xScale.invert(ev.pageX);
+		this.downY = this.yScale.invert(ev.pageY);
+		this.offsetX = this.offsetY = 0;
 
 		ev.preventDefault();
 		ev.stopPropagation();
 	}
 	
+	// call this every time you want to slide the graph over, as a result of some kind of 
 	shoveByOffset() {
 		const old = this.state;
 		const newBounds = {xMin: old.xMin + this.offsetX, xMax: old.xMax + this.offsetX,
@@ -232,53 +200,66 @@ class Svg2D extends Component {
 		this.yScale.domain([newBounds.yMin, newBounds.yMax]);
 	}
 
-	static mouseMove(ev) {
-		const _this = Svg2D.me;
-		if (! _this.dragging)
+	mouseMove(ev) {
+		if (! this.dragging)
 			return;
-////		console.log("moiuse move", ev);
 		
-//debugger;////
+		//debugger;////
 		// where is the mouse now, in data coordinates
-		const hereX = _this.xScale.invert(ev.pageX);
-		const hereY = _this.yScale.invert(ev.pageY);
+		const hereX = this.xScale.invert(ev.pageX);
+		const hereY = this.yScale.invert(ev.pageY);
 		
 		// save these; we'll use them for momentum
-		_this.offsetX = _this.downX - hereX;
-		_this.offsetY = _this.downY - hereY;
+		this.offsetX = this.downX - hereX;
+		this.offsetY = this.downY - hereY;
 		
 		// so shove over the scales so 'here' becomes the mouse down position again
-		_this.shoveByOffset();
+		this.shoveByOffset();
 		
 		ev.preventDefault();
 		ev.stopPropagation();
 	}
 
-	static mouseUp(ev) {
-		const _this = Svg2D.me;
-////		console.log("moiuse up", ev);
-		if (! _this.dragging)
+	mouseUp(ev) {
+		if (! this.dragging)
 			return;
-		_this.dragging = false;
+		this.dragging = false;
 		
 		// momentum?
-		if (Math.abs(_this.offsetX) + Math.abs(_this.offsetY) > 0.1) {
-			_this.heartbeat = setInterval(() => {
-				_this.shoveByOffset();
+		if (Math.abs(this.offsetX) + Math.abs(this.offsetY) > 0.1) {
+			this.heartbeat = setInterval(() => {
+				this.shoveByOffset();
 
 				// decaying exponentially
-				_this.offsetX *= .95;
-				_this.offsetY *= .95;
+				this.offsetX *= .95;
+				this.offsetY *= .95;
 				
 				// but stop when it gets too slow, or it gets annoying
-				if (Math.abs(_this.offsetX) + Math.abs(_this.offsetY) < 0.01)
-					clearInterval(_this.heartbeat);
+				if (Math.abs(this.offsetX) + Math.abs(this.offsetY) < 0.01)
+					clearInterval(this.heartbeat);
 			}, 50);
 		}
 
 		ev.preventDefault();
 		ev.stopPropagation();
 	}
+	
+	touchStart(ev) {
+		console.log("touch Start", ev);
+	}
+	
+	touchMove(ev) {
+		console.log("touchMove", ev);
+	}
+	
+	touchEnd(ev) {
+		console.log("touchEnd", ev);
+	}
+	
+	touchCancel(ev) {
+		console.log("touchCancel", ev);
+	}
+	
 }
 
 export default Svg2D;

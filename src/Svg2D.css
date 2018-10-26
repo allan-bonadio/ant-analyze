@@ -1,5 +1,11 @@
 .svg-chart {
 	cursor: grab;
+	width: 100%;
+	height: 100%;
+}
+
+.svg-chart:active {
+	cursor: grabbing;
 }
 
 .line-path {

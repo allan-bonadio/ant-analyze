@@ -7,14 +7,33 @@ body {
 }
 
 
-div.step-widget {
-
+@media screen and (min-width: 1130px) {
+	/* wide screen - blurb box to the side*/
+	div.scene-display {
+		float: left;
+	}
+	
+	div.blurb-box {
+		float: left;
+		width: 17em;
+	}
+	
 }
 
-div.blurb-box {
-	float: right;
-	width: 17em;
+@media screen and (max-width: 1129px) {
+	/* narrow screen - make it more vertical */
+	div.scene-display {
+		float: none;
+		max-width: 800px;
+	}
+
+	div.blurb-box {
+		float: left;
+		width: 34em;
+		max-width: 100%;
+	}
 }
+
 
 /* one of those little square gray buttons, or the Next button which is wider */
 div.nav-bar div {

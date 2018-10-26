@@ -12,20 +12,11 @@ class SceneDisplay extends Component {
 	}
 	
 	render() {
-////		if (this.lastIndex != this.props.index) {
-////			// change of scene!  Have to set a few things.
-////			Svg2D.setExternalScene(this.props.index, this.props.scene);
-////		}
-	
-	
-		let scene = config.scenes[this.props.selectedIndex];
-
-
-		this.scene = scene;
+		this.scene = config.scenes[this.props.selectedIndex];
 		
 		return (
 			<div className='scene-display' >
-				<Svg2D scene={scene} index={this.props.selectedIndex} width='800' height='600' />
+				<Svg2D scene={this.scene} index={this.props.selectedIndex} />
 			</div>
 		);
 	}
