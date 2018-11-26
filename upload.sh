@@ -2,6 +2,9 @@
 
 cd `dirname $0`
 
+# of course build it first!
+npm run build
+
 # upload the build directory to my website
 # sorry I couldn't get recursive to work with scp or sftp
 sftp allan@ojibwe << APPLETREE

@@ -33,8 +33,11 @@ class Svg2D extends Component {
 		this.state = {};
 		
 		// too tedious
-		['mouseDown', 'mouseMove', 'mouseUp', 'touchStart', 'touchMove', 'touchEnd', 'touchCancel',]
-			.forEach(evName => this[evName] = this[evName].bind(this));
+		[
+			'mouseDown', 'mouseMove', 'mouseUp', 'wheel',
+			'touchStart', 'touchMove', 'touchEnd', 'touchCancel', 'touchForceChange',
+			'gestureStart', 'gestureChange', 'gestureEnd', 
+		].forEach(funcName => this[funcName] = this[funcName].bind(this));
 	}
 	
 	componentDidMount() {
@@ -42,7 +45,12 @@ class Svg2D extends Component {
 		$(document.body)
 				.mousemove(this.mouseMove)
 				.mouseup(this.mouseUp)
-				.mouseleave(this.mouseUp)
+				.mouseleave(this.mouseUp);
+		
+		// somehow reacct isn't ready for these as attributes on elements
+		$('svg').on('gesturestart', this.gestureStart);
+		$('svg').on('gesturechange', this.gestureChange);
+		$('svg').on('gestureend', this.gestureEnd);
 	}
 	
 	// given a scene the user just switched to, return a default pre-autoscale state for it
@@ -54,8 +62,7 @@ class Svg2D extends Component {
 		return {
 			xMin: s.xMin,
 			xMax: s.xMax,
-			nPoints: s.nPoints,
-			func: s.func,
+			funcs: s.funcs,
 		};
 	}
 	
@@ -84,17 +91,23 @@ class Svg2D extends Component {
 	static calcPoints(state) {
 		let s = state;
 
-		// x units per k increment.  min, max, n can change upon every redraw.
-		const xPerK = (s.xMax - s.xMin) / (s.nPoints - 1);
-		if (isNaN(xPerK)) debugger;
 		
 		let pixelsAr = [];
-		for (let k = 0; k < s.nPoints; k++) {
-			let x = k * xPerK + s.xMin;  // range 0...nPoints maps to xmin...xmax
-			if (isNaN(x)) debugger;
-			let y = s.func(x);
-			if (isNaN(y))debugger;
-			pixelsAr[k] = {x: x, y: y};
+		for (let f = 0; f < s.funcs.length; f++) {
+			let func = s.funcs[f];
+			
+			// x units per k increment.  min, max, n can change upon every redraw.
+			const xPerK = (s.xMax - s.xMin) / (func.nPoints - 1);
+			if (isNaN(xPerK)) debugger;
+
+			pixelsAr[f] = [];
+			for (let k = 0; k < func.nPoints; k++) {
+				let x = k * xPerK + s.xMin;  // range 0...nPoints maps to xmin...xmax
+				if (isNaN(x)) debugger;
+				let y = func.func(x);
+				if (isNaN(y))debugger;
+				pixelsAr[f][k] = {x: x, y: y};
+			}
 		}
 		Svg2D.me.pixelsAr = pixelsAr;
 	}
@@ -103,15 +116,25 @@ class Svg2D extends Component {
 	// called initially and maybe for Resets
 	autoScale(state) {
 		this.xScale = scaleLinear()
-			.domain(extent(this.pixelsAr, d => d.x))
+			.domain(extent(this.pixelsAr[0], d => d.x))
 			.range([this.marginLeft, this.marginRight]);
 
-		let yDom = extent(this.pixelsAr, d => d.y);
-		state.yMin = yDom[0];
-		state.yMax = yDom[1];
+		// find the unified extent of all of the y values
+		let mini = Infinity, maxi = -Infinity, mi, mx ;
+		for (let f = 0; f < this.pixelsAr.length; f++) {
+			[mi, mx] = extent(this.pixelsAr[f], d => d.y);
+			mini = Math.min(mi, mini);
+			maxi = Math.max(mx, maxi);
+		}
+		state.yMin = mini;
+		state.yMax = maxi;
+		
+////		let yDom = extent(this.pixelsAr, d => d.y);
+////		state.yMin = yDom[0];
+////		state.yMax = yDom[1];
 	
 		this.yScale = scaleLinear()
-			.domain(yDom)
+			.domain([mini, maxi])
 			.range([this.marginBottom, this.marginTop]);
 		
 		if (isNaN(this.yScale.domain()[0])) debugger;
@@ -123,11 +146,12 @@ class Svg2D extends Component {
 		let state = this.state;
 		Svg2D.calcPoints(state);
 		
-		// Create a line path of for our data.
+		// Create a line path for each series in our data.
 		const lineSeries = line()
 			.x(d => this.xScale(d.x))
 			.y(d => this.yScale(d.y));
-		const linePath = lineSeries(this.pixelsAr);
+		let linePaths = this.pixelsAr.map((ar, ix) => 
+				<path d={lineSeries(ar)} key={ix} stroke={state.funcs[ix].color} />);
 
 		// axis generation - choose which side so tic labels don't go off edge
 		let xAxis, yAxis;
@@ -153,13 +177,26 @@ class Svg2D extends Component {
 		return (
 			<svg className='svg-chart' viewBox={`0 0 ${svgWidth} ${svgHeight}`} xx='`'
 						onMouseDown={this.mouseDown}
+						onWheel={this.wheel}
+			
+						onTouchStart={this.touchStart}  
+						onTouchMove={this.touchMove}
+						onTouchEnd={this.touchEnd}
+						onTouchCancel={this.touchCancel}
+////						onTouchForceChange={this.touchForceChange}
+
+// ReactDOM doesn't recognize these three handlers.
+////					onGestureStart={this.gestureStart}
+////					onGestureChange={this.gestureChange}
+////					onGestureEnd={this.gestureEnd}
+						
 						width={svgWidth} height={svgHeight} >
 				<g className='xAxis' ref={node => select(node).call(xAxis)}
 						style={{transform: 'translateY('+ this.yScale(xAxisY) +'px)'}} />
 				<g className='yAxis' ref={node => select(node).call(yAxis)}
 						style={{transform: 'translateX('+ this.xScale(yAxisX) +'px)'}} />
-				<g className='line-path'>
-					<path d={linePath} />
+				<g className='line-paths'>
+						{linePaths}
 				</g>
 			</svg>
 		);
@@ -237,19 +274,27 @@ class Svg2D extends Component {
 			}, 50);
 		}
 
-		if (ev.preventDefault) {
+		if (ev && ev.preventDefault) {
 			ev.preventDefault();
 			ev.stopPropagation();
 		}
 	}
 
-	/* ******************************************************* touch events */
+	wheel(ev) {
+		ev.preventDefault();
+		console.log("wheel x y z", ev);
+		console.log( ev.deltaX, ev.deltaY, ev.deltaZ);
+		//this.mouseUp(ev);
+	}
+
+	/* ******************************************************* touch & gesture events */
 	// nowhere near done
 	
-	/* 						onTouchStart={this.touchStart}  
-					.on('touchMove', this.touchMove)
-				.on('touchEnd', this.touchEnd)
-				.on('touchCancel', this.touchCancel);
+	/* add all of this to the svg element
+onTouchStart={this.touchStart}  
+.on('touchMove', this.touchMove)
+.on('touchEnd', this.touchEnd)
+.on('touchCancel', this.touchCancel);
 */
 	touchStart(ev) {
 		console.log("touch Start", ev.targetTouches, ev.touches);
@@ -269,6 +314,26 @@ class Svg2D extends Component {
 	touchCancel(ev) {
 		console.log("touchCancel", ev.targetTouches, ev.touches);
 		this.mouseUp(ev.touches[0]);
+	}
+	
+	touchForceChange(ev) {
+		console.log("touchForceChange", ev.targetTouches, ev.touches);
+		this.mouseUp(ev.touches[0]);
+	}
+	
+	gestureStart(ev) {
+		console.log("touchForceChange", ev.targetTouches, ev.touches);
+		////this.mouseUp(ev);
+	}
+	
+	gestureChange(ev) {
+		console.log("gestureChange", ev.targetTouches, ev.touches);
+		////this.mouseUp(ev);
+	}
+	
+	gestureEnd(ev) {
+		console.log("gestureEnd", ev.targetTouches, ev.touches);
+		////this.mouseUp(ev);
 	}
 	
 }
