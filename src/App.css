@@ -8,7 +8,7 @@ body {
 }
 
 
-@media screen and (max-width: 1130px) {
+@media screen and (max-width: 1129px) {
 	/* wide screen - blurb box to the side*/
 	div.scene-display {
 		float: left;
@@ -21,7 +21,7 @@ body {
 	
 }
 
-@media screen and (min-width: 1129px) {
+@media screen and (min-width: 1130px) {
 	/* narrow screen - make it more vertical */
 	div.scene-display {
 		float: none;

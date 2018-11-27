@@ -168,14 +168,10 @@ class Svg2D extends Component {
 		state.yMin = mini;
 		state.yMax = maxi;
 		
-////		let yDom = extent(this.pixelsAr, d => d.y);
-////		state.yMin = yDom[0];
-////		state.yMax = yDom[1];
-	
 		this.yScale = scaleLinear()
 			.domain([mini, maxi])
 			.range([this.marginBottom, this.marginTop]);
-		console.log("autoScale: ", this.marginBottom, this.marginTop, this.yScale.range());////
+		////console.log("autoScale: ", this.marginBottom, this.marginTop, this.yScale.range());////
 		
 		if (isNaN(this.yScale.domain()[0])) debugger;
 	}
@@ -277,6 +273,10 @@ class Svg2D extends Component {
 		this.downY = this.yScale.invert(ev.pageY);
 		this.offsetX = this.offsetY = 0;
 		this.preventStop(ev);
+		
+		// save these if a gesture is happening; must undo whatever single finger stuff it did
+		let s = this.state;
+		this.downMinMax = {xMin: s.xMin, xMax: s.xMax, yMin: s.yMin, yMax: s.yMax};
 	}
 	
 	mouseMoveEvt(ev) {
@@ -297,6 +297,10 @@ class Svg2D extends Component {
 		this.shoveByOffset();
 		
 		this.preventStop(ev);
+		
+		let s = this.state;////
+			if (s.xMin > 20 || s.xMax > 50 || s.xMax < 0 || s.xMin > 0) debugger;////
+		console.log("mme dom and range", this.xScale.domain(), this.xScale.range());
 	}
 
 	mouseUpEvt(ev) {
@@ -340,6 +344,7 @@ class Svg2D extends Component {
 	
 	touchStartEvt(ev) {
 		console.log("touch StartEvt", ev.pageX, ev.pageY, ev.touches);
+
 		// when you set touch event handlers, mouse events stop coming.  So fake it unless there's 2 or more touches
 		if (ev.touches.length == 1)
 			this.mouseDownEvt(ev.touches[0]);
@@ -348,7 +353,7 @@ class Svg2D extends Component {
 	}
 	
 	touchMoveEvt(ev) {
-		console.log("touchMoveEvt", ev.pageX, ev.pageY, ev.touches);
+		////console.log("touchMoveEvt", ev.pageX, ev.pageY, ev.touches);
 		if (ev.touches.length == 1)
 			this.mouseMoveEvt(ev.touches[0]);
 		else
@@ -396,41 +401,83 @@ class Svg2D extends Component {
 	// retutn array of two vectors: delta and midpoint
 	calcTouchFingers(touches) {
 		let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+		
+		// this should only happen on touch end events.  but i think they happen other times too.
+		if (touches.length <= 0)
+		 	return null;
+		
 		for (let t = 0; t < touches.length; t++) {
+			// these are all in pixel units
 			let touch = touches[t];
 			minX = Math.min(minX, touch.clientX);
 			minY= Math.min(minY, touch.clientY);
 			maxX = Math.max(maxX, touch.clientX);
 			maxY= Math.max(maxY, touch.clientY);
 		};
-		return [[maxX - minX, maxY - minY], [(maxX + minX)/2, (maxY + minY)/2]];
+		
+		
+////		if (Math.abs(minX - maxX) < 100 || Math.abs(minX - maxX) > 1000)
+////			debugger;
+		
+		return [[maxX - minX, maxY - minY], 
+				[this.xScale.invert((maxX + minX)/2), this.yScale.invert((maxY + minY)/2)]];
 	}
 	
 	touchStartHandler(ev) {
-		[this.touchStartDelta, this.touchMidPoint] = this.calcTouchFingers(ev.touches);
-		this.preventStop(ev);
+		// pull the plug on normal drag, which has been started
+		this.dragging = false;
+		this.setState(this.downMinMax);
 
+		[this.lastDelta, this.touchMidPoint] = this.calcTouchFingers(ev.touches);
+
+		this.spread = Math.abs(this.lastDelta[0]) > Math.abs(this.lastDelta[1]) ? 'x' : 'y';
+
+		this.preventStop(ev);
 	}
+	
 	touchMoveHandler(ev) {
-		let delta, mid;
-		[delta, mid] = this.calcTouchFingers(ev.touches);
+		let delta, mid, factor, xMin, xMax, yMin, yMax;
+		let s = this.state;
+		let midi = this.touchMidPoint;
+		
+		delta = this.calcTouchFingers(ev.touches)[0];
 		// is it a vertical or horizontal gesture?
-		if (Math.abs(delta[0]) > Math.abs(delta[1])) {
+		if (this.spread == 'x') {
 			// horizontal - stretch the x axis
-			console.log("horiz");
+			factor = this.lastDelta[0] / delta[0];
+			console.log("horiz, factor=", factor, this.lastDelta, delta);
+			xMin = (s.xMin - midi[0]) * factor +  midi[0];
+			xMax = (s.xMax - midi[0]) * factor +  midi[0];
+			this.setState({xMin , xMax});
+			console.log("xmin/max:", xMin, xMax);
+			this.xScale.domain([xMin, xMax]);
+			if (xMin > 20 || xMax > 50 || xMax < 0 || xMin > 0) debugger;
 		}
 		else {
 			// vertical - stretch the y axis
-			console.log("vertical");
+			factor =this.lastDelta[1] /  delta[1];
+			console.log("vertical, factor=", factor, this.lastDelta, delta);
+			yMin = (s.yMin - midi[1]) * factor +  midi[1];
+			yMax = (s.yMax - midi[1]) * factor +  midi[1];
+			this.setState({yMin , yMax});
+			console.log("ymin/max:", yMin, yMax);
+			this.yScale.domain([yMin, yMax]);
 		}
+		this.lastDelta = delta;
 		
-		
+////if (factor < .8 || factor > 1.2) debugger;
+		console.log("tmh dom and range", this.xScale.domain(), this.xScale.range());
+
 		this.preventStop(ev);
 	}
+	
 	touchEndHandler(ev) {
+		this.spread = false;
 		this.preventStop(ev);
 	}
+	
 	touchCancelHandler(ev) {
+		this.spread = false;
 		this.preventStop(ev);
 	}
 }
