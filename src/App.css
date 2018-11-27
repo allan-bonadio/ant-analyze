@@ -1,13 +1,14 @@
 body {
 	font-size: 14px;
+	position: fixed;
 }
 
 .App {
-	margin: 3em;
+	margin: 3px;
 }
 
 
-@media screen and (min-width: 1130px) {
+@media screen and (max-width: 1130px) {
 	/* wide screen - blurb box to the side*/
 	div.scene-display {
 		float: left;
@@ -15,12 +16,12 @@ body {
 	
 	div.blurb-box {
 		float: left;
-		width: 17em;
+		width: 100%;
 	}
 	
 }
 
-@media screen and (max-width: 1129px) {
+@media screen and (min-width: 1129px) {
 	/* narrow screen - make it more vertical */
 	div.scene-display {
 		float: none;
@@ -29,7 +30,7 @@ body {
 
 	div.blurb-box {
 		float: left;
-		width: 34em;
+		width: 100%;
 		max-width: 100%;
 	}
 }

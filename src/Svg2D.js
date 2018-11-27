@@ -10,12 +10,9 @@ import $ from 'jquery';
 
 import './Svg2D.css';
 
-// the inner size of the svg el
-const svgWidth = 800;
-const svgHeight = 600;
 
 // to make room for axes that may be cut off at the edges
-const axisMargin = 10;
+const axisMargin = 4;
 
 // there is one of these total, it displays differences depending on its selectedIndex prop passed in
 class Svg2D extends Component {
@@ -24,33 +21,75 @@ class Svg2D extends Component {
 		Svg2D.me = this;
 		////this.index = props.index;
 		
+		// the inner size of the svg el - changes on window resize or iPhone rotate events
+		this.state = {
+			svgWidth: window.innerWidth - 4,
+			svgHeight: window.innerHeight - 200,
+		};
+
 		// where data drawn; slightly inside the full svg
 		this.marginLeft = this.marginTop = axisMargin;
-		this.marginRight = svgWidth - axisMargin;
-		this.marginBottom = svgHeight - axisMargin;
+		this.marginRight = this.state.svgWidth - axisMargin;
+		this.marginBottom = this.state.svgHeight - axisMargin;
 		
 		// this constructor sets it up blank; you have to call setScene() to fire it up
-		this.state = {};
 		
 		// too tedious
 		[
-			'mouseDown', 'mouseMove', 'mouseUp', 'wheel',
-			'touchStart', 'touchMove', 'touchEnd', 'touchCancel', 'touchForceChange',
-			'gestureStart', 'gestureChange', 'gestureEnd', 
-		].forEach(funcName => this[funcName] = this[funcName].bind(this));
+			'mouseDownEvt', 'mouseMoveEvt', 'mouseUpEvt', 'mouseWheelEvt',
+			'touchStartEvt', 'touchMoveEvt', 'touchEndEvt', 'touchCancelEvt', 'touchForceChange',
+			'gestureStartEvt', 'gestureChangeEvt', 'gestureEndEvt', 
+		].forEach(funcName =>{
+			////console.log(funcName);
+			this[funcName] = this[funcName].bind(this)
+			});
+		
 	}
 	
+	
+	
 	componentDidMount() {
-		// these are needed for graph sliding & other touch events
+		// these are needed for graph sliding & other touch events - touches outside the SVG
 		$(document.body)
-				.mousemove(this.mouseMove)
-				.mouseup(this.mouseUp)
-				.mouseleave(this.mouseUp);
-		
-		// somehow reacct isn't ready for these as attributes on elements
-		$('svg').on('gesturestart', this.gestureStart);
-		$('svg').on('gesturechange', this.gestureChange);
-		$('svg').on('gestureend', this.gestureEnd);
+				.mousemove(this.mouseMoveEvt)
+				.mouseup(this.mouseUpEvt)
+				.mouseleave(this.mouseUpEvt)
+				// these must be on body element to override ?
+		$('svg')
+				.on('touchstart', this.touchStartEvt)
+				.on('touchmove', this.touchMoveEvt)
+				.on('touchend', this.touchEndEvt)
+				.on('touchcancel', this.touchCancelEvt);
+
+		$('div.step-widget')
+				.on('touchstart', ev => ev.stopPropagation)
+				.on('touchmove', ev => ev.stopPropagation)
+				.on('touchend', ev => ev.stopPropagation)
+				.on('touchcancel', ev => ev.stopPropagation);
+
+////		// somehow reacct isn't ready for these as attributes on elements
+////		$('svg').on('gesturestart', this.gestureStartEvt)
+////				.on('gesturechange', this.gestureChangeEvt);
+////				.on('gestureend', this.gestureEndEvt);
+
+		$(window).on('resize', ev => {
+			
+			// set these globals
+			let svgWidth = ev.target.innerWidth - 4;
+			let svgHeight = ev.target.innerHeight - $('.blurb-box')[0].offsetHeight;
+			this.setState({svgWidth, svgHeight});
+
+			this.marginRight = svgWidth - axisMargin;
+			this.marginBottom = svgHeight - axisMargin;
+			console.log("resize ev", ev.target.innerWidth, ev.target.innerHeight, 
+							this.marginBottom, this.yScale.range());
+
+			// and adjust the svg
+			$('svg').attr('width', svgWidth).attr('height', svgHeight)
+					.attr('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+			
+			this.autoScale(this.state);
+		});
 	}
 	
 	// given a scene the user just switched to, return a default pre-autoscale state for it
@@ -136,6 +175,7 @@ class Svg2D extends Component {
 		this.yScale = scaleLinear()
 			.domain([mini, maxi])
 			.range([this.marginBottom, this.marginTop]);
+		console.log("autoScale: ", this.marginBottom, this.marginTop, this.yScale.range());////
 		
 		if (isNaN(this.yScale.domain()[0])) debugger;
 	}
@@ -145,6 +185,7 @@ class Svg2D extends Component {
 		// don't immediately use the react state; we have to update it on the fly
 		let state = this.state;
 		Svg2D.calcPoints(state);
+		console.log("Render: ", state, this.yScale.range());////
 		
 		// Create a line path for each series in our data.
 		const lineSeries = line()
@@ -175,22 +216,24 @@ class Svg2D extends Component {
 		
 		// note i'm including a harmless grave accent to fix bug in debugger
 		return (
-			<svg className='svg-chart' viewBox={`0 0 ${svgWidth} ${svgHeight}`} xx='`'
-						onMouseDown={this.mouseDown}
-						onWheel={this.wheel}
+			<svg className='svg-chart' viewBox={`0 0 ${this.state.svgWidth} ${this.state.svgHeight}`} xx='`'
+						onMouseDown={this.mouseDownEvt}
+						onWheel={this.mouseWheelEvt}
 			
-						onTouchStart={this.touchStart}  
-						onTouchMove={this.touchMove}
-						onTouchEnd={this.touchEnd}
-						onTouchCancel={this.touchCancel}
-////						onTouchForceChange={this.touchForceChange}
+					// react does recognize these touch events - needed for gestures
+					// why don't these work anymore?  Need to be on the Body?
+////					onTouchStartEvt={this.touchStartEvt}  
+////					onTouchMoveEvt={this.touchMoveEvt}
+////					onTouchEndEvt={this.touchEndEvt}
+////					onTouchCancel={this.touchCancel}
+////					onTouchForceChange={this.touchForceChange}
 
 // ReactDOM doesn't recognize these three handlers.
-////					onGestureStart={this.gestureStart}
-////					onGestureChange={this.gestureChange}
-////					onGestureEnd={this.gestureEnd}
+////					onGestureStartEvt={this.gestureStartEvt}
+////					onGestureChange={this.gestureChangeEvt}
+////					onGestureEndEvt={this.gestureEndEvt}
 						
-						width={svgWidth} height={svgHeight} >
+						width={this.state.svgWidth} height={this.state.svgHeight} >
 				<g className='xAxis' ref={node => select(node).call(xAxis)}
 						style={{transform: 'translateY('+ this.yScale(xAxisY) +'px)'}} />
 				<g className='yAxis' ref={node => select(node).call(yAxis)}
@@ -204,23 +247,14 @@ class Svg2D extends Component {
 
 	/* ******************************************************* drag move around */
 
-	// handler for mouse down on graph surface
-	mouseDown(ev) {
-		
-		this.dragging = true;
-		
-		// yeah, i'm missing an offset for the svg versus the page; it'll be ok
-		this.downX = this.xScale.invert(ev.pageX);
-		this.downY = this.yScale.invert(ev.pageY);
-		this.offsetX = this.offsetY = 0;
-
-		if (ev.preventDefault) {
-			ev.preventDefault();
-			ev.stopPropagation();
-		}
+	preventStop(ev) {
+		if (!ev.preventDefault)
+			return;
+		ev.preventDefault();
+		//ev.stopPropagation();
 	}
 	
-	// call this every time you want to slide the graph over, as a result of some kind of 
+	// call this every time you want to slide the graph over, as a result of some kind of mouse move
 	shoveByOffset() {
 		const old = this.state;
 		const newBounds = {xMin: old.xMin + this.offsetX, xMax: old.xMax + this.offsetX,
@@ -232,9 +266,23 @@ class Svg2D extends Component {
 		this.yScale.domain([newBounds.yMin, newBounds.yMax]);
 	}
 
-	mouseMove(ev) {
+	// handler for mouse down on graph surface
+	mouseDownEvt(ev) {
+		console.log("mouseDownEvt", ev.pageX, ev.pageY);////
+		
+		this.dragging = true;
+		
+		// yeah, i'm missing an offset for the svg versus the page; it'll be ok
+		this.downX = this.xScale.invert(ev.pageX);
+		this.downY = this.yScale.invert(ev.pageY);
+		this.offsetX = this.offsetY = 0;
+		this.preventStop(ev);
+	}
+	
+	mouseMoveEvt(ev) {
 		if (! this.dragging)
 			return;
+		console.log("mouseMoveEvt", ev.pageX, ev.pageY);////
 		
 		//debugger;////
 		// where is the mouse now, in data coordinates
@@ -248,16 +296,14 @@ class Svg2D extends Component {
 		// so shove over the scales so 'here' becomes the mouse down position again
 		this.shoveByOffset();
 		
-		if (ev.preventDefault) {
-			ev.preventDefault();
-			ev.stopPropagation();
-		}
+		this.preventStop(ev);
 	}
 
-	mouseUp(ev) {
+	mouseUpEvt(ev) {
 		if (! this.dragging)
 			return;
 		this.dragging = false;
+		console.log("mouseUpEvt", ev.pageX, ev.pageY);////
 		
 		// momentum?
 		if (Math.abs(this.offsetX) + Math.abs(this.offsetY) > 0.1) {
@@ -274,68 +320,119 @@ class Svg2D extends Component {
 			}, 50);
 		}
 
-		if (ev && ev.preventDefault) {
-			ev.preventDefault();
-			ev.stopPropagation();
-		}
+		this.preventStop(ev);
+	}
+	
+	// sometimes momentum goes crazy like switching between scenes
+	static haltMomentum() {
+		this.me.offsetX = this.me.offsetY = 0;
 	}
 
-	wheel(ev) {
-		ev.preventDefault();
-		console.log("wheel x y z", ev);
+	mouseWheelEvt(ev) {
+		console.log("mouseWheelEvt x y z", ev);
 		console.log( ev.deltaX, ev.deltaY, ev.deltaZ);
-		//this.mouseUp(ev);
+		//this.mouseUpEvt(ev);
+		this.preventStop(ev);
 	}
 
 	/* ******************************************************* touch & gesture events */
 	// nowhere near done
 	
-	/* add all of this to the svg element
-onTouchStart={this.touchStart}  
-.on('touchMove', this.touchMove)
-.on('touchEnd', this.touchEnd)
-.on('touchCancel', this.touchCancel);
-*/
-	touchStart(ev) {
-		console.log("touch Start", ev.targetTouches, ev.touches);
-		this.mouseDown(ev.touches[0]);
+	touchStartEvt(ev) {
+		console.log("touch StartEvt", ev.pageX, ev.pageY, ev.touches);
+		// when you set touch event handlers, mouse events stop coming.  So fake it unless there's 2 or more touches
+		if (ev.touches.length == 1)
+			this.mouseDownEvt(ev.touches[0]);
+		else
+			this.touchStartHandler(ev)
 	}
 	
-	touchMove(ev) {
-		console.log("touchMove", ev.targetTouches, ev.touches);
-		this.mouseMove(ev.touches[0]);
+	touchMoveEvt(ev) {
+		console.log("touchMoveEvt", ev.pageX, ev.pageY, ev.touches);
+		if (ev.touches.length == 1)
+			this.mouseMoveEvt(ev.touches[0]);
+		else
+			this.touchMoveHandler(ev)
 	}
 	
-	touchEnd(ev) {
-		console.log("touchEnd", ev.targetTouches, ev.touches);
-		this.mouseUp(ev.touches[0]);
+	touchEndEvt(ev) {
+		console.log("touchEndEvt", ev.pageX, ev.pageY, ev.touches);
+		if (ev.touches.length == 1)
+			this.mouseUpEvt(ev.touches[0]);
+		else
+			this.touchEndHandler(ev)
 	}
 	
-	touchCancel(ev) {
-		console.log("touchCancel", ev.targetTouches, ev.touches);
-		this.mouseUp(ev.touches[0]);
+	touchCancelEvt(ev) {
+		console.log("touchCancelEvt", ev.pageX, ev.pageY, ev.touches);
+		if (ev.touches.length == 1)
+			this.mouseUpEvt(ev.touches[0]);
+		else
+			this.touchCancelHandler(ev)
 	}
 	
 	touchForceChange(ev) {
-		console.log("touchForceChange", ev.targetTouches, ev.touches);
-		this.mouseUp(ev.touches[0]);
+		console.log("touchForceChange", ev.pageX, ev.pageY, ev.touches);
 	}
 	
-	gestureStart(ev) {
-		console.log("touchForceChange", ev.targetTouches, ev.touches);
-		////this.mouseUp(ev);
+	gestureStartEvt(ev) {
+		console.log("gestureStartEvt", ev.originalEvent);
+		////this.mouseUpEvt(ev);
 	}
 	
-	gestureChange(ev) {
-		console.log("gestureChange", ev.targetTouches, ev.touches);
-		////this.mouseUp(ev);
+	gestureChangeEvt(ev) {
+		console.log("gestureChangeEvt", ev.originalEvent);
+		////this.mouseUpEvt(ev);
 	}
 	
-	gestureEnd(ev) {
-		console.log("gestureEnd", ev.targetTouches, ev.touches);
-		////this.mouseUp(ev);
+	gestureEndEvt(ev) {
+		console.log("gestureEndEvt", ev.originalEvent);
+		////this.mouseUpEvt(ev);
 	}
 	
+	/* ******************************************************* 2+ finger gestures */
+
+	// given array of touches, give me delta X and delta Y, over all fingers, top to bottom and L to R
+	// retutn array of two vectors: delta and midpoint
+	calcTouchFingers(touches) {
+		let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+		for (let t = 0; t < touches.length; t++) {
+			let touch = touches[t];
+			minX = Math.min(minX, touch.clientX);
+			minY= Math.min(minY, touch.clientY);
+			maxX = Math.max(maxX, touch.clientX);
+			maxY= Math.max(maxY, touch.clientY);
+		};
+		return [[maxX - minX, maxY - minY], [(maxX + minX)/2, (maxY + minY)/2]];
+	}
+	
+	touchStartHandler(ev) {
+		[this.touchStartDelta, this.touchMidPoint] = this.calcTouchFingers(ev.touches);
+		this.preventStop(ev);
+
+	}
+	touchMoveHandler(ev) {
+		let delta, mid;
+		[delta, mid] = this.calcTouchFingers(ev.touches);
+		// is it a vertical or horizontal gesture?
+		if (Math.abs(delta[0]) > Math.abs(delta[1])) {
+			// horizontal - stretch the x axis
+			console.log("horiz");
+		}
+		else {
+			// vertical - stretch the y axis
+			console.log("vertical");
+		}
+		
+		
+		this.preventStop(ev);
+	}
+	touchEndHandler(ev) {
+		this.preventStop(ev);
+	}
+	touchCancelHandler(ev) {
+		this.preventStop(ev);
+	}
 }
 
 export default Svg2D;

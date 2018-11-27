@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 
 import BlurbBox from './BlurbBox';
 import SceneDisplay from './SceneDisplay';
+import Svg2D from './Svg2D';
 
 class StepWidget extends Component {
 	constructor(props) {
@@ -24,6 +25,7 @@ class StepWidget extends Component {
 	// ultimately called by click handlers on the nav bar
 	static goToStep(stepIndex) {
 		StepWidget.me.setState({selectedIndex: stepIndex});
+		Svg2D.haltMomentum();
 	}
 }
 
