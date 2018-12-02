@@ -9,44 +9,42 @@ import {select} from 'd3-selection';
 import $ from 'jquery';
 
 import './Svg2D.css';
+import config from './config';
 
 
 // to make room for axes that may be cut off at the edges
-const axisMargin = 4;
+export const axisMargin = 4;
 
 // there is one of these total, it displays differences depending on its selectedIndex prop passed in
 class Svg2D extends Component {
 	constructor(props) {
 		super(props);
 		Svg2D.me = this;
-		////this.index = props.index;
+		
+////		// for testing, pass in innerWidth and innerHeight props
+////		let innerWidth = props.innerWidth || window.innerWidth;
+////		let innerHeight = props.innerHeight || window.innerHeight;
 		
 		// the inner size of the svg el - changes on window resize or iPhone rotate events
 		this.state = {
-			svgWidth: window.innerWidth - 4,
-			svgHeight: window.innerHeight - 200,
+			...this.decideSvgDimensions(window),
+////			svgWidth: innerWidth - 4,
+////			svgHeight: innerHeight - 200,
+			
+			selectedIndex: -1,
+			xMin: -1,  // just defaults
+			xMax: 1,  // will quickly be overwritten
 		};
 
-		// where data drawn; slightly inside the full svg
-		this.marginLeft = this.marginTop = axisMargin;
-		this.marginRight = this.state.svgWidth - axisMargin;
-		this.marginBottom = this.state.svgHeight - axisMargin;
-		
-		// this constructor sets it up blank; you have to call setScene() to fire it up
+		this.needsYScaler = true;
 		
 		// too tedious
 		[
-			'mouseDownEvt', 'mouseMoveEvt', 'mouseUpEvt', 'mouseWheelEvt',
+			'mouseDownEvt', 'mouseMoveEvt', 'mouseUpEvt', 
+			'mouseWheelEvt', 'resizeEvt',
 			'touchStartEvt', 'touchMoveEvt', 'touchEndEvt', 'touchCancelEvt', 'touchForceChange',
-			'gestureStartEvt', 'gestureChangeEvt', 'gestureEndEvt', 
-		].forEach(funcName =>{
-			////console.log(funcName);
-			this[funcName] = this[funcName].bind(this)
-			});
-		
+		].forEach(funcName => this[funcName] = this[funcName].bind(this));
 	}
-	
-	
 	
 	componentDidMount() {
 		// these are needed for graph sliding & other touch events - touches outside the SVG
@@ -54,7 +52,7 @@ class Svg2D extends Component {
 				.mousemove(this.mouseMoveEvt)
 				.mouseup(this.mouseUpEvt)
 				.mouseleave(this.mouseUpEvt)
-				// these must be on body element to override ?
+				
 		$('svg')
 				.on('touchstart', this.touchStartEvt)
 				.on('touchmove', this.touchMoveEvt)
@@ -62,178 +60,168 @@ class Svg2D extends Component {
 				.on('touchcancel', this.touchCancelEvt);
 
 		$('div.step-widget')
-				.on('touchstart', ev => ev.stopPropagation)
-				.on('touchmove', ev => ev.stopPropagation)
-				.on('touchend', ev => ev.stopPropagation)
-				.on('touchcancel', ev => ev.stopPropagation);
+				.on('touchstart', ev => ev.stopPropagation())
+				.on('touchmove', ev => ev.stopPropagation())
+				.on('touchend', ev => ev.stopPropagation())
+				.on('touchcancel', ev => ev.stopPropagation());
 
-////		// somehow reacct isn't ready for these as attributes on elements
-////		$('svg').on('gesturestart', this.gestureStartEvt)
-////				.on('gesturechange', this.gestureChangeEvt);
-////				.on('gestureend', this.gestureEndEvt);
-
-		$(window).on('resize', ev => {
-			
-			// set these globals
-			let svgWidth = ev.target.innerWidth - 4;
-			let svgHeight = ev.target.innerHeight - $('.blurb-box')[0].offsetHeight;
-			this.setState({svgWidth, svgHeight});
-
-			this.marginRight = svgWidth - axisMargin;
-			this.marginBottom = svgHeight - axisMargin;
-			console.log("resize ev", ev.target.innerWidth, ev.target.innerHeight, 
-							this.marginBottom, this.yScale.range());
-
-			// and adjust the svg
-			$('svg').attr('width', svgWidth).attr('height', svgHeight)
-					.attr('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
-			
-			this.autoScale(this.state);
-		});
+		$(window).on('resize', this.resizeEvt);
 	}
 	
-	// given a scene the user just switched to, return a default pre-autoscale state for it
-	static startingStateForScene(scene) {
-		const s = scene;
-		
-		// initial state: the xMin...yMax stuff.  
-		// caller must  autorange once: must use default xmin/max for that.
-		return {
-			xMin: s.xMin,
-			xMax: s.xMax,
-			funcs: s.funcs,
-		};
-	}
-	
-	
-	// called before a render, this checks for a new index/scene, and changes stuff
+	// called before the start of a render, this checks for a new index/scene, and changes stuff
 	// that's needed for this render
 	static getDerivedStateFromProps(props, state) {
-		let index = props.index;
-		let scene = props.scene;
-
+		let index = props.selectedIndex;
 		// only if user changed scene
-		if (index == state.prevIndex)
+		if (index == state.selectedIndex)
 			return null;
 		
-		// there's been a change in scene.  Reset the bounds & start over
-		state = Svg2D.startingStateForScene(scene);
-		state.prevIndex = index;
+		let scene = config.scenes[index];
+		Svg2D.me.funcs = scene.funcs;
 
-		Svg2D.calcPoints(state);  // calculate points given the x domain
-		Svg2D.me.autoScale(state);  //  default to ymin/max based on xmin/max
+		// there's been a change in scene.  Reset the bounds & start over
+		state = {...state, xMin: scene.xMin, xMax: scene.xMax, selectedIndex: index,};
 		return state;
 	}
 	
 	
-	// create the pixel data based on the function.  s
-	static calcPoints(state) {
-		let s = state;
-
+	// create the pixel data based on the function.  Reuse data in case you don't need to.
+	calcPoints() {
+		let s = this.state;
+		if (s.selectedIndex === this.lastTimeSelectedIndex && 
+					s.xMin == this.lastTimeXMin && s.xMax == this.lastTimeXMax)
+			return;  // it'll be the same
 		
-		let pixelsAr = [];
-		for (let f = 0; f < s.funcs.length; f++) {
-			let func = s.funcs[f];
+		let pixelsAr = [];  // no series
+		for (let f = 0; f < this.funcs.length; f++) {
+			let func = this.funcs[f];
 			
 			// x units per k increment.  min, max, n can change upon every redraw.
 			const xPerK = (s.xMax - s.xMin) / (func.nPoints - 1);
 			if (isNaN(xPerK)) debugger;
 
-			pixelsAr[f] = [];
+			pixelsAr[f] = [];  // add on a new series
 			for (let k = 0; k < func.nPoints; k++) {
 				let x = k * xPerK + s.xMin;  // range 0...nPoints maps to xmin...xmax
 				if (isNaN(x)) debugger;
 				let y = func.func(x);
 				if (isNaN(y))debugger;
-				pixelsAr[f][k] = {x: x, y: y};
+				pixelsAr[f][k] = {x, y};
 			}
 		}
-		Svg2D.me.pixelsAr = pixelsAr;
+		this.pixelsAr = pixelsAr;
+		
+		if (s.selectedIndex != this.lastTimeSelectedIndex)
+			this.needsYScaler = true;
+
+		// save these so we can tell if calc needs to be redone
+		this.lastTimeSelectedIndex = s.selectedIndex;
+		this.lastTimeXMin = s.xMin;
+		this.lastTimeXMax = s.xMax;
 	}
 	
-	// derive scalers given the points calculated in calcPoints()
-	// called initially and maybe for Resets
-	autoScale(state) {
+	// derive the X scaler given the points calculated in calcPoints()
+	// called initially and for mouse drags (translations)
+	deriveXScaler() {
+		if (! this.pixelsAr)
+			throw "No Pixels Array in deriveXScaler()";
+
 		this.xScale = scaleLinear()
-			.domain(extent(this.pixelsAr[0], d => d.x))
 			.range([this.marginLeft, this.marginRight]);
 
+		// use any series; the x values are all the same
+		this.xScale.domain(extent(this.pixelsAr[0], d => d.x))
+	}
+	
+	// derive Y scaler given the points calculated in calcPoints()
+	// called initially and upon scene changes
+	// don't call it on every render or else user won't be able to drag up or down!
+	deriveYScaler() {
+		if (! this.pixelsAr)
+			throw "No Pixels Array in deriveXScaler()";
+
+		this.yScale = scaleLinear()
+			.range([this.marginBottom, this.marginTop]);
+
 		// find the unified extent of all of the y values
-		let mini = Infinity, maxi = -Infinity, mi, mx ;
+		let mini = Infinity, maxi = -Infinity, mi, mx;
 		for (let f = 0; f < this.pixelsAr.length; f++) {
 			[mi, mx] = extent(this.pixelsAr[f], d => d.y);
 			mini = Math.min(mi, mini);
 			maxi = Math.max(mx, maxi);
 		}
-		state.yMin = mini;
-		state.yMax = maxi;
-		
-		this.yScale = scaleLinear()
-			.domain([mini, maxi])
-			.range([this.marginBottom, this.marginTop]);
-		////console.log("autoScale: ", this.marginBottom, this.marginTop, this.yScale.range());////
+		this.yScale.domain([mini, maxi]);
+
+		// the y range is calculated from values in the state, therefore not part of the state
+		this.yMin = mini;
+		this.yMax = maxi;
 		
 		if (isNaN(this.yScale.domain()[0])) debugger;
 	}
 	
-	// draw it.  the state must be set up (see constructor)
+	// render the axes, return an array [xAxis, yAxis].  Need xScale and yScale.
+	renderAxes() {
+		// axis generation - choose which side so tic labels don't go off edge
+		let xAxis, yAxis;
+		let s = this.state;
+		if  (this.yMin + this.yMax > 0)
+			xAxis = axisTop(this.xScale).ticks(7).tickPadding(9);
+		else
+			xAxis = axisBottom(this.xScale).ticks(7);
+
+		if (s.xMin + s.xMax > 0)
+			yAxis = axisRight(this.yScale).ticks(5).tickPadding(15);
+		else
+			yAxis = axisLeft(this.yScale).ticks(5);
+		
+		// the axes need to still be on the chart.  We'd like zero-zero but figure out the best.
+		let xAxisY = Math.max(this.yMin, Math.min(this.yMax, 0));
+		let yAxisX = Math.max(s.xMin, Math.min(s.xMax, 0));
+		
+		// wait! if some of the tick labels would overlap an axis, get rid of them
+		xAxis.tickFormat(x => Math.abs(x - yAxisX) < 0.1 ? ' ' : x);
+		yAxis.tickFormat(y => Math.abs(y - xAxisY) < 0.1 ? ' ' : y);
+		
+		return [
+			<g className='xAxis' key='xAxis' ref={node => select(node).call(xAxis)}
+					style={{transform: 'translateY('+ this.yScale(xAxisY) +'px)'}} /> ,
+			<g className='yAxis' key='yAxis' ref={node => select(node).call(yAxis)}
+					style={{transform: 'translateX('+ this.xScale(yAxisX) +'px)'}} />
+		];
+	}
+	
+	// draw it.  the state must be set up (see constructor).  These might have changed:
+	// x/y max/min  svgWidth/Height  
 	render() {
 		// don't immediately use the react state; we have to update it on the fly
 		let state = this.state;
-		Svg2D.calcPoints(state);
-		console.log("Render: ", state, this.yScale.range());////
+		this.calcPoints();
+		this.deriveXScaler();
+		if (this.needsYScaler) {
+			this.deriveYScaler();
+			this.needsYScaler = false;
+		}
+		//console.log("Render: ", state, this.xScale.domain(), this.yScale.domain());////
 		
 		// Create a line path for each series in our data.
 		const lineSeries = line()
 			.x(d => this.xScale(d.x))
 			.y(d => this.yScale(d.y));
 		let linePaths = this.pixelsAr.map((ar, ix) => 
-				<path d={lineSeries(ar)} key={ix} stroke={state.funcs[ix].color} />);
+				<path className='series' d={lineSeries(ar)} key={ix} stroke={this.funcs[ix].color} />);
 
-		// axis generation - choose which side so tic labels don't go off edge
-		let xAxis, yAxis;
-		if  (state.yMin + state.yMax > 0)
-			xAxis = axisTop(this.xScale).ticks(7).tickPadding(9);
-		else
-			xAxis = axisBottom(this.xScale).ticks(7);
-
-		if (state.xMin + state.xMax > 0)
-			yAxis = axisRight(this.yScale).ticks(5).tickPadding(15);
-		else
-			yAxis = axisLeft(this.yScale).ticks(5);
+		let viewBox = `0 0 ${state.svgWidth} ${state.svgHeight}`;
 		
-		// the axes need to still be on the chart.  We'd like zero-zero but figure out the best.
-		let xAxisY = Math.max(state.yMin, Math.min(state.yMax, 0));
-		let yAxisX = Math.max(state.xMin, Math.min(state.xMax, 0));
-		
-		// wait! if some of the tick labels would overlap an axis, get rid of them
-		xAxis.tickFormat(x => Math.abs(x - yAxisX) < 0.1 ? '' : x);
-		yAxis.tickFormat(y => Math.abs(y - xAxisY) < 0.1 ? '' : y);
-		
-		// note i'm including a harmless grave accent to fix bug in debugger
+		// react doesnt recognize touch events - needed for gestures - so use jQuery in DidMount
 		return (
-			<svg className='svg-chart' viewBox={`0 0 ${this.state.svgWidth} ${this.state.svgHeight}`} xx='`'
+			<svg className='svg-chart'  
+						viewBox={viewBox}
+						width={state.svgWidth} height={state.svgHeight}
+						preserveAspectRatio='none'
 						onMouseDown={this.mouseDownEvt}
-						onWheel={this.mouseWheelEvt}
-			
-					// react does recognize these touch events - needed for gestures
-					// why don't these work anymore?  Need to be on the Body?
-////					onTouchStartEvt={this.touchStartEvt}  
-////					onTouchMoveEvt={this.touchMoveEvt}
-////					onTouchEndEvt={this.touchEndEvt}
-////					onTouchCancel={this.touchCancel}
-////					onTouchForceChange={this.touchForceChange}
+						onWheel={this.mouseWheelEvt} >
 
-// ReactDOM doesn't recognize these three handlers.
-////					onGestureStartEvt={this.gestureStartEvt}
-////					onGestureChange={this.gestureChangeEvt}
-////					onGestureEndEvt={this.gestureEndEvt}
-						
-						width={this.state.svgWidth} height={this.state.svgHeight} >
-				<g className='xAxis' ref={node => select(node).call(xAxis)}
-						style={{transform: 'translateY('+ this.yScale(xAxisY) +'px)'}} />
-				<g className='yAxis' ref={node => select(node).call(yAxis)}
-						style={{transform: 'translateX('+ this.xScale(yAxisX) +'px)'}} />
+				{this.renderAxes()}
 				<g className='line-paths'>
 						{linePaths}
 				</g>
@@ -241,25 +229,45 @@ class Svg2D extends Component {
 		);
 	}
 
-	/* ******************************************************* drag move around */
+	/* ******************************************************* resize window & svg */
+	// given the window obj, figure out margins and svgWidth/Height
+	decideSvgDimensions(win) {
+		// deduct the height of the blurb box, or if not created yet, just approximate
+		let blurbHeight = 200, blurbBox$ = $('.blurb-box')
+		if (blurbBox$.length)
+			blurbHeight = blurbBox$[0].offsetHeight;
+		  
+		let svgWidth = (this.props.innerWidth || window.innerWidth) - 4;
+		let svgHeight = (this.props.innerHeight || window.innerHeight) - blurbHeight;
 
-	preventStop(ev) {
-		if (!ev.preventDefault)
-			return;
-		ev.preventDefault();
-		//ev.stopPropagation();
+		// where data drawn; slightly inside the full svg
+		this.marginLeft = this.marginTop = axisMargin;
+		this.marginRight = svgWidth - axisMargin;
+		this.marginBottom = svgHeight - axisMargin;
+		
+		return {svgWidth, svgHeight};
 	}
 	
+	resizeEvt(ev) {
+		// size of the SVG changes in render() but tell it what
+		this.setState(this.decideSvgDimensions(ev.target));
+
+		console.log("resize ev", ev.target.innerWidth, ev.target.innerHeight, 
+						this.marginBottom, this.yScale.range());
+	}
+	
+	/* ******************************************************* drag move around */
 	// call this every time you want to slide the graph over, as a result of some kind of mouse move
+	// size and direction of move passed in by this.offsetX/Y
 	shoveByOffset() {
 		const old = this.state;
-		const newBounds = {xMin: old.xMin + this.offsetX, xMax: old.xMax + this.offsetX,
-							yMin: old.yMin + this.offsetY, yMax: old.yMax + this.offsetY};
-		if (isNaN(newBounds.yMax)) debugger;////
-		this.setState(newBounds);
+		const newXRange = {xMin: old.xMin + this.offsetX, xMax: old.xMax + this.offsetX};
+		this.setState(newXRange);
+		this.yMin = this.yMin + this.offsetY;
+		this.yMax = this.yMax + this.offsetY;
 		
-		this.xScale.domain([newBounds.xMin, newBounds.xMax]);
-		this.yScale.domain([newBounds.yMin, newBounds.yMax]);
+		this.xScale.domain([newXRange.xMin, newXRange.xMax]);
+		this.yScale.domain([this.yMin, this.yMax]);
 	}
 
 	// handler for mouse down on graph surface
@@ -272,17 +280,17 @@ class Svg2D extends Component {
 		this.downX = this.xScale.invert(ev.pageX);
 		this.downY = this.yScale.invert(ev.pageY);
 		this.offsetX = this.offsetY = 0;
-		this.preventStop(ev);
+		ev.preventDefault();
 		
 		// save these if a gesture is happening; must undo whatever single finger stuff it did
 		let s = this.state;
-		this.downMinMax = {xMin: s.xMin, xMax: s.xMax, yMin: s.yMin, yMax: s.yMax};
+		this.downMinMax = {xMin: s.xMin, xMax: s.xMax, yMin: this.yMin, yMax: this.yMax};
 	}
 	
 	mouseMoveEvt(ev) {
 		if (! this.dragging)
 			return;
-		console.log("mouseMoveEvt", ev.pageX, ev.pageY);////
+		////console.log("mouseMoveEvt", ev.pageX, ev.pageY);////
 		
 		//debugger;////
 		// where is the mouse now, in data coordinates
@@ -296,11 +304,10 @@ class Svg2D extends Component {
 		// so shove over the scales so 'here' becomes the mouse down position again
 		this.shoveByOffset();
 		
-		this.preventStop(ev);
+		ev.preventDefault();
 		
-		let s = this.state;////
-			if (s.xMin > 20 || s.xMax > 50 || s.xMax < 0 || s.xMin > 0) debugger;////
-		console.log("mme dom and range", this.xScale.domain(), this.xScale.range());
+////		let s = this.state;////
+////		console.log("mme dom and range", this.xScale.domain(), this.xScale.range());
 	}
 
 	mouseUpEvt(ev) {
@@ -324,7 +331,7 @@ class Svg2D extends Component {
 			}, 50);
 		}
 
-		this.preventStop(ev);
+		ev.preventDefault();
 	}
 	
 	// sometimes momentum goes crazy like switching between scenes
@@ -336,18 +343,31 @@ class Svg2D extends Component {
 		console.log("mouseWheelEvt x y z", ev);
 		console.log( ev.deltaX, ev.deltaY, ev.deltaZ);
 		//this.mouseUpEvt(ev);
-		this.preventStop(ev);
+		ev.preventDefault();
 	}
 
 	/* ******************************************************* touch & gesture events */
-	// nowhere near done
+	// touch events are like mouse events, eg touchStart ~= mouseDown.  
+	// But the start/end are delivered for events for each finger.  
+	// Each ev object also has a list of touches, one for each finger that's currently down.
+	// Also, you don't have to intercept Move and End events for the window or body;
+	// they guarantee the touch events are delivered to the touchStart element.
+
+	// convert the 0th touch in this event to a pseudo-event good enough for the mouse funcs
+	// only call this in a one-touch situation
+	touchToEvent(ev) {
+		let t = ev.touches[0];
+		t.preventDefault = ev.preventDefault;  // make it look like an event
+		return t;
+	}
 	
 	touchStartEvt(ev) {
 		console.log("touch StartEvt", ev.pageX, ev.pageY, ev.touches);
 
-		// when you set touch event handlers, mouse events stop coming.  So fake it unless there's 2 or more touches
+		// when you set touch event handlers, mouse events stop coming.  
+		// So fake it unless there's 2 or more touches
 		if (ev.touches.length == 1)
-			this.mouseDownEvt(ev.touches[0]);
+			this.mouseDownEvt(this.touchToEvent(ev));
 		else
 			this.touchStartHandler(ev)
 	}
@@ -355,7 +375,7 @@ class Svg2D extends Component {
 	touchMoveEvt(ev) {
 		////console.log("touchMoveEvt", ev.pageX, ev.pageY, ev.touches);
 		if (ev.touches.length == 1)
-			this.mouseMoveEvt(ev.touches[0]);
+			this.mouseMoveEvt(this.touchToEvent(ev));
 		else
 			this.touchMoveHandler(ev)
 	}
@@ -363,36 +383,21 @@ class Svg2D extends Component {
 	touchEndEvt(ev) {
 		console.log("touchEndEvt", ev.pageX, ev.pageY, ev.touches);
 		if (ev.touches.length == 1)
-			this.mouseUpEvt(ev.touches[0]);
+			this.mouseUpEvt(this.touchToEvent(ev));
 		else
 			this.touchEndHandler(ev)
 	}
 	
 	touchCancelEvt(ev) {
 		console.log("touchCancelEvt", ev.pageX, ev.pageY, ev.touches);
-		if (ev.touches.length == 1)
-			this.mouseUpEvt(ev.touches[0]);
+		if (ev.touches.length == 1) 
+			this.mouseUpEvt(this.touchToEvent(ev));
 		else
 			this.touchCancelHandler(ev)
 	}
 	
 	touchForceChange(ev) {
 		console.log("touchForceChange", ev.pageX, ev.pageY, ev.touches);
-	}
-	
-	gestureStartEvt(ev) {
-		console.log("gestureStartEvt", ev.originalEvent);
-		////this.mouseUpEvt(ev);
-	}
-	
-	gestureChangeEvt(ev) {
-		console.log("gestureChangeEvt", ev.originalEvent);
-		////this.mouseUpEvt(ev);
-	}
-	
-	gestureEndEvt(ev) {
-		console.log("gestureEndEvt", ev.originalEvent);
-		////this.mouseUpEvt(ev);
 	}
 	
 	/* ******************************************************* 2+ finger gestures */
@@ -415,10 +420,6 @@ class Svg2D extends Component {
 			maxY= Math.max(maxY, touch.clientY);
 		};
 		
-		
-////		if (Math.abs(minX - maxX) < 100 || Math.abs(minX - maxX) > 1000)
-////			debugger;
-		
 		return [[maxX - minX, maxY - minY], 
 				[this.xScale.invert((maxX + minX)/2), this.yScale.invert((maxY + minY)/2)]];
 	}
@@ -432,10 +433,11 @@ class Svg2D extends Component {
 
 		this.spread = Math.abs(this.lastDelta[0]) > Math.abs(this.lastDelta[1]) ? 'x' : 'y';
 
-		this.preventStop(ev);
+		ev.preventDefault();
 	}
 	
 	touchMoveHandler(ev) {
+		// eslint-disable-next-line
 		let delta, mid, factor, xMin, xMax, yMin, yMax;
 		let s = this.state;
 		let midi = this.touchMidPoint;
@@ -457,28 +459,27 @@ class Svg2D extends Component {
 			// vertical - stretch the y axis
 			factor =this.lastDelta[1] /  delta[1];
 			console.log("vertical, factor=", factor, this.lastDelta, delta);
-			yMin = (s.yMin - midi[1]) * factor +  midi[1];
-			yMax = (s.yMax - midi[1]) * factor +  midi[1];
-			this.setState({yMin , yMax});
-			console.log("ymin/max:", yMin, yMax);
-			this.yScale.domain([yMin, yMax]);
+			this.yMin = (this.yMin - midi[1]) * factor +  midi[1];
+			this.yMax = (this.yMax - midi[1]) * factor +  midi[1];
+			console.log("ymin/max:", this.yMin, this.yMax);
+			this.yScale.domain([this.yMin, this.yMax]);
 		}
 		this.lastDelta = delta;
 		
 ////if (factor < .8 || factor > 1.2) debugger;
 		console.log("tmh dom and range", this.xScale.domain(), this.xScale.range());
 
-		this.preventStop(ev);
+		ev.preventDefault();
 	}
 	
 	touchEndHandler(ev) {
 		this.spread = false;
-		this.preventStop(ev);
+		ev.preventDefault();
 	}
 	
 	touchCancelHandler(ev) {
 		this.spread = false;
-		this.preventStop(ev);
+		ev.preventDefault();
 	}
 }
 

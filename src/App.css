@@ -1,15 +1,23 @@
 body {
 	font-size: 14px;
 	position: fixed;
+	height: 100%;
+	box-sizing: border-box;
+}
+
+#root {
+	height: 100%;
 }
 
 .App {
 	margin: 3px;
+	height: 100%;
 }
 
 
 @media screen and (max-width: 1129px) {
 	/* wide screen - blurb box to the side*/
+/* 
 	div.scene-display {
 		float: left;
 	}
@@ -18,11 +26,13 @@ body {
 		float: left;
 		width: 100%;
 	}
+ */
 	
 }
 
 @media screen and (min-width: 1130px) {
 	/* narrow screen - make it more vertical */
+/* 
 	div.scene-display {
 		float: none;
 		max-width: 800px;
@@ -33,8 +43,25 @@ body {
 		width: 100%;
 		max-width: 100%;
 	}
+ */
 }
 
+/* ******************************************************* step widget */
+.step-widget {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.scene-display {
+	flex: 1 1 auto;
+}
+
+.blurb-box {
+	flex: 0 0 auto;
+}
+
+/* ******************************************************* nav bar */
 
 /* one of those little square gray buttons, or the Next button which is wider */
 div.nav-bar div {

@@ -20,6 +20,12 @@ class StepWidget extends Component {
 				<BlurbBox  selectedIndex={this.state.selectedIndex} />
 			</div>
 		);
+		
+					////	<SceneDisplay  selectedIndex={this.state.selectedIndex} />
+////				<div class='scene-display' style={{backgroundColor: 'green', height: '100%', }}>
+////					blah blah blah
+////				</div>
+
 	}
 
 	// ultimately called by click handlers on the nav bar
