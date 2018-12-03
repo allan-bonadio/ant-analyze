@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 
 import config from './config';
-import StepWidget from './StepWidget';
+import App from './App';
 
 class NavBar extends Component {
 	constructor(props) {
@@ -37,14 +37,14 @@ class NavBar extends Component {
 	// human clicks on one of the number buttons
 	clickNumber(ev) {
 		ev.stopPropagation();
-		StepWidget.goToStep(+ev.target.getAttribute('index'));
+		App.goToStep(+ev.target.getAttribute('index'));
 	}
 	
 	// click on the NEXT> button
 	clickNext(ev) {
 		ev.stopPropagation();
 		let stepIndex = (this.props.selectedIndex + 1) % config.scenes.length;
-		StepWidget.goToStep(stepIndex);
+		App.goToStep(stepIndex);
 	}
 	
 	killTextSelection(ev) {
