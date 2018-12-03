@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 
 import BlurbBox from './BlurbBox';
-import SceneDisplay from './SceneDisplay';
+////import SceneDisplay from './SceneDisplay';
 import Svg2D from './Svg2D';
 
 class StepWidget extends Component {
@@ -16,16 +16,10 @@ class StepWidget extends Component {
 	render() {
 		return (
 			<div className='step-widget'>
-				<SceneDisplay  selectedIndex={this.state.selectedIndex} />
+				<Svg2D  selectedIndex={this.state.selectedIndex} />
 				<BlurbBox  selectedIndex={this.state.selectedIndex} />
 			</div>
 		);
-		
-					////	<SceneDisplay  selectedIndex={this.state.selectedIndex} />
-////				<div class='scene-display' style={{backgroundColor: 'green', height: '100%', }}>
-////					blah blah blah
-////				</div>
-
 	}
 
 	// ultimately called by click handlers on the nav bar

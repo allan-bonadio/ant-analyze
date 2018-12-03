@@ -18,10 +18,6 @@ body {
 @media screen and (max-width: 1129px) {
 	/* wide screen - blurb box to the side*/
 /* 
-	div.scene-display {
-		float: left;
-	}
-	
 	div.blurb-box {
 		float: left;
 		width: 100%;
@@ -33,11 +29,6 @@ body {
 @media screen and (min-width: 1130px) {
 	/* narrow screen - make it more vertical */
 /* 
-	div.scene-display {
-		float: none;
-		max-width: 800px;
-	}
-
 	div.blurb-box {
 		float: left;
 		width: 100%;
@@ -53,7 +44,7 @@ body {
 	height: 100%;
 }
 
-.scene-display {
+.svg-chart {
 	flex: 1 1 auto;
 }
 
