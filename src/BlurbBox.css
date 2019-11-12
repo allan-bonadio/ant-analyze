@@ -1,0 +1,78 @@
+/* ******************************************************* blurb grid */
+
+.blurb-box {
+	margin: .1em;
+
+	display: grid;
+	grid-template-rows: auto auto auto auto;
+	grid-template-columns: auto;
+	grid: 'nav'
+		'title'
+		'blurb'
+		'instructions';
+}
+
+.blurb-title {
+	grid-area: title;
+}
+
+.blurb-text {
+	grid-area: blurb;
+}
+
+@media screen and (orientation:portrait) {
+	.blurb-box {
+		width: 100%;
+	}
+}
+
+@media screen and (orientation:landscape) {
+	.blurb-box {
+		max-width: 30%;
+	}
+}
+
+
+
+
+
+/* ******************************************************* nav bar */
+
+/* one of those little square gray buttons, or the Next button which is wider */
+div.nav-bar {
+	grid-area: nav;
+}
+
+/* each button */
+div.nav-bar div {
+	display: inline-block;
+	line-height: 1.5em;
+	padding: .5em;
+	margin: .167em;
+	border: 0px none;
+	cursor: pointer;
+	
+	background: #eee;
+}
+
+div.nav-bar div.selected {
+	font-weight: bold;
+	background: #ddd;
+}
+
+/* ******************************************************* instructions */
+.desktop-instructions, .mobile-instructions {
+	grid-area: instructions;
+	float: right;
+	width: 11em;
+	padding: .2em;
+	margin: 0 .5em .5em .5em;
+	background-color: #ffe;
+	border: black 1px solid;
+}
+
+.desktop-instructions {
+}
+
+.mobile-instructions {
+}
