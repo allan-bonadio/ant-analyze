@@ -23,7 +23,7 @@ class NavBar extends Component {
 		});
 
 		// the next button
-		buttons.push(<div key='next' onClick={this.clickNext} onMouseDown={this.killTextSelection}>
+		buttons.push(<div className='next-button' key='next' onClick={this.clickNext} onMouseDown={this.killTextSelection}>
 			NEXT &nbsp; ❯
 		</div>);
 			

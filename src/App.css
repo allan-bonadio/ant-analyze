@@ -2,6 +2,7 @@ body {
 	font-size: 14px;
 	position: fixed;
 	height: 100%;
+	width: 100%;
 	box-sizing: border-box;
 }
 
@@ -15,60 +16,49 @@ body {
 }
 
 
-@media screen and (max-width: 1129px) {
-	/* wide screen - blurb box to the side*/
-/* 
-	div.blurb-box {
-		float: left;
-		width: 100%;
-	}
- */
-	
+
+/* ******************************************************* responsive */
+
+
+@media screen and (orientation:portrait) {
+
 }
 
-@media screen and (min-width: 1130px) {
+@media screen and (orientation:landscape) {
+	svg, .blurb-box {
+		float: left;
+	}
+}
+
+@media screen and (max-width: 499px) {
 	/* narrow screen - make it more vertical */
+	body {
 /* 
-	div.blurb-box {
-		float: left;
-		width: 100%;
-		max-width: 100%;
-	}
+		font-size: 12px;
  */
+	}
 }
 
-/* ******************************************************* step widget */
-.step-widget {
-	display: flex;
-	flex-direction: column;
-	height: 100%;
+@media screen and (min-width: 500px) {
+	/* wide screen */
 }
 
-.svg-chart {
-	flex: 1 1 auto;
-}
-
-.blurb-box {
-	flex: 0 0 auto;
-}
-
-/* ******************************************************* nav bar */
-
-/* one of those little square gray buttons, or the Next button which is wider */
-div.nav-bar div {
-	display: inline-block;
-	line-height: 1.5em;
-	padding: 1em;
-	margin: .167em;
-	border: 0px none;
-	border-radius: 0;
-	cursor: pointer;
-	
-	background: #eee;
-}
-
-div.nav-bar div.selected {
-	font-weight: bold;
-	background: #ddd;
+@media screen and (max-width: 499px), screen and (max-height: 499px) {
+	/* small screen - shrink padding/margins, take out stuff */
+	.blurb-text {
+		display: none;
+	}
+	div.nav-bar div {
+		padding: .2em .4em;
+	}
+	div.nav-bar div.next-button {
+		display: none;
+	}
+	p {
+		margin: .2em 0;
+	}
+	h2 {
+		margin: .2em 0;
+	}
 }
 
