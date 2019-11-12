@@ -1,0 +1,13 @@
+
+canvas {
+	border: none;
+	background-color: black;
+}
+
+#attitude-readout {
+	position: absolute;
+	color: white;
+	padding: .2em;
+}
+
+
