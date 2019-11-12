@@ -1,8 +1,12 @@
+import 'core-js/es6/map';
+import 'core-js/es6/set';
+import 'raf/polyfill';
 import React, { Component } from 'react';
 
+import config from './config';
 import BlurbBox from './BlurbBox';
-////import SceneDisplay from './SceneDisplay';
 import Svg2D from './Svg2D';
+import Webgl3D from './Webgl3D';
 
 import './App.css';
 
@@ -16,9 +20,15 @@ class App extends Component {
 	}
 	
 	render() {
+		// only one of svg3d or webgl3d will appear
+		let scene = config.scenes[this.state.selectedIndex];
+		let graph = (scene.graphics == '2D') 
+			? <Svg2D  selectedIndex={this.state.selectedIndex} />
+			: <Webgl3D  selectedIndex={this.state.selectedIndex} />
+
 		return (
 			<div className='step-widget'>
-				<Svg2D  selectedIndex={this.state.selectedIndex} />
+				{graph}
 				<BlurbBox  selectedIndex={this.state.selectedIndex} />
 			</div>
 		);
