@@ -16,7 +16,7 @@ class App extends Component {
 		App.me = this;  // singleton
 
 		// the step index is 0...n-1, whereas the step number is 1...n
-		this.state = {selectedIndex: 0};
+		this.state = {selectedIndex: 3};
 	}
 	
 	render() {
