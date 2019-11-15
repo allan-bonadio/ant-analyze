@@ -1,3 +1,7 @@
+//
+// blanket plot - a WebGL helper library to draw a blanket plot.
+//					basically, a surface z = f(x, y), like that.
+//
 
 import {mat4} from './gl-matrix';
 
@@ -8,36 +12,50 @@ const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
 // Keep between ~.5 ... .999 or 1 for no friction
 const ROTATION_FRICTION = .75;
 
-// call them like this
-// let plot = new blanketPlot(
-// 		document.getElementById('blanket-plot'),
-// 		nXCells, nYCells);
+// call them like this:
+// create it, passing a Canvas element, and how big
+//		let plot = new blanketPlot(
+// 			document.getElementById('blanket-plot'),
+// 			nXCells, nYCells);
 // 
+// This is how you feed in your data.  blanket = nested JS arrays like
+//		[[el,el,el],[el,el,el],[el,el,el]]
+// Blanket must have same dimensions as passed to blanketPlot constrctor.
+// each value is an object like 
+// {x: 2.3, y: 4.5, z: 12.7, red: .4, green: .2, blue: .95, alpha: 1}
 // plot.attachData(blanketData);
 // 
+// um, this is subject to change...
 // plot.startInteraction();	
 
+// class to talk to graphics processor via webgl
 class blanketPlot {
 	// canvas is the canvas DOM node
 	// nXCells and nYCells is dimensions of blanket area in cell coords
 	constructor(canvas, nXCells, nYCells) {
-		[this.canvas, this.nXCells, this.nYCells] = [canvas, nXCells, nYCells];
+		this.canvas = canvas;
+		this.nXCells = nXCells;
+		this.nYCells = nYCells;
 		
 		// allocation of array spaces
 		this.nBlanketVertices = 2 * (nXCells + 2) * nYCells - 2;
 		this.nAxisVertices = 24;
 		this.nVertices = this.nBlanketVertices + this.nAxisVertices;
 
-		// angle human is looking at it with
-		this.lattRotation = 3;  // 0...π
+		// angle human is looking at it with, geographical coordinates 
+		// latt = lattitude = angle tilted down, 0=bottom looking up
+		// long = longitude = azmuth = horizontal rotation along z axis, 0= +x axis
+		// wait maybe not...
+		this.lattRotation = 1.7;  // 0...π
 		this.longRotation = 0;  // primarily 0...2π but it's allowed to 
 					// wrap around a few circles if needed...??
 		this.lattVelocity = 0;
 		this.longVelocity = 0;
 		
-		// better for production, imparts initial spin
-		//this.lattVelocity = -.1;
-		//this.longVelocity = .1;
+		// better for production, imparts initial spin,
+		// so user can figure out that they can drag it around
+		this.lattVelocity = .5;
+		this.longVelocity = .5;
 		
 		
 		// set up and make sure gl is possible
@@ -47,13 +65,12 @@ class blanketPlot {
 		if (!this.gl) {
 			throw new Error("Unable to initialize WebGL. "+ 
 				"Your browser or machine may not support it.");
-			return null;
 		}
 
 		// stuff to be done once
 		this.initShaderProgram();
 		this.attachMouseHandlers();
-		this.createProgramInfo();
+		//this.createProgramInfo();
 
 		this.then = 0;
 	}
@@ -311,9 +328,11 @@ class blanketPlot {
 	}
 	
 	// called by client to give the data, and generates the compact arrays
+	// to be sent to the gpu
 	attachData(blanket, unitsPerCell) {
 		this.positions = new Float32Array(this.nVertices * 3);
 		this.colors = new Float32Array(this.nVertices * 4);
+		this.blanket = blanket;
 	
 		// each of these routines fills the arrays with data for different things being drawn
 		let pOffset = 0, cOffset = 0;
@@ -382,7 +401,7 @@ class blanketPlot {
 			 45 * Math.PI / 180,
 			 gl.canvas.clientWidth / gl.canvas.clientHeight,
 			 0.1,  // clipping near
-			 100.0);  // clipping far
+			 10000.0);  // clipping far
 
 		// Set the drawing position to the center of the scene.
 		// then transform it as needed
@@ -506,16 +525,16 @@ class blanketPlot {
 		// Update the rotation for the next draw (but keep it to 0...whatever)
 		this.longRotation = (this.longRotation + this.longVelocity * deltaTime) / twoπ;
 		this.longRotation = (this.longRotation - Math.floor(this.longRotation)) * twoπ;
-		this.lattRotation = (this.lattRotation + this.lattVelocity * deltaTime);
 
 		// constrain latt to 0...180°, stop it if it hits end
+		this.lattRotation = (this.lattRotation + this.lattVelocity * deltaTime);
 		if (this.lattRotation < 0) {
 			this.lattRotation = 0;
-			this.lattVelocity = 0;
+			this.lattVelocity = -this.lattVelocity / 2;  // bang!
 		}
 		if (this.lattRotation > π) {
 			this.lattRotation = π;
-			this.lattVelocity = 0;
+			this.lattVelocity = -this.lattVelocity / 2;  // bounce!
 		}
 		
 		// and some friction please

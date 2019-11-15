@@ -7,18 +7,19 @@ import {scaleLinear} from 'd3-scale';
 // import {axisTop, axisBottom, axisLeft, axisRight} from 'd3-axis';
 // import {select} from 'd3-selection';
 
-import $ from 'jquery';
+//import $ from 'jquery';
 
 import './Webgl3D.css';
 import config from './config';
 import blanketPlot from './blanketPlot';
 
 import {generateBlanket, ensureCalcPoints} from './genComplex';
-import {mat4} from './gl-matrix';
+//import {mat4} from './gl-matrix';
 
 // in the olden days, we gave the user buttons to make the mesh more dense or loose
 // use low numbers (2...6) for debugging.  Try for 25x25 for production;
-const nXCells = 5;
+// over 2000x2000 risks running out of memory; 8000x8000 does run out
+const nXCells = 25;
 const nYCells = nXCells;
 
 
@@ -33,24 +34,32 @@ class Webgl3D extends Component {
 ////		let innerHeight = props.innerHeight || window.innerHeight;
 		
 		// the inner size of the svg el - changes on window resize or iPhone rotate events
+		
+		
+		let scene = config.scenes[props.selectedIndex];
 		this.state = {
 ////			...this.decideSvgDimensions(window),
 ////			svgWidth: innerWidth - 4,
 ////			svgHeight: innerHeight - 200,
 			
-			selectedIndex: -1,
+			selectedIndex: props.selectedIndex || -1,
+			
+			// user can change domain (someday) so this defaults to the scene
+			xMin: scene.xMin,
+			xMax: scene.xMax,
+			yMin: scene.yMin,
+			yMax: scene.yMax,
+
+			nXCells: nXCells,
+			nYCells: nYCells,
 		};
 
 		// tedious
-		[
-			'mouseDownEvt', 'mouseMoveEvt', 'mouseUpEvt', 
-			'mouseWheelEvt', 'resizeEvt',
-			'touchStartEvt', 'touchMoveEvt', 'touchEndEvt', 
-			'touchCancelEvt', 'touchForceChange',
-		].forEach(funcName => {
-			console.log('binding', funcName);
-			this[funcName] = this[funcName].bind(this)
-		});
+// 		[
+// 			'mouseDownEvt', 'mouseMoveEvt', 'mouseUpEvt', 
+// 			'mouseWheelEvt', 'resizeEvt',
+// 			'touchStartEvt', 'touchMoveEvt', 'touchEndEvt', 
+// 			'touchCancelEvt', 'touchForceChange',
 		//].forEach(funcName => this[funcName] = this[funcName].bind(this));
 	}
 	
@@ -61,16 +70,16 @@ class Webgl3D extends Component {
 	
 	// do this when the blanket data changes, or the canvas dimensions
 	restartWebgl() {
-		// generate the actual data
+		// generate the actual data.  done in calcPoints()
 		//this.blanket = generateBlanket(nXCells, nYCells);
 		
 		// set up the webgl canvas over again
 		this.plot = new blanketPlot(
-			document.getElementById('canvas#blanket-plot'),
-			nXCells, nYCells);
+			document.getElementById('blanket-plot'),
+			this.state.nXCells, this.state.nYCells);
 
 		// stick data into plot
-		//this.plot.attachData(this.blanket);
+		this.plot.attachData(this.blanket);
 
 		// draw first and every after
 		this.plot.startInteraction();	
@@ -123,7 +132,7 @@ class Webgl3D extends Component {
 	// create the pixel data based on the function.  Bag it in case you don't need to.
 	calcPoints() {
 
-		this.blanket = generateBlanket(nXCells, nYCells);
+		this.blanket = generateBlanket(this.state.nXCells, this.state.nYCells);
 
 		//this.pixelsAr = pixelsAr;
 		
@@ -139,10 +148,11 @@ class Webgl3D extends Component {
 		if (! this.blanket)
 			throw "No Blanket Array in deriveScalers()";
 
-		this.xScale = scaleLinear().range([0, this.nXCells]);
-		this.xScale.domain(this.xMin, this.xMax);
-		this.yScale = scaleLinear().range([0, this.nYCells]);
-		this.yScale.domain(this.yMin, this.yMax);
+		let s = this.state;
+		this.xScale = scaleLinear().range([0, s.nXCells]);
+		this.xScale.domain(s.xMin, s.xMax);
+		this.yScale = scaleLinear().range([0, s.nYCells]);
+		this.yScale.domain(s.yMin, s.yMax);
 
 		// find the unified extent of all of the z values on all rows
 		let mini = Infinity, maxi = -Infinity, mi, mx;
@@ -151,6 +161,13 @@ class Webgl3D extends Component {
 			mini = Math.min(mi, mini);
 			maxi = Math.max(mx, maxi);
 		}
+		
+		// that's min and max in data coords.  convert to cell coords.
+		this.nZCells = s.nXCells / (s.xMax - s.xMin);
+		
+		// this isn't that important; there are no 'cells' vertically, 
+		// but z values converted to cell coords for webgl
+		this.zScale = scaleLinear().range([0, this.nZCells]);
 		this.zScale.domain([mini, maxi]);
 
 		// the z range is calculated from values in the buffer, 
