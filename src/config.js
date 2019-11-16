@@ -50,7 +50,7 @@ export let config = {
 		// 3d over complex plane
 		{
 			title: "Sine over Complex Plane",
-			formula: "sin(x)",
+			formula: "sin(x+iy)",
 			blurb: "In the imaginary directions, the trig functions become hyperbolic functions, which end up rising exponentially.",
 			graphics: '3D',
 			funcs: [{

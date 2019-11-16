@@ -19,7 +19,7 @@ import {generateBlanket, ensureCalcPoints} from './genComplex';
 // in the olden days, we gave the user buttons to make the mesh more dense or loose
 // use low numbers (2...6) for debugging.  Try for 25x25 for production;
 // over 2000x2000 risks running out of memory; 8000x8000 does run out
-const nXCells = 25;
+const nXCells = 6;
 const nYCells = nXCells;
 
 
@@ -33,14 +33,14 @@ class Webgl3D extends Component {
 ////		let innerWidth = props.innerWidth || window.innerWidth;
 ////		let innerHeight = props.innerHeight || window.innerHeight;
 		
-		// the inner size of the svg el - changes on window resize or iPhone rotate events
+		// the inner size of the webgl el - changes on window resize or iPhone rotate events
 		
 		
-		let scene = config.scenes[props.selectedIndex];
+		let scene = this.scene = config.scenes[props.selectedIndex];
 		this.state = {
-////			...this.decideSvgDimensions(window),
-////			svgWidth: innerWidth - 4,
-////			svgHeight: innerHeight - 200,
+////			...this.decideWebglDimensions(window),
+////			webglWidth: innerWidth - 4,
+////			webglHeight: innerHeight - 200,
 			
 			selectedIndex: props.selectedIndex || -1,
 			
@@ -91,7 +91,7 @@ class Webgl3D extends Component {
 // 				.mouseup(this.mouseUpEvt)
 // 				.mouseleave(this.mouseUpEvt)
 // 				
-// 		$('svg')
+// 		$('webgl')
 // 				.on('touchstart', this.touchStartEvt)
 // 				.on('touchmove', this.touchMoveEvt)
 // 				.on('touchend', this.touchEndEvt)
@@ -106,7 +106,7 @@ class Webgl3D extends Component {
 // 		$(window).on('resize', this.resizeEvt);
 // 		
 		// do this to re-render after the blurb box is sized properly
-////		this.setState(this.decideSvgDimensions(window));
+////		this.setState(this.decideWebglDimensions(window));
 // 	}
 	
 	// called before the start of a render, this checks for a new index/scene, and changes stuff
@@ -117,7 +117,7 @@ class Webgl3D extends Component {
 		if (index == state.selectedIndex)
 			return null;
 		
-		let scene = config.scenes[index];
+		let scene = this.scene;
 		Webgl3D.me.funcs = scene.funcs;
 
 		// there's been a change in scene.  Reset the bounds & start over
@@ -129,16 +129,13 @@ class Webgl3D extends Component {
 	}
 	
 	
-	// create the pixel data based on the function.  Bag it in case you don't need to.
+	// create the pixel data based on the function.
 	calcPoints() {
-
-		this.blanket = generateBlanket(this.state.nXCells, this.state.nYCells);
-
-		//this.pixelsAr = pixelsAr;
-		
-		// only if stuff needs to be recalculated. ??? notsure about this
-//  		if (s.selectedIndex != this.lastTimeSelectedIndex)
-// 			this.needsZScaler = true;
+		this.blanket = generateBlanket(
+			this.scene.funcs[0].func, 
+			this.state.nXCells, 
+			this.state.nYCells
+		);
 	}
 	
 	// derive the X and Y scaler given the dimensions of the graph.
@@ -155,9 +152,14 @@ class Webgl3D extends Component {
 		this.yScale.domain(s.yMin, s.yMax);
 
 		// find the unified extent of all of the z values on all rows
+		// At this point there should be no z values that are objects
+		let b = this.blanket;
 		let mini = Infinity, maxi = -Infinity, mi, mx;
-		for (let f = 0; f < this.blanket.length; f++) {
-			[mi, mx] = extent(this.blanket[f], d => d.z);
+		for (let f = 0; f < b.length; f++) {
+			[mi, mx] = extent(b[f], d => d.z);
+			console.log(`mi=${mi} mx=${mx} from d.z=`, b[f].map(d => d.z));
+			if (isNaN(mi) || isNaN(mx)) debugger;
+
 			mini = Math.min(mi, mini);
 			maxi = Math.max(mx, maxi);
 		}
@@ -175,7 +177,8 @@ class Webgl3D extends Component {
 		this.zMin = mini;
 		this.zMax = maxi;
 		
-		if (isNaN(this.zScale.domain()[0])) debugger;
+		let dom = this.zScale.domain();
+		if (isNaN(dom[0]) || isNaN(dom[1])) debugger;
 	}
 	
 // 	render the axes, return an array [xAxis, yAxis].  Need xScale and yScale.
@@ -211,7 +214,7 @@ class Webgl3D extends Component {
 	
 	// draw the canvas that'll show it.  the state must be set up (see constructor).  
 	// These might have changed:
-	// x/y max/min  svgWidth/Height  
+	// x/y max/min  webglWidth/Height  
 	render() {
 		// don't immediately use the react state; we have to update it on the fly
 		let state = this.state;
@@ -228,7 +231,7 @@ class Webgl3D extends Component {
 // 		let linePaths = this.pixelsAr.map((ar, ix) => 
 // 				<path className='series' d={lineSeries(ar)} key={ix} stroke={this.funcs[ix].color} />);
 // 
-// 		let viewBox = `0 0 ${state.svgWidth} ${state.svgHeight}`;
+// 		let viewBox = `0 0 ${state.webglWidth} ${state.webglHeight}`;
 		
 		// react doesnt recognize touch events - needed for gestures - so use jQuery in DidMount
 		return (
@@ -247,38 +250,38 @@ class Webgl3D extends Component {
 
 	}
 
-	/* ******************************************************* resize window & svg */
-	// given the window obj, figure out margins and svgWidth/Height, return object to merge into state
-// 	decideSvgDimensions(win) {
+	/* ******************************************************* resize window & webgl */
+	// given the window obj, figure out margins and webglWidth/Height, return object to merge into state
+// 	decideWebglDimensions(win) {
 // 		// size of the screen (or phony size passed in by testing)
-// 		let svgWidth = +(this.props.innerWidth || window.innerWidth);
-// 		let svgHeight = +(this.props.innerHeight || window.innerHeight);
+// 		let webglWidth = +(this.props.innerWidth || window.innerWidth);
+// 		let webglHeight = +(this.props.innerHeight || window.innerHeight);
 // 		
 // 		// deduct the height of the blurb box, or if not created yet, just approximate
 // 		let blurbHeight = 200, blurbWidth = 400, blurbBox$ = $('.blurb-box')
-// 		if (svgWidth > svgHeight) {
+// 		if (webglWidth > webglHeight) {
 // 			if (blurbBox$.length)
 // 				blurbWidth = blurbBox$[0].offsetWidth;
-// 			svgWidth -= blurbWidth + 4;
+// 			webglWidth -= blurbWidth + 4;
 // 		}
 // 		else {
 // 			if (blurbBox$.length)
 // 				blurbHeight = blurbBox$[0].offsetHeight;
-// 			svgHeight -= blurbHeight + 4;
+// 			webglHeight -= blurbHeight + 4;
 // 		}
 // 
-// 		// where data drawn; slightly inside the full svg
+// 		// where data drawn; slightly inside the full webgl
 // 		this.marginLeft = this.marginTop = axisMargin;
-// 		this.marginRight = svgWidth - axisMargin;
-// 		this.marginBottom = svgHeight - axisMargin;
+// 		this.marginRight = webglWidth - axisMargin;
+// 		this.marginBottom = webglHeight - axisMargin;
 // 		this.needsYScaler = true;
 // 		
-// 		return {svgWidth, svgHeight};
+// 		return {webglWidth, webglHeight};
 // 	}
 // 	
 // 	resizeEvt(ev) {
 // 		// size of the SVG changes in render() but tell it what
-// 		this.setState(this.decideSvgDimensions(ev.target));
+// 		this.setState(this.decideWebglDimensions(ev.target));
 // 
 // 		console.log("resize ev", ev.target.innerWidth, ev.target.innerHeight, 
 // 						this.marginBottom, this.yScale.range());
@@ -304,7 +307,7 @@ class Webgl3D extends Component {
 // 		
 // 		this.dragging = true;
 // 		
-// 		// yeah, i'm missing an offset for the svg versus the page; it'll be ok
+// 		// yeah, i'm missing an offset for the webgl versus the page; it'll be ok
 // 		this.downX = this.xScale.invert(ev.pageX);
 // 		this.downY = this.yScale.invert(ev.pageY);
 // 		this.offsetX = this.offsetY = 0;
