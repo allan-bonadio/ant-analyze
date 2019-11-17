@@ -38,7 +38,7 @@ class Svg2D extends Component {
 			xMax: 1,  // will quickly be overwritten
 		};
 
-		this.needsYScaler = true;
+		this.needsScalerRecalc = true;
 		
 		// tedious
 		[
@@ -113,29 +113,30 @@ class Svg2D extends Component {
 		this.pixelsAr = pixelsAr;
 		
 		if (s.renderedIndex != this.lastTimeRenderedIndex)
-			this.needsYScaler = true;
+			this.needsScalerRecalc = true;
 
 	}
 	
 	// derive the X scaler given the points calculated in calcPoints()
 	// called initially and for mouse drags (translations)
-	deriveXScaler() {
+	deriveXScale() {
 		if (! this.pixelsAr)
-			throw "No Pixels Array in deriveXScaler()";
+			throw "No Pixels Array in deriveXScale()";
 
 		this.xScale = scaleLinear()
 			.range([this.marginLeft, this.marginRight]);
 
 		// use any series; the x values are all the same
+		// we don't really need to do this?  I thought I was going to omit NaN y values...
 		this.xScale.domain(extent(this.pixelsAr[0], d => d.x))
 	}
 	
 	// derive Y scaler given the points calculated in calcPoints()
 	// called initially and upon scene changes
 	// don't call it on every render or else user won't be able to drag up or down!
-	deriveYScaler() {
+	deriveYScale() {
 		if (! this.pixelsAr)
-			throw "No Pixels Array in deriveXScaler()";
+			throw "No Pixels Array in deriveXScale()";
 
 		this.yScale = scaleLinear()
 			.range([this.marginBottom, this.marginTop]);
@@ -193,10 +194,10 @@ class Svg2D extends Component {
 		// don't immediately use the react state; we have to update it on the fly
 		let state = this.state;
 		ensureCalcPoints(this);
-		this.deriveXScaler();
-		if (this.needsYScaler) {
-			this.deriveYScaler();
-			this.needsYScaler = false;
+		this.deriveXScale();
+		if (this.needsScalerRecalc) {
+			this.deriveYScale();
+			this.needsScalerRecalc = false;
 		}
 		//console.log("Render: ", state, this.xScale.domain(), this.yScale.domain());////
 		
@@ -250,7 +251,7 @@ class Svg2D extends Component {
 		this.marginLeft = this.marginTop = axisMargin;
 		this.marginRight = svgWidth - axisMargin;
 		this.marginBottom = svgHeight - axisMargin;
-		this.needsYScaler = true;
+		this.needsScalerRecalc = true;
 		
 		return {svgWidth, svgHeight};
 	}

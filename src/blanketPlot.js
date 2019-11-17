@@ -9,8 +9,8 @@ import {mat4} from './gl-matrix';
 const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
 
 // how much rotation velocities fade over time.  
-// Keep between ~.5 ... .999 or 1 for no friction
-const ROTATION_FRICTION = .75;
+// Keep between ~.2 ... .999, or 1 for no coasting,  0 for no friction
+const ROTATION_FRICTION = .95;
 
 // call them like this:
 // create it, passing a Canvas element, and how big

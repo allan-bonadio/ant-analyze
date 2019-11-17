@@ -2,6 +2,8 @@
 // gen complex -- generate complex arithmetic blanket plots
 //
 
+import {hsl} from 'd3-color';
+
 
 // pass it either a svg2d or webgl3d object, and it'll maybe call xxx.calcPoints()
 // if it needs to, and remembers stuff for next time
@@ -28,47 +30,24 @@ export function ensureCalcPoints(graphComp) {
 // ****************************************************************** complex color
 
 // we always keep saturation at 100% for the complex plane
-// saturation is always 1
-function rgbFromHl(hue, lightness) {
-	let hue_60 = hue / 60;
-	let hextant = Math.floor(hue_60);  // 0, 1, 2, ...5, maybe 6
-	//let colorvector = ((r, g, b) => {red: r, green: g, blue: b});
-	function colorvector(r, g, b) {
-		return {red: r, green: g, blue: b}
-	}
-	
-	// this is loosely based on wikipedia's HSL to RGB algorithm
-	let chroma = (1 - Math.abs(2 * lightness - 1));
-	let frac = chroma * (hue_60 - hextant);
-	switch (hextant) {
-	case NaN:
-	case undefined:  return colorvector(0, 0, 0);
-
-	case 6:
-	case 0:  return colorvector(chroma, frac, 0);
-
-	case 1:  return colorvector(1-frac, chroma, 0);
-	case 2:  return colorvector(0, chroma, frac);
-	case 3:  return colorvector(0, 1-frac, chroma);
-	case 4:  return colorvector(frac, 0, chroma);
-	case 5:  return colorvector(chroma, 0, 1-frac);
-	
-	default:  throw "hue out of range "+ hue;
-	}
-
-}
 
 // convert a complex value for vert.z (like {re: 1, im: -1}) to have z = z.re
 // and to add the color for the complex value
 function complexTo3DColor(vert) {
-	let zre = vert.z.re, zim = vert.z.im;
+	let zre = vert.z_data.re, zim = vert.z_data.im;
 	let hue = 180 * Math.atan2(zim, zre) / Math.PI + 180;  // make it positive
-	let lightness = Math.atan(Math.hypot(zre, zim)) * 4 / Math.PI;  // make it 0...1
-	let rgb = rgbFromHl(hue, lightness);
-	Object.assign(vert, rgb);
-	vert.z = zre;  // why do i have to do this?
+	let lightness = Math.atan(Math.hypot(zre, zim) / 3) * 2 / Math.PI;  // make it 0...1
+	let rgb = hsl(hue, 1, lightness).rgb();
+	vert.red = rgb.r / 255;
+	vert.green = rgb.g / 255;
+	vert.blue = rgb.b / 255;
+// 	let rgb = rgbFromHl(hue, lightness);
+// 	Object.assign(vert, rgb);
+	vert.z_data = zre;
 	console.log(`(${zre},${zim}) ---> `, vert);
-	if (isNaN(zre + zim + hue + lightness + rgb.red + rgb.green + rgb.blue)) debugger;
+	
+	// check to see if ANY of these are NaN
+	if (isNaN(zre + zim + hue + lightness + rgb.r + rgb.g + rgb.b)) debugger;
 }
 
 // ****************************************************************** data generation
@@ -101,8 +80,11 @@ function calcRandom(x, y) {
 
 
 // decide which formula/generator to use, and use it to generate a matrix of 
-// vertex objects with keys x, y, z, red, green, blue, alpha
-export function generateBlanket(func, nXCells, nYCells) {
+// vertex objects with keys x, y, z_data, red, green, blue, alpha
+// also hand in scalers for x, y from cell to data coords
+// Unfortunately we can't map z values to cell coords yet 
+// cuz we need them all to figure out the scaler
+export function generateBlanket(func, nXCells, nYCells, xc2xd, yc2yd) {
 	let blanket = new Array(nYCells + 1);
 
 	for (let y = 0; y <= nYCells; y++) {
@@ -111,21 +93,38 @@ export function generateBlanket(func, nXCells, nYCells) {
 			// each vertex has a value.  
 			// some sort of obj with whatever we might need for the rendering.
 			let vert = row[x] = {
-				x, y, 
-				z: func(x, y),
+				x, y,   // cell coords
+				
+				// still in data coords cuz we don't know the extent yet
+				z_data: func(xc2xd(x), yc2yd(y)),
 				
 				// just a default color, set your own later if you care
 				red: 1, green: 1, blue: 0, alpha: 1,
 			};
 			
-			if (typeof vert.z == 'object') {
-				// a complex number - convert to xyz and color
+			if (typeof vert.z_data == 'object') {
+				// a complex number - convert to z scalar, and color
 				complexTo3DColor(vert);
-				if (isNaN(vert.z)) debugger;
+				if (isNaN(vert.z_data)) debugger;
 			}
 		}
 	}
+	
+	// a few more things to remember
+	blanket.nXCells = nXCells;
+	blanket.nYCells = nYCells;
 	return blanket;
 }
 
+// call this after you've figured out the Z scaling from data coords to cell coords
+// zd2zc is a function that converts from z_data values to z cell coords
+export function scaleBlanket(blanket, zd2zc) {
+	for (let y = 0; y <= blanket.nYCells; y++) {
+		let row = blanket[y];
+		for (let x = 0; x <= blanket.nXCells; x++) {
+			let vert = row[x];
+			vert.z = zd2zc(vert.z_data);
+		}
+	}
+}
 
