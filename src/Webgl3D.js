@@ -19,8 +19,13 @@ import {generateBlanket, scaleBlanket, ensureCalcPoints} from './genComplex';
 // in the olden days, we gave the user buttons to make the mesh more dense or loose
 // use low numbers (2...6) for debugging.  Try for 25x25 for production;
 // over 2000x2000 risks running out of memory; 8000x8000 does run out
-const nXCells = 16;
-const nYCells = nXCells;
+// const nXCells = 16;
+// const nYCells = nXCells;
+
+// better.  choose n cells in x and y direction to make total xy cells
+// nice if this is a perfect square
+const nCells = 1600;
+//const nCells = 16;  // for testing
 
 
 // there is one of these total, it displays differences depending on its selectedIndex prop passed in
@@ -37,6 +42,17 @@ class Webgl3D extends Component {
 		
 		
 		let scene = this.scene = config.scenes[props.selectedIndex];
+
+		// try this.  REshape the cell block according to the mins/maxes, 
+		// so the product ends up being nCells, 
+		// but still in approximate proportion of x vs y
+		this.nYCells = Math.sqrt(nCells * 
+			(scene.yMax - scene.yMin) / (scene.xMax - scene.xMin));
+		this.nYCells = Math.round(this.nYCells);
+		this.nXCells = Math.round(nCells / this.nYCells);
+		console.log("So I GET XCELLS, YCELLS", this.nXCells, this.nYCells);
+
+
 		this.state = {
 ////			...this.decideWebglDimensions(window),
 ////			webglWidth: innerWidth - 4,
@@ -50,10 +66,10 @@ class Webgl3D extends Component {
 			yMin: scene.yMin,
 			yMax: scene.yMax,
 
-			nXCells: nXCells,
-			nYCells: nYCells,
+			nXCells: this.nXCells,
+			nYCells: this.nYCells,
 		};
-
+		
 		// tedious
 // 		[
 // 			'mouseDownEvt', 'mouseMoveEvt', 'mouseUpEvt', 
@@ -74,9 +90,15 @@ class Webgl3D extends Component {
 		//this.blanket = generateBlanket(nXCells, nYCells);
 		
 		// set up the webgl canvas over again
+		let s = this.state;
+		let scene = this.scene;
 		this.plot = new blanketPlot(
-			document.getElementById('blanket-plot'),
-			this.state.nXCells, this.state.nYCells);
+			document.getElementById('blanket-plot'), {
+				nXCells: s.nXCells, nYCells: s.nYCells,
+				xPerCell: (scene.xMax - scene.xMin) / s.nXCells, 
+				yPerCell: (scene.yMax - scene.yMin) / s.nYCells,
+			}
+		);
 
 		// stick data into plot
 		this.plot.attachData(this.blanket);
@@ -141,7 +163,7 @@ class Webgl3D extends Component {
 	// derive the X and Y scaler given the dimensions of the graph.
 	// they convert from dataspace coords to cell coords, use scale.invert for opposite
 	// call before calculating data as it needs these!
-	deriveXYScales() {
+	deriveIndependentScales() {
 		let s = this.state;
 		this.xScale = scaleLinear().range([0, s.nXCells]);
 		this.xScale.domain([s.xMin, s.xMax]);
@@ -150,9 +172,10 @@ class Webgl3D extends Component {
 	}
 	
 	// derive Z scaler from points calculated in calcPoints()
+	// also lightness for complex
 	// again, convert from dataspace coords to cell coords, use scale.invert for opposite
 	// Blanket z values must be calculated by now!
-	deriveZScale() {
+	deriveDependentScales() {
 		// find the unified extent of all of the z values on all rows
 		// At this point there should be no z values that are objects
 		let b = this.blanket;
@@ -160,31 +183,40 @@ class Webgl3D extends Component {
 			throw "No Blanket Array in deriveScalers()";
 
 		let mini = Infinity, maxi = -Infinity, mi, mx;
+		let biggest = -Infinity, big, small;
 		for (let f = 0; f < b.length; f++) {
-			[mi, mx] = extent(b[f], d => d.z_data);
-			//console.log(`mi=${mi} mx=${mx} from d.z=`, b[f].map(d => d.z_data));
+			[mi, mx] = extent(b[f], d => d.z_height);
+			[small, big] = extent(b[f], d => d.abs);
+			//console.log(`mi=${mi} mx=${mx} from d.z=`, b[f].map(d => d.z_height));
 			if (isNaN(mi) || isNaN(mx)) debugger;
 
 			mini = Math.min(mi, mini);
 			maxi = Math.max(mx, maxi);
+			biggest = Math.max(big, biggest);
 		}
 		
 		// that's min and max in data coords.  convert to cell coords.
 		let s = this.state;
-		this.nZCells = s.nXCells / (s.xMax - s.xMin);
+		this.nZCells = biggest;  // floor?  not sure about this
 		
 		// this isn't that important; there are no 'cells' vertically, 
 		// but z values converted to cell coords for webgl
-		this.zScale = scaleLinear().range([0, this.nZCells]);
-		this.zScale.domain([mini, maxi]);
+		// um... isn't one of these an identity?
+		this.zScale = scaleLinear()
+			.range([0, this.nZCells])
+			.domain([mini, maxi]);
+
+		// adjust the color algorithm for larger/smaller z magnitudes
+		this.lightnessScale = scaleLinear()
+			.range([0, 1])
+			.domain([0, biggest]);
 
 		// the z range is calculated from values in the buffer, 
 		// therefore not part of the state
 		this.zMin = mini;
 		this.zMax = maxi;
 		
-		let dom = this.zScale.domain();
-		if (isNaN(dom[0]) || isNaN(dom[1])) debugger;
+		if (isNaN(this.zScale(1))) debugger;
 	}
 	
 // 	render the axes, return an array [xAxis, yAxis].  Need xScale and yScale.
@@ -225,10 +257,10 @@ class Webgl3D extends Component {
 		// don't immediately use the react state; we have to update it on the fly
 		let state = this.state;
 		
-		this.deriveXYScales();
+		this.deriveIndependentScales();
 		ensureCalcPoints(this);
-		this.deriveZScale();
-		scaleBlanket(this.blanket, this.zScale);
+		this.deriveDependentScales();
+		scaleBlanket(this.blanket, this.zScale, this.lightnessScale);
 
 // 		// Create a line path for each series in our data.
 // 		const lineSeries = line()
