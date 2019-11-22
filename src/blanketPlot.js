@@ -5,6 +5,9 @@
 
 import {mat4} from './gl-matrix';
 
+import blanketTriangles from './blanketTriangles';
+import blanketAxes from './blanketAxes';
+
 // don't try to type these names, just copy paste
 const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
 
@@ -28,23 +31,36 @@ const ROTATION_FRICTION = .95;
 // um, this is subject to change...
 // plot.startInteraction();	
 
-// class to talk to graphics processor via webgl
+// class to talk to graphics processor via webgl.  This doesn't touch data coordinates,
+// just cell coordinates and cellsize in viewable space
 class blanketPlot {
 	// canvas is the canvas DOM node
 	// nXCells and nYCells is dimensions of blanket area in cell coords
-	constructor(canvas, nXCells, nYCells) {
+	// options: nXCells, nYCells = cell dimensions of xy area
+	// xPerCell, yPerCell = size of a cell in visible space
+	constructor(canvas, options) {
 		this.canvas = canvas;
-		this.nXCells = nXCells;
-		this.nYCells = nYCells;
+		Object.assign(this, options);
 		
-		// allocation of array spaces
-		this.nBlanketVertices = 2 * (nXCells + 2) * nYCells - 2;
-		this.nAxisVertices = 24;
-		this.nVertices = this.nBlanketVertices + this.nAxisVertices;
+		this.axes = new blanketAxes(this, options.nXCells, options.nYCells);
+		this.triangles = new blanketTriangles(this, options.nXCells, options.nYCells);
+		
+// 		this.nXCells = nXCells;
+// 		this.nYCells = nYCells;
+		
+		// allocation of array spaces, in vertices.  
+		// Blanket: 2 triangles per cell, 1 vertex per triangle + 2 to get started,
+		// then 2 extra every time you move from one x-row to the next
+		////this.nBlanketVertices = 2 * (options.nXCells + 2) * options.nYCells - 2;
+		
+		// four axes with 8 vertices, per dimension
+// 		this.nAxisVertices = 24;
+		
+		this.nVertices = this.triangles.nVertices + this.axes.nVertices;
 
 		// angle human is looking at it with, geographical coordinates 
-		// latt = lattitude = angle tilted down, 0=bottom looking up
-		// long = longitude = azmuth = horizontal rotation along z axis, 0= +x axis
+		// latt = lattitude = angle tilted up/down, 0=bottom looking up
+		// long = longitude = azmuth = horizontal rotation around z axis, 0= +x axis
 		// wait maybe not...
 		this.lattRotation = 1.7;  // 0...π
 		this.longRotation = 0;  // primarily 0...2π but it's allowed to 
@@ -75,6 +91,7 @@ class blanketPlot {
 		this.then = 0;
 	}
 	
+	// check for a WebGL error.  This is taken out of some documentation.
 	checkOK() {
 		let gl = this.gl;
 		if (! gl)
@@ -100,7 +117,7 @@ class blanketPlot {
 				msg = "Out of Memory.";
 				break;
 			case gl.CONTEXT_LOST_WEBGL:
-				msg = "WebGL context is lost.";
+				msg = "WebGL context was lost.";
 				break;
 			default:
 				msg = "Unknown error from GL: "+ err;
@@ -203,101 +220,18 @@ class blanketPlot {
 	
 	//********************************************************* Data Layout
 	
-	setBlanketVertices(pOffset, cOffset) {
-		let pos = this.positions;
-		let col = this.colors;
-		let bla = this.blanket;
-		
-		function addVertex(x, y) {
-			let b = bla[x][y];
-
-			// all single floats the way the gpu likes it
-			pos[pOffset++] = x;
-			pos[pOffset++] = y;
-			pos[pOffset++] = b.z;
-			
-			col[cOffset++] = b.red;
-			col[cOffset++] = b.green;
-			col[cOffset++] = b.blue;
-			col[cOffset++] = b.alpha;
-		}
-		
-		// now go through all blanket vertices
-		// each is a triangle drawn with gl.TRIANGLE_STRIP, 
-		// one for every 3 consecutive vertices (overlapping)
-		let x, y;
-		// note we don't do the last row!  each band is 1 high.
-		for (y = 0; y < this.nYCells; y++) {
-			let b;
-		
-			// a degenerate vertex; needed to goto next row
-			if (y > 0)
-				addVertex(0, y);
-			
-			for (x = 0; x <= this.nXCells; x++) {
-				// 2 buffer, 2 floats each
-				addVertex(x, y);
-				addVertex(x, y + 1);
-			}
-			
-			// a degenerate vertex; needed to goto next row
-			if (y < this.nYCells-1)
-				addVertex(this.nXCells, y+1);
-		}
-		return [pOffset, cOffset];
-	}
 	
-	// Always 24 vertices.
-	setAxisVertices(pOffset, cOffset) {
-		let x, y, z, xCells = this.nXCells, yCells = this.nYCells, zCells = 1;
-		let pos = this.positions;
-		let col = this.colors;
-		
-		function addVertex(x, y, z) {
-			pos[pOffset++] = x;
-			pos[pOffset++] = y;
-			pos[pOffset++] = z;
-			
-			col[cOffset++] = col[cOffset++] = col[cOffset++] = 1;
-			col[cOffset++] = .5;
-		}
-		
-		// these are individual line segments, drawn with gl.LINES.
-		// each pair of vertices is one line.
-		for (x = 0; x <= xCells; x += xCells) {
-			for (y = 0; y <= yCells; y += yCells) {
-				addVertex(x, y, 0);
-				addVertex(x, y, zCells);
-			}
-		}
-	
-		for (y = 0; y <= yCells; y += yCells) {
-			for (z = 0; z <= zCells; z += zCells) {
-				addVertex(0, y, z);
-				addVertex(xCells, y, z);
-			}
-		}
-
-		for (z = 0; z <= zCells; z += zCells) {
-			for (x = 0; x <= xCells; x += xCells) {
-				addVertex(x, 0, z);
-				addVertex(x, yCells, z);
-			}
-		}
-
-		return [pOffset, cOffset];
-	}
 
 	dumpBuffers() {
-		function n(x) {
-			return x.toFixed(2);
+		function n(q) {
+			return q.toFixed(2);
 		}
 		
 		let pos = this.positions;
 		let col = this.colors;
 		let p, vert;
 
-		for (vert = 0; vert < this.nBlanketVertices; vert++) {
+		for (vert = 0; vert < this.triangles.nVertices; vert++) {
 			p = vert * 3;
 			console.log("blanket positions %d: %s %s %s", 
 				vert, n(pos[p]), n(pos[p+1]), n(pos[p+2]));
@@ -305,21 +239,21 @@ class blanketPlot {
 		}
 		console.log(' ');
 
-		for (vert = 0; vert < this.nBlanketVertices; vert++) {
+		for (vert = 0; vert < this.triangles.nVertices; vert++) {
 			p = vert * 4;
 			console.log("blanket color %d: %s %s %s %s", 
 				vert, n(col[p]), n(col[p+1]), n(col[p+2]), n(col[p+3]));
  		}
 		console.log(' ');
 
-		for (vert = this.nBlanketVertices; vert < this.nVertices; vert++) {
+		for (vert = this.triangles.nVertices; vert < this.nVertices; vert++) {
 			p = vert * 3;
 			console.log("axis positions %d: %s %s %s", 
 				vert, n(pos[p]), n(pos[p+1]), n(pos[p+2]));
 		}
 		console.log(' ');
 
-		for (vert = this.nBlanketVertices; vert < this.nVertices; vert++) {
+		for (vert = this.triangles.nVertices; vert < this.nVertices; vert++) {
 			p = vert * 4;
 			console.log("axis color %d: %s %s %s %s", 
 				vert, n(col[p]), n(col[p+1]), n(col[p+2]), n(col[p+3]));
@@ -336,21 +270,13 @@ class blanketPlot {
 	
 		// each of these routines fills the arrays with data for different things being drawn
 		let pOffset = 0, cOffset = 0;
-		[pOffset, cOffset] = this.setBlanketVertices(pOffset, cOffset);
-		if (pOffset != this.nBlanketVertices*3)
-			console.error("pOffset b is wrong: %d instead of %d", 
-				pOffset, this.nBlanketVertices*3);
-		if (cOffset != this.nBlanketVertices*4)
-			console.error("cOffset b is wrong: %d instead of %d", 
-				cOffset, this.nBlanketVertices*4);
+		[pOffset, cOffset] = this.triangles.setVertices(pOffset, cOffset);
+		console.assert(pOffset == this.triangles.nVertices*3, 'buffer TP');
+		console.assert(cOffset == this.triangles.nVertices*4, 'buffer TC');
 		
-		[pOffset, cOffset] = this.setAxisVertices(pOffset, cOffset);
-		if (pOffset != this.nVertices*3)
-			console.error("pOffset a is wrong: %d instead of %d", 
-				pOffset, this.nBlanketVertices*3);
-		if (cOffset != this.nVertices*4)
-			console.error("pOffset a is wrong: %d instead of %d", 
-				cOffset, this.nBlanketVertices*4);
+		[pOffset, cOffset] = this.axes.setVertices(pOffset, cOffset);
+		console.assert(pOffset == this.nVertices*3, 'buffer AP');
+		console.assert(cOffset == this.nVertices*4, 'buffer AC');
 
 		//this.dumpBuffers();
 
@@ -406,11 +332,13 @@ class blanketPlot {
 		// Set the drawing position to the center of the scene.
 		// then transform it as needed
 		const modelViewMatrix = mat4.create();
-
+		
 		// where to back up to, to see it best
+		let xLength = this.xPerCell * this.nXCells;  // overall dimensions in view space
+		let yLength = this.yPerCell * this.nYCells;
 		mat4.translate(modelViewMatrix,		 // destination matrix
 			modelViewMatrix,		 // matrix to translate
-			[0, 0, -1.0 * (this.nXCells + this.nYCells)]);
+			[0, 0, -0.5 * (xLength + yLength)]);
 		
 		// rotate by latt
 		mat4.rotate(modelViewMatrix,  // destination matrix
@@ -424,12 +352,13 @@ class blanketPlot {
 			this.longRotation,   // east-west rotate in radians
 			[0, 0, 1]);       // rotate around z
 
-		// where to slide over to to, to see it best
+		// where to slide viewing eye to to, xy, to see it best
 		mat4.translate(modelViewMatrix,		 // destination matrix
 			modelViewMatrix,		 // matrix to translate
-			[-this.nXCells/2, -this.nYCells/2, 0]);
+			[-xLength/2, -yLength/2, 0]);
 
-			//original [-0.0, 0.0, -6.0]);	// amount to translate
+		// apply the xPerCell and yPerCell scaling
+		mat4.scale(modelViewMatrix, modelViewMatrix, [this.xPerCell, this.yPerCell, 1])
 
 		// Set the shader uniforms
 		let uls = this.programInfo.uniformLocations;
@@ -442,7 +371,7 @@ class blanketPlot {
 		
 		// set some gl variables
 		gl.clearColor(0.0, 0.0, 0.0, 1.0);	// Clear to black, fully opaque
-		gl.clearDepth(1.0);				 // Clear everything
+		gl.clearDepth(1.0);				 // Clear depth buffer (16 bits, distance from viewer)
 		gl.enable(gl.DEPTH_TEST);	 // Enable depth testing
 		gl.depthFunc(gl.LEQUAL);		// Near things obscure far things
 		gl.lineWidth(1.0);  // really the only choice
@@ -456,9 +385,9 @@ class blanketPlot {
 		this.checkOK();
 
 		// actual drawing
-		gl.drawArrays(gl.TRIANGLE_STRIP, 0, this.nBlanketVertices);
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, this.triangles.nVertices);
 		this.checkOK();
-		gl.drawArrays(gl.LINES, this.nBlanketVertices, this.nAxisVertices);
+		gl.drawArrays(gl.LINES, this.triangles.nVertices, this.axes.nVertices);
 		this.checkOK();
 		// some alternate modes: gl.LINE_STRIP gl.POINTS
 	}
