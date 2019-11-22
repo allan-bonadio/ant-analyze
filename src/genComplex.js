@@ -31,48 +31,28 @@ export function ensureCalcPoints(graphComp) {
 
 // we always keep saturation at 100% for the complex plane
 
-// convert a complex value for vert.z (like {re: 1, im: -1}) to have z = z.re
-// and to add the color for the complex value
-function complexTo3DColor(vert) {
+// take a complex value for vert.z (like {re: 1, im: -1}) 
+// and fill in other components (color, height) to make the 3d complex graph
+function complexScaleAndColor(vert, lightnessScale) {
 	let zre = vert.z_data.re, zim = vert.z_data.im;
+	
 	let hue = 180 * Math.atan2(zim, zre) / Math.PI + 180;  // make it positive
-	let lightness = Math.atan(Math.hypot(zre, zim) / 3) * 2 / Math.PI;  // make it 0...1
+	let lightness = Math.atan(lightnessScale(vert.abs)) * 2 / Math.PI;  // make it 0...1
+	
 	let rgb = hsl(hue, 1, lightness).rgb();
 	vert.red = rgb.r / 255;
 	vert.green = rgb.g / 255;
 	vert.blue = rgb.b / 255;
 // 	let rgb = rgbFromHl(hue, lightness);
 // 	Object.assign(vert, rgb);
-	vert.z_data = zre;
-	console.log(`(${zre},${zim}) ---> `, vert);
+	vert.z_height = zre;
+	//console.log(`(${zre},${zim}) ---> `, vert);
 	
 	// check to see if ANY of these are NaN
 	if (isNaN(zre + zim + hue + lightness + rgb.r + rgb.g + rgb.b)) debugger;
 }
 
 // ****************************************************************** data generation
-
-// generate random data, z = 0 ... 0.99999...
-function XXXcalcRandom(nXCells, nYCells) {
-	let blanket = new Array(nYCells + 1);
-	let blue = 0.5;
-
-	for (let y = 0; y <= nYCells; y++) {
-		let row = blanket[y] = new Array(nXCells + 1);
-		let green = y / nYCells;
-		for (let x = 0; x <= nXCells; x++) {
-			// each vertex has a value.  
-			// some sort of obj with whatever we might need for the rendering.
-			row[x] = {
-				x, y, 
-				z: Math.random(),
-				red: x / nXCells, green, blue, alpha: 1,
-				//red: Math.random(), green: Math.random(), blue: Math.random(),
-			};
-		}
-	}
-	return blanket;
-}
 
 function calcRandom(x, y) {
 	return Math.random();
@@ -102,10 +82,17 @@ export function generateBlanket(func, nXCells, nYCells, xc2xd, yc2yd) {
 				red: 1, green: 1, blue: 0, alpha: 1,
 			};
 			
+			// z_height is the ultimate height on the 3d surface, data units, whether complex or not
 			if (typeof vert.z_data == 'object') {
-				// a complex number - convert to z scalar, and color
-				complexTo3DColor(vert);
-				if (isNaN(vert.z_data)) debugger;
+				// complex number
+				// the abs is used for complex coloring
+				vert.abs = Math.hypot(vert.z_data.re, vert.z_data.im);
+				vert.z_height = vert.z_data.re;
+			}
+			else {
+				// real
+				vert.abs = 0;
+				vert.z_height = vert.z_data;
 			}
 		}
 	}
@@ -118,12 +105,19 @@ export function generateBlanket(func, nXCells, nYCells, xc2xd, yc2yd) {
 
 // call this after you've figured out the Z scaling from data coords to cell coords
 // zd2zc is a function that converts from z_data values to z cell coords
-export function scaleBlanket(blanket, zd2zc) {
+export function scaleBlanket(blanket, zd2zc, lightnessScale) {
 	for (let y = 0; y <= blanket.nYCells; y++) {
 		let row = blanket[y];
 		for (let x = 0; x <= blanket.nXCells; x++) {
 			let vert = row[x];
-			vert.z = zd2zc(vert.z_data);
+			vert.z = zd2zc(vert.z_height);
+
+			
+			if (typeof vert.z_data == 'object') {
+				// a complex number - convert to z scalar, and color
+				complexScaleAndColor(vert, lightnessScale);
+				if (isNaN(vert.z_height + vert.red + vert.green)) debugger;
+			}
 		}
 	}
 }
