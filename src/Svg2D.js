@@ -119,9 +119,9 @@ class Svg2D extends Component {
 	
 	// derive the X scaler given the points calculated in calcPoints()
 	// called initially and for mouse drags (translations)
-	deriveXScale() {
+	deriveIndependentScales() {
 		if (! this.pixelsAr)
-			throw "No Pixels Array in deriveXScale()";
+			throw "No Pixels Array in deriveIndependentScales()";
 
 		this.xScale = scaleLinear()
 			.range([this.marginLeft, this.marginRight]);
@@ -134,9 +134,9 @@ class Svg2D extends Component {
 	// derive Y scaler given the points calculated in calcPoints()
 	// called initially and upon scene changes
 	// don't call it on every render or else user won't be able to drag up or down!
-	deriveYScale() {
+	deriveDependentScales() {
 		if (! this.pixelsAr)
-			throw "No Pixels Array in deriveXScale()";
+			throw "No Pixels Array in deriveDependentScales()";
 
 		this.yScale = scaleLinear()
 			.range([this.marginBottom, this.marginTop]);
@@ -194,9 +194,9 @@ class Svg2D extends Component {
 		// don't immediately use the react state; we have to update it on the fly
 		let state = this.state;
 		ensureCalcPoints(this);
-		this.deriveXScale();
+		this.deriveIndependentScales();
 		if (this.needsScalerRecalc) {
-			this.deriveYScale();
+			this.deriveDependentScales();
 			this.needsScalerRecalc = false;
 		}
 		//console.log("Render: ", state, this.xScale.domain(), this.yScale.domain());////
