@@ -19,9 +19,11 @@ class blanketTriangles {
 	}
 
 	setVertices(pOffset, cOffset) {
+		this.startVertex = pOffset / 3;
 		let pos = this.plot.positions;
 		let col = this.plot.colors;
 		let bla = this.plot.blanket;
+		let miniZ = Infinity, maxiZ = -Infinity;
 		
 		function addVertex(x, y) {
 			let b = bla[y][x];
@@ -35,6 +37,9 @@ class blanketTriangles {
 			col[cOffset++] = b.green;
 			col[cOffset++] = b.blue;
 			col[cOffset++] = b.alpha;
+			
+			miniZ = Math.min(miniZ, b.z);
+			maxiZ = Math.max(maxiZ, b.z);
 		}
 		
 		// now go through all blanket vertices
@@ -59,7 +64,17 @@ class blanketTriangles {
 			if (y < this.plot.nYCells-1)
 				addVertex(this.plot.nXCells, y+1);
 		}
+		
+		// only the triangles surface gets to set the z min/max
+		this.plot.miniZ = miniZ;
+		this.plot.maxiZ = maxiZ;
+		
 		return [pOffset, cOffset];
+	}
+
+	draw(gl) {
+		gl.drawArrays(gl.TRIANGLE_STRIP, this.startVertex, this.nVertices);
+		this.plot.checkOK();
 	}
 }
 

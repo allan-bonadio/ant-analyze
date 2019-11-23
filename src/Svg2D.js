@@ -45,6 +45,7 @@ class Svg2D extends Component {
 			'mouseDownEvt', 'mouseMoveEvt', 'mouseUpEvt', 
 			'mouseWheelEvt', 'resizeEvt',
 			'touchStartEvt', 'touchMoveEvt', 'touchEndEvt', 'touchCancelEvt', 'touchForceChange',
+			'gestureStartHandler', 'gestureChangeHandler', 'gestureEndHandler',
 		].forEach(funcName => this[funcName] = this[funcName].bind(this));
 	}
 	
@@ -344,11 +345,12 @@ class Svg2D extends Component {
 	
 	// sometimes momentum goes crazy like switching between scenes
 	static haltMomentum() {
-		this.me.offsetX = this.me.offsetY = 0;
+		if (Svg2D.me)
+			Svg2D.me.offsetX = Svg2D.me.offsetY = 0;
 	}
 
 	mouseWheelEvt(ev) {
-		////console.log("mouseWheelEvt x y z", ev);
+		console.log("mouseWheelEvt x y z", ev);
 		////console.log( ev.deltaX, ev.deltaY, ev.deltaZ);
 		//this.mouseUpEvt(ev);
 		ev.preventDefault();
@@ -370,7 +372,7 @@ class Svg2D extends Component {
 	}
 	
 	touchStartEvt(ev) {
-		////console.log("touch StartEvt", ev.pageX, ev.pageY, ev.touches);
+		console.log("touch StartEvt", ev.pageX, ev.pageY, ev.touches);
 
 		// when you set touch event handlers, mouse events stop coming.  
 		// So fake it unless there's 2 or more touches
@@ -381,7 +383,7 @@ class Svg2D extends Component {
 	}
 	
 	touchMoveEvt(ev) {
-		////console.log("touchMoveEvt", ev.pageX, ev.pageY, ev.touches);
+		console.log("touchMoveEvt", ev.pageX, ev.pageY, ev.touches);
 		if (ev.touches.length == 1)
 			this.mouseMoveEvt(this.touchToEvent(ev));
 		else
@@ -389,7 +391,7 @@ class Svg2D extends Component {
 	}
 	
 	touchEndEvt(ev) {
-		////console.log("touchEndEvt", ev.pageX, ev.pageY, ev.touches);
+		console.log("touchEndEvt", ev.pageX, ev.pageY, ev.touches);
 		if (ev.touches.length == 1)
 			this.mouseUpEvt(this.touchToEvent(ev));
 		else
@@ -397,7 +399,7 @@ class Svg2D extends Component {
 	}
 	
 	touchCancelEvt(ev) {
-		////console.log("touchCancelEvt", ev.pageX, ev.pageY, ev.touches);
+		console.log("touchCancelEvt", ev.pageX, ev.pageY, ev.touches);
 		if (ev.touches.length == 1) 
 			this.mouseUpEvt(this.touchToEvent(ev));
 		else
@@ -489,6 +491,16 @@ class Svg2D extends Component {
 	touchCancelHandler(ev) {
 		this.spread = false;
 		ev.preventDefault();
+	}
+	
+	gestureStartHandler(ev) {
+		console.log("gestureStartHandler");
+	}
+	gestureChangeHandler(ev) {
+		console.log("gestureChangeHandler");
+	}
+	gestureEndHandler(ev) {
+		console.log("gestureEndHandler");
 	}
 }
 

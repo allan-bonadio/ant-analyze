@@ -19,13 +19,8 @@ const ROTATION_FRICTION = .95;
 // create it, passing a Canvas element, and how big
 //		let plot = new blanketPlot(
 // 			document.getElementById('blanket-plot'),
-// 			nXCells, nYCells);
+// 			{nXCells: xxxx, nYCells:xxx, ...});
 // 
-// This is how you feed in your data.  blanket = nested JS arrays like
-//		[[el,el,el],[el,el,el],[el,el,el]]
-// Blanket must have same dimensions as passed to blanketPlot constrctor.
-// each value is an object like 
-// {x: 2.3, y: 4.5, z: 12.7, red: .4, green: .2, blue: .95, alpha: 1}
 // plot.attachData(blanketData);
 // 
 // um, this is subject to change...
@@ -42,19 +37,9 @@ class blanketPlot {
 		this.canvas = canvas;
 		Object.assign(this, options);
 		
+		// these set up for the geometry, and calculate number of vertices they need
 		this.axes = new blanketAxes(this, options.nXCells, options.nYCells);
 		this.triangles = new blanketTriangles(this, options.nXCells, options.nYCells);
-		
-// 		this.nXCells = nXCells;
-// 		this.nYCells = nYCells;
-		
-		// allocation of array spaces, in vertices.  
-		// Blanket: 2 triangles per cell, 1 vertex per triangle + 2 to get started,
-		// then 2 extra every time you move from one x-row to the next
-		////this.nBlanketVertices = 2 * (options.nXCells + 2) * options.nYCells - 2;
-		
-		// four axes with 8 vertices, per dimension
-// 		this.nAxisVertices = 24;
 		
 		this.nVertices = this.triangles.nVertices + this.axes.nVertices;
 
@@ -263,6 +248,11 @@ class blanketPlot {
 	
 	// called by client to give the data, and generates the compact arrays
 	// to be sent to the gpu
+	// This is how you feed in your data.  blanket = nested JS arrays like
+	//		[[el,el,el],[el,el,el],[el,el,el]]
+	// Blanket must have same dimensions as passed to blanketPlot constrctor.
+	// each value is an object like 
+	// {x: 2.3, y: 4.5, z: 12.7, red: .4, green: .2, blue: .95, alpha: 1}
 	attachData(blanket, unitsPerCell) {
 		this.positions = new Float32Array(this.nVertices * 3);
 		this.colors = new Float32Array(this.nVertices * 4);
@@ -320,8 +310,8 @@ class blanketPlot {
 		// used to simulate the distortion of perspective in a camera.
 		// Our field of view is 45 degrees, with a width/height
 		// ratio that matches the display size of the canvas
-		// and we only want to see objects between 0.1 units
-		// and 100 units away from the camera.
+		// and we only want to see objects between whatever units
+		// away from the camera.
 		const projectionMatrix = mat4.create();
 		mat4.perspective(projectionMatrix,
 			 45 * Math.PI / 180,
@@ -338,7 +328,7 @@ class blanketPlot {
 		let yLength = this.yPerCell * this.nYCells;
 		mat4.translate(modelViewMatrix,		 // destination matrix
 			modelViewMatrix,		 // matrix to translate
-			[0, 0, -0.5 * (xLength + yLength)]);
+			[0, 0, -0.7 * (xLength + yLength)]);
 		
 		// rotate by latt
 		mat4.rotate(modelViewMatrix,  // destination matrix
@@ -355,7 +345,7 @@ class blanketPlot {
 		// where to slide viewing eye to to, xy, to see it best
 		mat4.translate(modelViewMatrix,		 // destination matrix
 			modelViewMatrix,		 // matrix to translate
-			[-xLength/2, -yLength/2, 0]);
+			[-xLength/2, -yLength/2, -(this.maxiZ - this.miniZ) / 2]);
 
 		// apply the xPerCell and yPerCell scaling
 		mat4.scale(modelViewMatrix, modelViewMatrix, [this.xPerCell, this.yPerCell, 1])
@@ -385,10 +375,12 @@ class blanketPlot {
 		this.checkOK();
 
 		// actual drawing
-		gl.drawArrays(gl.TRIANGLE_STRIP, 0, this.triangles.nVertices);
-		this.checkOK();
-		gl.drawArrays(gl.LINES, this.triangles.nVertices, this.axes.nVertices);
-		this.checkOK();
+		this.triangles.draw(gl);
+		this.axes.draw(gl);
+// 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, this.triangles.nVertices);
+// 		this.checkOK();
+// 		gl.drawArrays(gl.LINES, this.triangles.nVertices, this.axes.nVertices);
+// 		this.checkOK();
 		// some alternate modes: gl.LINE_STRIP gl.POINTS
 	}
 	
@@ -443,6 +435,9 @@ class blanketPlot {
 
 	// actually draw on canvas, one frame for animation
 	renderOneFrame(now) {
+		if (! document.getElementById('attitude-readout'))
+			return;
+			
 		now *= 0.001;  // convert to seconds
 		
 		// the first time, then is undefined and so are the others

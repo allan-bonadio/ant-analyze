@@ -18,6 +18,7 @@ class blanketAxes {
 
 	// Always 24 vertices.
 	setVertices(pOffset, cOffset) {
+		this.startVertex = pOffset / 3;
 		let x, y, z, xCells = this.plot.nXCells, yCells = this.plot.nYCells, zCells = 6;
 		let pos = this.plot.positions;
 		let col = this.plot.colors;
@@ -57,6 +58,10 @@ class blanketAxes {
 		return [pOffset, cOffset];
 	}
 
+	draw(gl) {
+		gl.drawArrays(gl.LINES, this.startVertex, this.nVertices);
+		this.plot.checkOK();
+	}
 };
 
 export default blanketAxes;
