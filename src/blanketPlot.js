@@ -2,6 +2,14 @@
 // blanket plot - a WebGL helper library to draw a blanket plot.
 //					basically, a surface z = f(x, y), like that.
 //
+/* eslint-disable eqeqeq, no-throw-literal  */
+
+import {extent} from 'd3-array';
+import {scaleLinear} from 'd3-scale';
+// import {line} from 'd3-shape';
+// import {axisTop, axisBottom, axisLeft, axisRight} from 'd3-axis';
+// import {select} from 'd3-selection';
+import {hsl} from 'd3-color';
 
 import {mat4} from './gl-matrix';
 
@@ -16,15 +24,15 @@ const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
 const ROTATION_FRICTION = .95;
 
 // call them like this:
-// create it, passing a Canvas element, and how big
+//    create it, passing a Canvas element, and how big
 //		let plot = new blanketPlot(
 // 			document.getElementById('blanket-plot'),
 // 			{nXCells: xxxx, nYCells:xxx, ...});
 // 
-// plot.attachData(blanketData);
+//      plot.attachData(blanketData);
 // 
-// um, this is subject to change...
-// plot.startInteraction();	
+//    um, this is subject to change...
+//      plot.startInteraction();	
 
 // class to talk to graphics processor via webgl.  This doesn't touch data coordinates,
 // just cell coordinates and cellsize in viewable space
@@ -47,20 +55,21 @@ class blanketPlot {
 		// latt = lattitude = angle tilted up/down, 0=bottom looking up
 		// long = longitude = azmuth = horizontal rotation around z axis, 0= +x axis
 		// wait maybe not...
-		this.lattRotation = 1.7;  // 0...π
-		this.longRotation = 0;  // primarily 0...2π but it's allowed to 
-					// wrap around a few circles if needed...??
-		this.lattVelocity = 0;
-		this.longVelocity = 0;
-		
-		// better for production, imparts initial spin,
-		// so user can figure out that they can drag it around
-		this.lattVelocity = .5;
-		this.longVelocity = .5;
+// 		this.lattRotation = 1.7;  // 0...π
+// 		this.longRotation = 0;  // primarily 0...2π but it's allowed to 
+// 					// wrap around a few circles if needed...??
+// 		this.lattVelocity = 0;
+// 		this.longVelocity = 0;
+// 		
+// 		// better for production, imparts initial spin,
+// 		// so user can figure out that they can drag it around
+// 		this.lattVelocity = .5;
+// 		this.longVelocity = .5;
 		
 		
 		// set up and make sure gl is possible
-		this.gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+		this.gl = canvas.getContext('webgl') || 
+					canvas.getContext('experimental-webgl');
 
 		// If it can't do GL, give up now
 		if (!this.gl) {
@@ -70,7 +79,8 @@ class blanketPlot {
 
 		// stuff to be done once
 		this.initShaderProgram();
-		this.attachMouseHandlers();
+		//this.attachMouseHandlers();
+		//this.events.attachEventHandlers()
 		//this.createProgramInfo();
 
 		this.then = 0;
@@ -208,44 +218,134 @@ class blanketPlot {
 	
 
 	dumpBuffers() {
-		function n(q) {
+		function f(q) {
 			return q.toFixed(2);
 		}
 		
+		console.log("actual data put into vertex buffers")
+		
 		let pos = this.positions;
 		let col = this.colors;
-		let p, vert;
+		let p, c, n;
 
-		for (vert = 0; vert < this.triangles.nVertices; vert++) {
-			p = vert * 3;
+		for (n = 0; n < this.triangles.nVertices; n++) {
+			p = (this.triangles.startVertex + n) * 3;
 			console.log("blanket positions %d: %s %s %s", 
-				vert, n(pos[p]), n(pos[p+1]), n(pos[p+2]));
+				n, f(pos[p]), f(pos[p+1]), f(pos[p+2]));
 			
 		}
 		console.log(' ');
 
-		for (vert = 0; vert < this.triangles.nVertices; vert++) {
-			p = vert * 4;
+		for (n = 0; n < this.triangles.nVertices; n++) {
+			c = (this.triangles.startVertex + n) * 4;
 			console.log("blanket color %d: %s %s %s %s", 
-				vert, n(col[p]), n(col[p+1]), n(col[p+2]), n(col[p+3]));
+				n, f(col[c]), f(col[c+1]), f(col[c+2]), f(col[c+3]));
  		}
 		console.log(' ');
 
-		for (vert = this.triangles.nVertices; vert < this.nVertices; vert++) {
-			p = vert * 3;
+		for (n = 0; n < this.axes.nVertices; n++) {
+			p = (this.axes.startVertex + n) * 3;
 			console.log("axis positions %d: %s %s %s", 
-				vert, n(pos[p]), n(pos[p+1]), n(pos[p+2]));
+				n, f(pos[p]), f(pos[p+1]), f(pos[p+2]));
 		}
 		console.log(' ');
 
-		for (vert = this.triangles.nVertices; vert < this.nVertices; vert++) {
-			p = vert * 4;
+		for (n = 0; n < this.axes.nVertices; n++) {
+			c = (this.axes.startVertex + n) * 4;
 			console.log("axis color %d: %s %s %s %s", 
-				vert, n(col[p]), n(col[p+1]), n(col[p+2]), n(col[p+3]));
+				n, f(col[c]), f(col[c+1]), f(col[c+2]), f(col[c+3]));
 		}
 		console.log(' ');
 	}
 	
+	// derive Z scaler from points calculated in calcPoints()
+	// also lightness for complex
+	// again, convert from dataspace coords to cell coords, use scale.invert for opposite
+	// Blanket z values must be calculated by now!
+	deriveZScale() {
+		// find the unified extent of all of the z values on all rows
+		// At this point there should be no z values that are objects
+		let b = this.blanket;
+		if (! b)
+			throw "No Blanket Array in deriveScalers()";
+
+		let mini = Infinity, maxi = -Infinity, mi, mx;
+		let biggest = -Infinity, big, small;
+		for (let f = 0; f < b.length; f++) {
+			[mi, mx] = extent(b[f], d => d.z_height);
+			[small, big] = extent(b[f], d => d.abs);
+			//console.log(`mi=${mi} mx=${mx} from d.z=`, b[f].map(d => d.z_height));
+			if (isNaN(mi) || isNaN(mx)) debugger;
+
+			mini = Math.min(mi, mini);
+			maxi = Math.max(mx, maxi);
+			biggest = Math.max(big, biggest);
+		}
+		
+		// that's min and max in data coords.  convert to cell coords.
+		// but z values converted to 'cell coords' for webgl
+		// um... isn't one of these an identity?
+		this.zScale = scaleLinear()
+			.range([mini, maxi])  //// figure this out later!!
+			.domain([mini, maxi]);
+
+		// adjust the color algorithm for larger/smaller z magnitudes
+		this.lightnessScale = scaleLinear()
+			.range([0, 1])
+			.domain([0, biggest]);
+
+		// the z range is calculated from values in the triangles buffer
+		this.zMin = mini;
+		this.zMax = maxi;
+		
+		if (isNaN(this.zScale(1))) debugger;
+	}
+	
+
+	// we always keep saturation at 100% for the complex plane
+
+	// take a complex value for vert.z (like {re: 1, im: -1}) 
+	// and fill in other components (color, height) to make the 3d complex graph
+	complexScaleAndColor(vert, lightnessScale) {
+		let zre = vert.z_data.re, zim = vert.z_data.im;
+	
+		let hue = 180 * Math.atan2(zim, zre) / Math.PI + 180;  // make it positive
+		let lightness = Math.atan(lightnessScale(vert.abs)) * 2 / Math.PI;  // make it 0...1
+	
+		let rgb = hsl(hue, 1, lightness).rgb();
+		vert.red = rgb.r / 255;
+		vert.green = rgb.g / 255;
+		vert.blue = rgb.b / 255;
+	// 	let rgb = rgbFromHl(hue, lightness);
+	// 	Object.assign(vert, rgb);
+		vert.z_height = zre;
+		//console.log(`(${zre},${zim}) ---> `, vert);
+	
+		// check to see if ANY of these are NaN
+		if (isNaN(zre + zim + hue + lightness + rgb.r + rgb.g + rgb.b)) debugger;
+	}
+
+	// call this after you've figured out the Z scaling from data coords to cell coords
+	// zScale is a function that converts from z_data values to z cell coords
+	scaleBlanket() {
+		let blanket = this.blanket;
+		let zScale = this.zScale;
+		for (let y = 0; y <= blanket.nYCells; y++) {
+			let row = blanket[y];
+			for (let x = 0; x <= blanket.nXCells; x++) {
+				let vert = row[x];
+				vert.z = zScale(vert.z_height);
+
+			
+				if (typeof vert.z_data == 'object') {
+					// a complex number - convert to z scalar, and color
+					this.complexScaleAndColor(vert, this.lightnessScale);
+					if (isNaN(vert.z_height + vert.red + vert.green)) debugger;
+				}
+			}
+		}
+	}
+
 	// called by client to give the data, and generates the compact arrays
 	// to be sent to the gpu
 	// This is how you feed in your data.  blanket = nested JS arrays like
@@ -253,22 +353,25 @@ class blanketPlot {
 	// Blanket must have same dimensions as passed to blanketPlot constrctor.
 	// each value is an object like 
 	// {x: 2.3, y: 4.5, z: 12.7, red: .4, green: .2, blue: .95, alpha: 1}
-	attachData(blanket, unitsPerCell) {
+	attachData(blanket) {
 		this.positions = new Float32Array(this.nVertices * 3);
 		this.colors = new Float32Array(this.nVertices * 4);
 		this.blanket = blanket;
+		
+		this.deriveZScale();
+		this.scaleBlanket();
 	
 		// each of these routines fills the arrays with data for different things being drawn
 		let pOffset = 0, cOffset = 0;
-		[pOffset, cOffset] = this.triangles.setVertices(pOffset, cOffset);
+		[pOffset, cOffset] = this.triangles.layDownVertices(pOffset, cOffset);
 		console.assert(pOffset == this.triangles.nVertices*3, 'buffer TP');
 		console.assert(cOffset == this.triangles.nVertices*4, 'buffer TC');
 		
-		[pOffset, cOffset] = this.axes.setVertices(pOffset, cOffset);
+		[pOffset, cOffset] = this.axes.layDownVertices(pOffset, cOffset);
 		console.assert(pOffset == this.nVertices*3, 'buffer AP');
 		console.assert(cOffset == this.nVertices*4, 'buffer AC');
 
-		//this.dumpBuffers();
+		this.dumpBuffers();
 
 		let gl = this.gl;
 		this.createProgramInfo();
@@ -300,7 +403,7 @@ class blanketPlot {
 	//********************************************************* Draw One Frame
 	
 	// make the matrices that position and rotate it all into view
-	createMatrices() {
+	createMatrices(longitude, lattitude) {
 		let gl = this.gl;
 
 		// note: gl-matrix.js always has the first argument
@@ -333,19 +436,19 @@ class blanketPlot {
 		// rotate by latt
 		mat4.rotate(modelViewMatrix,  // destination matrix
 			modelViewMatrix,  // matrix to rotate
-			this.lattRotation,   // tip north/south in radians
+			lattitude,   // tip north/south in radians
 			[1, 0, 0]);       // around x axis
 
 		// rotate by long
 		mat4.rotate(modelViewMatrix,  // destination matrix
 			modelViewMatrix,  // matrix to rotate
-			this.longRotation,   // east-west rotate in radians
+			longitude,   // east-west rotate in radians
 			[0, 0, 1]);       // rotate around z
 
 		// where to slide viewing eye to to, xy, to see it best
 		mat4.translate(modelViewMatrix,		 // destination matrix
 			modelViewMatrix,		 // matrix to translate
-			[-xLength/2, -yLength/2, -(this.maxiZ - this.miniZ) / 2]);
+			[-xLength/2, -yLength/2, -(this.zMax - this.zMin) / 2]);
 
 		// apply the xPerCell and yPerCell scaling
 		mat4.scale(modelViewMatrix, modelViewMatrix, [this.xPerCell, this.yPerCell, 1])
@@ -356,7 +459,7 @@ class blanketPlot {
 		gl.uniformMatrix4fv(uls.modelViewMatrix, false, modelViewMatrix);
 	}
 	
-	drawOneFrame() {
+	drawOneFrame(longitude, lattitude) {
 		let gl = this.gl;
 		
 		// set some gl variables
@@ -371,7 +474,7 @@ class blanketPlot {
 		this.checkOK();
 
 		gl.useProgram(this.programInfo.program);
-		this.createMatrices();
+		this.createMatrices(longitude, lattitude);
 		this.checkOK();
 
 		// actual drawing
@@ -486,5 +589,4 @@ class blanketPlot {
 }
 
 export default blanketPlot;
-
 

@@ -1,3 +1,6 @@
+/* eslint-disable eqeqeq, no-throw-literal  */
+
+
 import 'core-js/es6/map';
 import 'core-js/es6/set';
 import 'raf/polyfill';
@@ -16,27 +19,28 @@ class App extends Component {
 		App.me = this;  // singleton
 
 		// the step index is 0...n-1, whereas the step number is 1...n
-		this.state = {selectedIndex: 3};
+		// this is just the initial one
+		this.state = {requestedIndex: 3};
 	}
 	
 	render() {
 		// only one of svg3d or webgl3d will appear
-		let scene = config.scenes[this.state.selectedIndex];
-		let graph = (scene.graphics == '2D') 
-			? <Svg2D  selectedIndex={this.state.selectedIndex} />
-			: <Webgl3D  selectedIndex={this.state.selectedIndex} />
+		let scene = config.scenes[this.state.requestedIndex];
 
 		return (
-			<div className='step-widget'>
-				{graph}
-				<BlurbBox  selectedIndex={this.state.selectedIndex} />
+			<div className='outer-wrapper'>
+				<Svg2D  requestedIndex={this.state.requestedIndex} 
+						name='area' show={scene.graphics == '2D'}/>
+				<Webgl3D  requestedIndex={this.state.requestedIndex} 
+						name='volume' show={scene.graphics == '3D'}/>
+				<BlurbBox  requestedIndex={this.state.requestedIndex} />
 			</div>
 		);
 	}
 
 	// ultimately called by click handlers on the nav bar
 	static goToStep(stepIndex) {
-		App.me.setState({selectedIndex: stepIndex});
+		App.me.setState({requestedIndex: stepIndex});
 		Svg2D.haltMomentum();
 	}
 }

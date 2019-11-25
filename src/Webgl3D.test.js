@@ -24,7 +24,7 @@ configure({ adapter: new Adapter() });
 // make an Svg2D component, but pass back the wrapper for its iinner <svg>
 function makeASvg() {
 	return mount(
-		<Svg2D selectedIndex='0' innerWidth='600' innerHeight='500' />
+		<Svg2D requestedIndex='0' innerWidth='600' innerHeight='500' />
 	).childAt(0);
 }
 
@@ -51,7 +51,7 @@ describe('Svg2D ', () => {
 
 	it('renders without crashing', () => {
 		const div = document.createElement('div');
-		ReactDOM.render(<Svg2D selectedIndex='0' />, div);
+		ReactDOM.render(<Svg2D requestedIndex='0' />, div);
 	});
 
 	describe('nodes under svg ', () => {
@@ -108,11 +108,11 @@ describe('Svg2D ', () => {
 			let dState;
 			
 			// when not changing scene
-			dState = Svg2D.getDerivedStateFromProps({selectedIndex: 0}, {selectedIndex: 0});
+			dState = Svg2D.getDerivedStateFromProps({requestedIndex: 0}, {requestedIndex: 0});
 			expect(dState).toBeNull();
 			
 			// when changing scene
-			dState = Svg2D.getDerivedStateFromProps({selectedIndex: 1}, {selectedIndex: 0});
+			dState = Svg2D.getDerivedStateFromProps({requestedIndex: 1}, {requestedIndex: 0});
 			expect(instance.funcs).toBe(config.scenes[1].funcs);
 			expect(dState.xMin).toEqual(-20);
 			expect(dState.xMax).toEqual(20);
@@ -406,11 +406,11 @@ describe('Svg2D ', () => {
 				let divs =  shallow(<div><span /></div>);
 				console.log("divs", divs, divs.debug());
 				//anal(divs);
-				
-////			let navw =  mount(<NavBar selectedIndex='0' />);
+				g
+////			let navw =  mount(<NavBar requestedIndex='0' />);
 			////console.log("navw", navw, navw.debug());
 
-////			let navs =  shallow(<NavBar selectedIndex='0' />);
+////			let navs =  shallow(<NavBar requestedIndex='0' />);
 			////console.log("navs", navs, navs.debug());
 				
 				

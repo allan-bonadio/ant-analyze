@@ -15,7 +15,7 @@ class NavBar extends Component {
 	
 	render() {
 		let buttons = config.scenes.map((scene, ix) => {
-			let sel = (this.props.selectedIndex === ix) ? 'selected' : '';
+			let sel = (this.props.requestedIndex === ix) ? 'selected' : '';
 			return <div key={ix} index={ix} className={sel} onClick={this.clickNumber} 
 						onMouseDown={this.killTextSelection}  >
 				{scene.formula}
@@ -43,7 +43,7 @@ class NavBar extends Component {
 	// click on the NEXT> button
 	clickNext(ev) {
 		ev.stopPropagation();
-		let stepIndex = (this.props.selectedIndex + 1) % config.scenes.length;
+		let stepIndex = (this.props.requestedIndex + 1) % config.scenes.length;
 		App.goToStep(stepIndex);
 	}
 	

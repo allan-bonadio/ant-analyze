@@ -13,15 +13,7 @@ class BlurbBox extends Component {
 	}
 
 	render() {
-		let scene = config.scenes[this.props.selectedIndex];
-////		let touchDisplay ='block';
-////		let mouseDisplay = 'none';
-////		if (! ('ontouchstart' in document.body)) {
-////			touchDisplay = 'none';
-////			mouseDisplay = 'block';
-////		}
-////		let touchDisplay =  ? 'block' : 'none';
-////		let touchDisplay = 'ontouchstart' in document.body ? 'block' : 'none';
+		let scene = config.scenes[this.props.requestedIndex];
 		let touchDisplay = 'ontouchstart' in document.body ? 'block' : 'none';
 		let mouseDisplay = 'ontouchstart' in document.body ? 'none' : 'block';
 		
@@ -35,7 +27,7 @@ class BlurbBox extends Component {
 					<br/><big> ↔ </big> zoom along <i>x</i> axis
 					<br/><big> ↕ </big> zoom along <i>y</i> axis
 				</p>
-				<NavBar nSteps={config.scenes.length} selectedIndex={this.props.selectedIndex} />
+				<NavBar nSteps={config.scenes.length} requestedIndex={this.props.requestedIndex} />
 				<h2 className='blurb-title'>
 					{scene.title}
 				</h2>

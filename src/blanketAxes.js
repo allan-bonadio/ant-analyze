@@ -1,11 +1,13 @@
 //
 // blanket axes - axis lines and tic marks for a blanket plot.
 //
+/* eslint-disable eqeqeq, no-throw-literal  */
+
 
 import {mat4} from './gl-matrix';
 
 // don't try to type these names, just copy paste
-const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
+//const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
 
 // this ends up being a mixin for blanketPlot
 class blanketAxes {
@@ -17,7 +19,7 @@ class blanketAxes {
 	}
 
 	// Always 24 vertices.
-	setVertices(pOffset, cOffset) {
+	layDownVertices(pOffset, cOffset) {
 		this.startVertex = pOffset / 3;
 		let x, y, z, xCells = this.plot.nXCells, yCells = this.plot.nYCells, zCells = 6;
 		let pos = this.plot.positions;
