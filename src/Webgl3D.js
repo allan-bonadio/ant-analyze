@@ -235,7 +235,8 @@ class Webgl3D extends Component {
 // 		this.plot.gl = canvas.getContext('webgl') || 
 // 					canvas.getContext('experimental-webgl');
 
-
+		// this is what we need (otherwise it's all distorted)
+		this.plot.gl.viewport(0, 0, graphWidth, graphHeight);
 
 
 	}
