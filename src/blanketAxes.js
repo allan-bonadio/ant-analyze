@@ -15,6 +15,7 @@ import {vertexBuffer} from './genComplex';
 class blanketAxes {
 	constructor(plot, nXCells, nYCells) {
 		this.plot = plot;
+		this.name = 'axes';
 		
 		// four axes with 8 vertices, times 3 dimensions
 		this.nVertices = 24;

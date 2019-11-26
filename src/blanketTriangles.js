@@ -14,6 +14,7 @@ import {vertexBuffer} from './genComplex';
 class blanketTriangles {
 	constructor(plot, nXCells, nYCells) {
 		this.plot = plot;
+		this.name = 'triangles';
 		
 		// Blanket: 2 triangles per cell, 1 vertex per triangle + 2 to get started,
 		// then 2 extra every time you move from one x-row to the next

@@ -51,8 +51,9 @@ class blanketPlot {
 		// these set up for the geometry, and calculate number of vertices they need
 		this.axes = new blanketAxes(this, options.nXCells, options.nYCells);
 		this.triangles = new blanketTriangles(this, options.nXCells, options.nYCells);
-		
 		this.nVertices = this.triangles.nVertices + this.axes.nVertices;
+		
+		this.painters = [this.triangles, this.axes];
 
 		// set up and make sure gl is possible
 		this.gl = canvas.getContext('webgl') || 
@@ -204,49 +205,15 @@ class blanketPlot {
 	
 	// list out ALL the vertices and their colors
 	dumpBuffer() {
-// 		function f(q) {
-// 			return q.toFixed(2);
-// 		}
 		
 		console.log("actual data put into vertex buffer")
 		
-		this.buffer.dump("triangles", this.triangles.startVertex, this.triangles.nVertices);
-		console.log();
-		this.buffer.dump("axes", this.axes.startVertex, this.axes.nVertices);
-		
-		
-// 		let pos = this.buffer.positions;
-// 		let col = this.buffer.colors;
-// 		let p, c, n;
-// 
-// 		for (n = 0; n < this.triangles.nVertices; n++) {
-// 			p = (this.triangles.startVertex + n) * 3;
-// 			console.log("blanket positions %d: %s %s %s", 
-// 				n, f(pos[p]), f(pos[p+1]), f(pos[p+2]));
-// 			
-// 		}
-// 		console.log(' ');
-// 
-// 		for (n = 0; n < this.triangles.nVertices; n++) {
-// 			c = (this.triangles.startVertex + n) * 4;
-// 			console.log("blanket color %d: %s %s %s %s", 
-// 				n, f(col[c]), f(col[c+1]), f(col[c+2]), f(col[c+3]));
-//  		}
-// 		console.log(' ');
-// 
-// 		for (n = 0; n < this.axes.nVertices; n++) {
-// 			p = (this.axes.startVertex + n) * 3;
-// 			console.log("axis positions %d: %s %s %s", 
-// 				n, f(pos[p]), f(pos[p+1]), f(pos[p+2]));
-// 		}
-// 		console.log(' ');
-// 
-// 		for (n = 0; n < this.axes.nVertices; n++) {
-// 			c = (this.axes.startVertex + n) * 4;
-// 			console.log("axis color %d: %s %s %s %s", 
-// 				n, f(col[c]), f(col[c+1]), f(col[c+2]), f(col[c+3]));
-// 		}
-// 		console.log(' ');
+		this.painters.forEach(painter => 
+			this.buffer.dump(painter.name, painter.startVertex, painter.nVertices));
+			
+// 		this.buffer.dump("triangles", this.triangles.startVertex, this.triangles.nVertices);
+// 		console.log();
+// 		this.buffer.dump("axes", this.axes.startVertex, this.axes.nVertices);
 	}
 
 	
@@ -353,9 +320,11 @@ class blanketPlot {
 		this.scaleBlanket();
 	
 		// each of these routines fills the arrays with data for different things being drawn
-		this.triangles.layDownVertices();
-		
-		this.axes.layDownVertices();
+		this.painters.forEach(painter => painter.layDownVertices());
+
+// 		this.triangles.layDownVertices();
+// 		
+// 		this.axes.layDownVertices();
 
 		this.dumpBuffer();
 
@@ -465,8 +434,9 @@ class blanketPlot {
 		this.checkOK();
 
 		// actual drawing
-		this.triangles.draw(gl);
-		this.axes.draw(gl);
+		this.painters.forEach(painter => painter.draw(gl));
+// 		this.triangles.draw(gl);
+// 		this.axes.draw(gl);
 	}
 
 }
