@@ -4,4 +4,12 @@ canvas {
 	background-color: black;
 }
 
+.webgl-chart {
+	cursor: grab;
+}
+
+.webgl-chart:active {
+	cursor: grabbing;
+}
+
 
