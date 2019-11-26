@@ -389,7 +389,7 @@ class blanketPlot {
 	//********************************************************* Draw One Frame
 	
 	// make the matrices that position and rotate it all into view
-	createMatrices(longitude, lattitude) {
+	createMatrices(longitude, latitude) {
 		let gl = this.gl;
 
 		// note: gl-matrix.js always has the first argument
@@ -422,7 +422,7 @@ class blanketPlot {
 		// rotate by latt
 		mat4.rotate(modelViewMatrix,  // destination matrix
 			modelViewMatrix,  // matrix to rotate
-			lattitude + π_2,   // tip north/south in radians
+			latitude + π_2,   // tip north/south in radians
 			[1, 0, 0]);       // around x axis
 
 		// rotate by long
@@ -445,8 +445,8 @@ class blanketPlot {
 		gl.uniformMatrix4fv(uls.modelViewMatrix, false, modelViewMatrix);
 	}
 	
-	// longitude and lattitude are in radians
-	drawOneFrame(longitude, lattitude) {
+	// longitude and latitude are in radians
+	drawOneFrame(longitude, latitude) {
 		let gl = this.gl;
 		
 		// set some gl variables
@@ -461,7 +461,7 @@ class blanketPlot {
 		this.checkOK();
 
 		gl.useProgram(this.programInfo.program);
-		this.createMatrices(longitude, lattitude);
+		this.createMatrices(longitude, latitude);
 		this.checkOK();
 
 		// actual drawing
