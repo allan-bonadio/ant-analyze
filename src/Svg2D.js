@@ -9,7 +9,7 @@ import {line} from 'd3-shape';
 import {axisTop, axisBottom, axisLeft, axisRight} from 'd3-axis';
 import {select} from 'd3-selection';
 
-import $ from 'jquery';
+//import $ from 'jquery';
 
 import './Svg2D.css';
 import config from './config';
@@ -24,7 +24,7 @@ export const axisMargin = 4;
 // So it looks like you're sliding the solid background around with your finger.
 //Try it on different screen/svg sizes.  yes you have to adjust these by hand.
 const HORIZ_EVENTS_FACTOR = -.025;
-const VERT_EVENTS_FACTOR = .8;
+const VERT_EVENTS_FACTOR = .9;
 
 // there is one of these total, it displays differences depending on its 
 // requestedIndex prop passed in (see react lifecycle getDerivedStateFromProps())
@@ -33,22 +33,20 @@ class Svg2D extends Component {
 		super(props);
 		Svg2D.me = this;
 		
-
-		
-////		// for testing, pass in innerWidth and innerHeight props
-////		let innerWidth = props.innerWidth || window.innerWidth;
-////		let innerHeight = props.innerHeight || window.innerHeight;
+		// for testing, pass in innerWidth and innerHeight props
+		let innerWidth = props.innerWidth || window.innerWidth;
+		let innerHeight = props.innerHeight || window.innerHeight;
 		
 		// the inner size of the svg el - changes on window resize or iPhone rotate events
 		this.state = {
-			...this.decideSvgDimensions(window),
-////			svgWidth: innerWidth - 4,
-////			svgHeight: innerHeight - 200,
+			graphWidth: innerWidth - 4,
+			graphHeight: innerHeight - 200,
 			
 			renderedIndex: -1,  // rendered, not selected.  be patient.
 			xMin: -1,  // just defaults
 			xMax: 1,  // will quickly be overwritten
 		};
+		this.specialForResize(this.state.graphWidth, this.state.graphHeight);
 		
 		// just defaults for first render or for props.show false
 		this.yMin = -1;
@@ -60,24 +58,33 @@ class Svg2D extends Component {
 		
 		// tedious
 		[
-			'mouseWheelEvt', 'resizeEvt',
-			'shoveByOffset',
+			'mouseWheelEvt', 
+			'shoveFunc', 'drawAtPos',
 		].forEach(funcName => this[funcName] = this[funcName].bind(this));
 	}
 	
 	componentDidMount() {
 		// these are needed for graph sliding & other touch events - touches outside the SVG
 		
-		// we don't need a draw function because shoveByOffset changes the state
+		// we don't need a draw function because shoveFunc changes the state
 		// which will end up redrawing
-		this.events = new graphicEvents(this, ()=>{}, this.shoveByOffset);
+		this.events = new graphicEvents(this, this.drawAtPos, this.shoveFunc);
 				
-		$(window).on('resize', this.resizeEvt);
+		////$(window).on('resize', this.resizeEvt);
 		
 		// do this to re-render after the blurb box is sized properly
-		this.setState(this.decideSvgDimensions(window));
+		this.setState(graphicEvents.decideGraphDimensions(window));
 	}
 	
+	// graphicEvents calls us after the drag position changed to set the readout
+	// extra is for debugging mostly
+	setReadout(horizPosition, vertPosition, extra) {
+
+		// alternate arrow chars: ' ➨➙ ➛➜ ➠➔→ '
+		this.props.setReadout(this.state.xMin.toFixed(2) +' ➜ '+ 
+				this.state.xMax.toFixed(2) +' '+ (extra || ''));
+	}
+
 	// called before the start of a render, this checks for a new index/scene, and changes stuff
 	// that's needed for this render
 	static getDerivedStateFromProps(props, state2b) {
@@ -155,7 +162,7 @@ class Svg2D extends Component {
 		this.lastCalcYMax = s.yMax;
 	}
 
-// derive the X scaler given the points calculated in calcPoints()
+	// derive the X scaler given the points calculated in calcPoints()
 	// called initially and for mouse drags (translations)
 	deriveIndependentScales() {
 		if (! this.pixelsAr)
@@ -230,7 +237,7 @@ class Svg2D extends Component {
 	}
 	
 	// draw it.  the state must be set up (see constructor).  These might have changed:
-	// x/y max/min  svgWidth/Height so everything recalculated here.
+	// x/y max/min  graphWidth/Height so everything recalculated here.
 	render() {
 		let style = {display: 'none'};
 
@@ -256,13 +263,13 @@ class Svg2D extends Component {
 						stroke={this.funcs[ix].color} />);
 		}
 
-		let viewBox = `0 0 ${state.svgWidth} ${state.svgHeight}`;
+		let viewBox = `0 0 ${state.graphWidth} ${state.graphHeight}`;
 		
 		// react doesnt recognize touch events - needed for gestures - so use jQuery in DidMount
 		return (
 			<svg className='svg-chart'  
 						viewBox={viewBox}
-						width={state.svgWidth} height={state.svgHeight}
+						width={state.graphWidth} height={state.graphHeight}
 						preserveAspectRatio='none'
 						onMouseDown={this.events ? this.events.mouseDownEvt : ()=>{}}
 						onWheel={this.mouseWheelEvt} 
@@ -278,47 +285,60 @@ class Svg2D extends Component {
 	}
 
 	/* ******************************************************* resize window & svg */
-	// given the window obj, figure out margins and svgWidth/Height, return object to merge into state
-	decideSvgDimensions(win) {
-		// size of the screen (or phony size passed in by testing)
-		let svgWidth = +(this.props.innerWidth || window.innerWidth);
-		let svgHeight = +(this.props.innerHeight || window.innerHeight);
-		
-		// deduct the height of the blurb box, or if not created yet, just approximate
-		let blurbHeight = 200, blurbWidth = 400, blurbBox$ = $('.blurb-box')
-		if (svgWidth > svgHeight) {
-			if (blurbBox$.length)
-				blurbWidth = blurbBox$[0].offsetWidth;
-			svgWidth -= blurbWidth + 4;
-		}
-		else {
-			if (blurbBox$.length)
-				blurbHeight = blurbBox$[0].offsetHeight;
-			svgHeight -= blurbHeight + 4;
-		}
-
-		// where data drawn; slightly inside the full svg
+	// given the window obj, figure out margins and graphWidth/Height, return object to merge into state
+// 	decideSvgDimensions(win) {
+// 		// size of the screen (or phony size passed in by testing)
+// 		let graphWidth = +(this.props.innerWidth || window.innerWidth);
+// 		let graphHeight = +(this.props.innerHeight || window.innerHeight);
+// 		
+// 		// deduct the height of the blurb box, or if not created yet, just approximate
+// 		let blurbHeight = 200, blurbWidth = 400, blurbBox$ = $('.blurb-box')
+// 		if (graphWidth > graphHeight) {
+// 			if (blurbBox$.length)
+// 				blurbWidth = blurbBox$[0].offsetWidth;
+// 			graphWidth -= blurbWidth + 4;
+// 		}
+// 		else {
+// 			if (blurbBox$.length)
+// 				blurbHeight = blurbBox$[0].offsetHeight;
+// 			graphHeight -= blurbHeight + 4;
+// 		}
+// 
+// 		// where data drawn; slightly inside the full svg
+// 		this.marginLeft = this.marginTop = axisMargin;
+// 		this.marginRight = graphWidth - axisMargin;
+// 		this.marginBottom = graphHeight - axisMargin;
+// 		this.needsScalerRecalc = true;
+// 		
+// 		return {graphWidth, graphHeight};
+// 	}
+// 	
+// 	resizeEvt(ev) {
+// 		// size of the SVG changes in render() but tell it what
+// 		this.setState(this.decideSvgDimensions(ev.target));
+// 
+// 		console.log("resize ev", ev.target.innerWidth, ev.target.innerHeight, 
+// 						this.marginBottom);
+// 		console.log(this);
+// 		console.log(this.yScale);
+// 		console.log(this.yScale.range);
+// 		console.log(this.yScale.range());
+// 	}
+	
+	specialForResize(graphWidth, graphHeight) {
+		// where data drawn; slightly inside the full graph
 		this.marginLeft = this.marginTop = axisMargin;
-		this.marginRight = svgWidth - axisMargin;
-		this.marginBottom = svgHeight - axisMargin;
+		this.marginRight = graphWidth - axisMargin;
+		this.marginBottom = graphHeight - axisMargin;
 		this.needsScalerRecalc = true;
 		
-		return {svgWidth, svgHeight};
-	}
-	
-	resizeEvt(ev) {
-		// size of the SVG changes in render() but tell it what
-		this.setState(this.decideSvgDimensions(ev.target));
-
-		console.log("resize ev", ev.target.innerWidth, ev.target.innerHeight, 
-						this.marginBottom, this.yScale.range());
 	}
 	
 	/* ******************************************************* drag move around */
 	// call this every time you want to slide the graph over (translate), 
 	// as a result of some kind of mouse/touch move
 	// the abs are the full horiz/vert coordinate; rel are change from last time
-	shoveByOffset(hAbs, vAbs, hRel, vRel) {
+	shoveFunc(hAbs, vAbs, hRel, vRel) {
 		hRel = hRel / HORIZ_EVENTS_FACTOR;
 		vRel = vRel / VERT_EVENTS_FACTOR;
 		
@@ -334,7 +354,12 @@ class Svg2D extends Component {
 		this.yScale.domain([this.yMin, this.yMax]);
 	}
 	
+	drawAtPos(horizPosition, vertPosition) {
+	
+	}
+	
 	// sometimes momentum goes crazy like switching between scenes
+	//// fix this!
 	static haltMomentum() {
 		if (Svg2D.me)
 			Svg2D.me.offsetX = Svg2D.me.offsetY = 0;
@@ -344,7 +369,9 @@ class Svg2D extends Component {
 		console.log("mouseWheelEvt x y z", ev);
 		////console.log( ev.deltaX, ev.deltaY, ev.deltaZ);
 		//this.mouseUpEvt(ev);
-		ev.preventDefault();
+		// ??? this gives error message
+		// react-dom.development.js:4944 [Intervention] Unable to preventDefault inside passive event listener due to target being treated as passive. See https://www.chromestatus.com/features/6662647093133312
+		//ev.preventDefault();
 	}
 
 	/* ******************************************************* touch & gesture events */

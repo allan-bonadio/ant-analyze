@@ -4,7 +4,8 @@
 //
 /* eslint-disable eqeqeq, no-throw-literal  */
 
-//import {mat4} from './gl-matrix';
+//import {mat4} from 'gl-matrix';
+import {vertexBuffer} from './genComplex';
 
 // don't try to type these names, just copy paste
 //const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
@@ -20,53 +21,32 @@ class blanketTriangles {
 	}
 
 	// generate all the vertices for the whole blanket
-	scaleZ(pOffset, cOffset) {
+	layDownVertices() {
+		let buffer = this.buffer = this.plot.buffer;
+		this.startVertex = buffer.nVertices;
+// 		let pos = this.plot.positions;  // the buffers
+// 		let col = this.plot.colors;  // we're filling
 		let bla = this.plot.blanket;  // where the data comes from
 		
 		// lay down one vertex.  and the color.  And collect z min and max. 
-		
-		// now go through all blanket vertices
-		// each is a triangle drawn with gl.TRIANGLE_STRIP, 
-		// one for each vertex, minus 2 cuz the first two don't make a triangle yet.  
-		// every 3 consecutive vertices (overlapping) become a triangle
-		// x and y are in cell coordinates
-		let x, y;
-		let miniZ = Infinity, maxiZ = -Infinity;
-		for (y = 0; y <= this.plot.nYCells; y++) {
-			let bb = bla[y];
-			for (x = 0; x <= this.plot.nXCells; x++) {
-				let b = bb[x];
-				miniZ = Math.min(miniZ, b.z_height);
-				maxiZ = Math.max(maxiZ, b.z_height);
-			}
-		}
-		
-		// only the triangles surface gets to set the z min/max
-		this.plot.miniZ = miniZ;
-		this.plot.maxiZ = maxiZ;
-	}
+// 		function addVertex(x, y) {
+// 			let b = bla[y][x];
+// 
+// 			// all single floats the way the gpu likes it
+// 			pos[pOffset++] = x;
+// 			pos[pOffset++] = y;
+// 			pos[pOffset++] = b.z;
+// 			
+// 			col[cOffset++] = b.red;
+// 			col[cOffset++] = b.green;
+// 			col[cOffset++] = b.blue;
+// 			col[cOffset++] = b.alpha;
+// 		}
 
-	// generate all the vertices for the whole blanket
-	layDownVertices(pOffset, cOffset) {
-		this.startVertex = pOffset / 3;
-		let pos = this.plot.positions;  // the buffers
-		let col = this.plot.colors;  // we're filling
-		let bla = this.plot.blanket;  // where the data comes from
-		
-		// lay down one vertex.  and the color.  And collect z min and max. 
-		function addVertex(x, y) {
+		let addVertex = (x, y) => {
 			let b = bla[y][x];
-
-			// all single floats the way the gpu likes it
-			pos[pOffset++] = x;
-			pos[pOffset++] = y;
-			pos[pOffset++] = b.z;
-			
-			col[cOffset++] = b.red;
-			col[cOffset++] = b.green;
-			col[cOffset++] = b.blue;
-			col[cOffset++] = b.alpha;
-		}
+			buffer.addVertex([x, y, b.z], [b.red, b.green, b.blue, 1]);
+		};
 		
 		// now go through all blanket vertices
 		// each is a triangle drawn with gl.TRIANGLE_STRIP, 
@@ -91,7 +71,8 @@ class blanketTriangles {
 			if (y < this.plot.nYCells-1)
 				addVertex(this.plot.nXCells, y+1);
 		}
-		return [pOffset, cOffset];
+		this.nVertices = this.buffer.nVertices - this.startVertex;
+		return;
 	}
 
 	draw(gl) {

@@ -4,7 +4,9 @@
 /* eslint-disable eqeqeq, no-throw-literal  */
 
 
-import {mat4} from './gl-matrix';
+import {mat4} from 'gl-matrix';
+
+import {vertexBuffer} from './genComplex';
 
 // don't try to type these names, just copy paste
 //const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
@@ -19,45 +21,40 @@ class blanketAxes {
 	}
 
 	// Always 24 vertices.
-	layDownVertices(pOffset, cOffset) {
-		this.startVertex = pOffset / 3;
-		let x, y, z, xCells = this.plot.nXCells, yCells = this.plot.nYCells, zCells = 6;
+	layDownVertices() {
+		let buffer = this.buffer = this.plot.buffer;
+		this.startVertex = this.buffer.nVertices;
+		let x, y, z, xCells = this.plot.nXCells, yCells = this.plot.nYCells;
+		let zMin = this.plot.zMin, zMax = this.plot.zMax, zSize = zMax - zMin;
 		let pos = this.plot.positions;
 		let col = this.plot.colors;
 		
-		function addVertex(x, y, z) {
-			pos[pOffset++] = x;
-			pos[pOffset++] = y;
-			pos[pOffset++] = z;
-			
-			col[cOffset++] = col[cOffset++] = col[cOffset++] = 1;
-			col[cOffset++] = .5;
-		}
+		let addVertex = (x, y, z) => {
+			buffer.addVertex([x, y, z], [1, 1, 1, .5]);
+		};
 		
 		// these are individual line segments, drawn with gl.LINES.
-		// each pair of vertices is one line.
+		// each pair of vertices is one line.  Each loop goes around 2ice.
 		for (x = 0; x <= xCells; x += xCells) {
 			for (y = 0; y <= yCells; y += yCells) {
-				addVertex(x, y, 0);
-				addVertex(x, y, zCells);
+				addVertex(x, y, zMin);
+				addVertex(x, y, zMax);
 			}
 		}
 	
 		for (y = 0; y <= yCells; y += yCells) {
-			for (z = 0; z <= zCells; z += zCells) {
+			for (z = zMin; z <= zMax; z += zSize) {
 				addVertex(0, y, z);
 				addVertex(xCells, y, z);
 			}
 		}
 
-		for (z = 0; z <= zCells; z += zCells) {
+		for (z = zMin; z <= zMax; z += zSize) {
 			for (x = 0; x <= xCells; x += xCells) {
 				addVertex(x, 0, z);
 				addVertex(x, yCells, z);
 			}
 		}
-
-		return [pOffset, cOffset];
 	}
 
 	draw(gl) {

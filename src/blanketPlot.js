@@ -11,18 +11,21 @@ import {scaleLinear} from 'd3-scale';
 // import {select} from 'd3-selection';
 import {hsl} from 'd3-color';
 
-import {mat4} from './gl-matrix';
+import {mat4} from 'gl-matrix';
 
+import {vertexBuffer} from './genComplex';
 import blanketTriangles from './blanketTriangles';
 import blanketAxes from './blanketAxes';
 
 // don't try to type these names, just copy paste
 const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
 
-// how much rotation velocities fade over time.  
-// Keep between ~.2 ... .999, or 1 for no coasting,  0 for no friction
-const ROTATION_FRICTION = .95;
 
+
+
+
+
+/* *************************************************** blanketPlot */
 // call them like this:
 //    create it, passing a Canvas element, and how big
 //		let plot = new blanketPlot(
@@ -51,22 +54,6 @@ class blanketPlot {
 		
 		this.nVertices = this.triangles.nVertices + this.axes.nVertices;
 
-		// angle human is looking at it with, geographical coordinates 
-		// latt = lattitude = angle tilted up/down, 0=bottom looking up
-		// long = longitude = azmuth = horizontal rotation around z axis, 0= +x axis
-		// wait maybe not...
-// 		this.lattRotation = 1.7;  // 0...π
-// 		this.longRotation = 0;  // primarily 0...2π but it's allowed to 
-// 					// wrap around a few circles if needed...??
-// 		this.lattVelocity = 0;
-// 		this.longVelocity = 0;
-// 		
-// 		// better for production, imparts initial spin,
-// 		// so user can figure out that they can drag it around
-// 		this.lattVelocity = .5;
-// 		this.longVelocity = .5;
-		
-		
 		// set up and make sure gl is possible
 		this.gl = canvas.getContext('webgl') || 
 					canvas.getContext('experimental-webgl');
@@ -215,48 +202,53 @@ class blanketPlot {
 	
 	//********************************************************* Data Layout
 	
-	
-
-	dumpBuffers() {
-		function f(q) {
-			return q.toFixed(2);
-		}
+	// list out ALL the vertices and their colors
+	dumpBuffer() {
+// 		function f(q) {
+// 			return q.toFixed(2);
+// 		}
 		
-		console.log("actual data put into vertex buffers")
+		console.log("actual data put into vertex buffer")
 		
-		let pos = this.positions;
-		let col = this.colors;
-		let p, c, n;
-
-		for (n = 0; n < this.triangles.nVertices; n++) {
-			p = (this.triangles.startVertex + n) * 3;
-			console.log("blanket positions %d: %s %s %s", 
-				n, f(pos[p]), f(pos[p+1]), f(pos[p+2]));
-			
-		}
-		console.log(' ');
-
-		for (n = 0; n < this.triangles.nVertices; n++) {
-			c = (this.triangles.startVertex + n) * 4;
-			console.log("blanket color %d: %s %s %s %s", 
-				n, f(col[c]), f(col[c+1]), f(col[c+2]), f(col[c+3]));
- 		}
-		console.log(' ');
-
-		for (n = 0; n < this.axes.nVertices; n++) {
-			p = (this.axes.startVertex + n) * 3;
-			console.log("axis positions %d: %s %s %s", 
-				n, f(pos[p]), f(pos[p+1]), f(pos[p+2]));
-		}
-		console.log(' ');
-
-		for (n = 0; n < this.axes.nVertices; n++) {
-			c = (this.axes.startVertex + n) * 4;
-			console.log("axis color %d: %s %s %s %s", 
-				n, f(col[c]), f(col[c+1]), f(col[c+2]), f(col[c+3]));
-		}
-		console.log(' ');
+		this.buffer.dump("triangles", this.triangles.startVertex, this.triangles.nVertices);
+		console.log();
+		this.buffer.dump("axes", this.axes.startVertex, this.axes.nVertices);
+		
+		
+// 		let pos = this.buffer.positions;
+// 		let col = this.buffer.colors;
+// 		let p, c, n;
+// 
+// 		for (n = 0; n < this.triangles.nVertices; n++) {
+// 			p = (this.triangles.startVertex + n) * 3;
+// 			console.log("blanket positions %d: %s %s %s", 
+// 				n, f(pos[p]), f(pos[p+1]), f(pos[p+2]));
+// 			
+// 		}
+// 		console.log(' ');
+// 
+// 		for (n = 0; n < this.triangles.nVertices; n++) {
+// 			c = (this.triangles.startVertex + n) * 4;
+// 			console.log("blanket color %d: %s %s %s %s", 
+// 				n, f(col[c]), f(col[c+1]), f(col[c+2]), f(col[c+3]));
+//  		}
+// 		console.log(' ');
+// 
+// 		for (n = 0; n < this.axes.nVertices; n++) {
+// 			p = (this.axes.startVertex + n) * 3;
+// 			console.log("axis positions %d: %s %s %s", 
+// 				n, f(pos[p]), f(pos[p+1]), f(pos[p+2]));
+// 		}
+// 		console.log(' ');
+// 
+// 		for (n = 0; n < this.axes.nVertices; n++) {
+// 			c = (this.axes.startVertex + n) * 4;
+// 			console.log("axis color %d: %s %s %s %s", 
+// 				n, f(col[c]), f(col[c+1]), f(col[c+2]), f(col[c+3]));
+// 		}
+// 		console.log(' ');
 	}
+
 	
 	// derive Z scaler from points calculated in calcPoints()
 	// also lightness for complex
@@ -288,16 +280,14 @@ class blanketPlot {
 		this.zScale = scaleLinear()
 			.range([mini, maxi])  //// figure this out later!!
 			.domain([mini, maxi]);
+		this.zMin = mini;
+		this.zMax = maxi;
 
 		// adjust the color algorithm for larger/smaller z magnitudes
 		this.lightnessScale = scaleLinear()
 			.range([0, 1])
 			.domain([0, biggest]);
 
-		// the z range is calculated from values in the triangles buffer
-		this.zMin = mini;
-		this.zMax = maxi;
-		
 		if (isNaN(this.zScale(1))) debugger;
 	}
 	
@@ -354,50 +344,46 @@ class blanketPlot {
 	// each value is an object like 
 	// {x: 2.3, y: 4.5, z: 12.7, red: .4, green: .2, blue: .95, alpha: 1}
 	attachData(blanket) {
-		this.positions = new Float32Array(this.nVertices * 3);
-		this.colors = new Float32Array(this.nVertices * 4);
+		this.buffer = new vertexBuffer(this.nVertices);
+// 		this.positions = new Float32Array(this.nVertices * 3);
+// 		this.colors = new Float32Array(this.nVertices * 4);
 		this.blanket = blanket;
 		
 		this.deriveZScale();
 		this.scaleBlanket();
 	
 		// each of these routines fills the arrays with data for different things being drawn
-		let pOffset = 0, cOffset = 0;
-		[pOffset, cOffset] = this.triangles.layDownVertices(pOffset, cOffset);
-		console.assert(pOffset == this.triangles.nVertices*3, 'buffer TP');
-		console.assert(cOffset == this.triangles.nVertices*4, 'buffer TC');
+		this.triangles.layDownVertices();
 		
-		[pOffset, cOffset] = this.axes.layDownVertices(pOffset, cOffset);
-		console.assert(pOffset == this.nVertices*3, 'buffer AP');
-		console.assert(cOffset == this.nVertices*4, 'buffer AC');
+		this.axes.layDownVertices();
 
-		this.dumpBuffers();
+		this.dumpBuffer();
 
-		let gl = this.gl;
 		this.createProgramInfo();
+		this.buffer.attachToGL(this.gl, this.programInfo.attribLocations);
 
 		// Tell WebGL how to pull out the positions from the position
 		// buffer into the vertexPosition attribute.
-		let als = this.programInfo.attribLocations;
-		this.positionsBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.positionsBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, this.positions, gl.STATIC_DRAW);
-		gl.vertexAttribPointer(
-				als.vertexPosition,
-				3, gl.FLOAT,  // n numbers per vertex, n type
-				false, 0, 0);  // normalize, stride, offset
-		gl.enableVertexAttribArray(als.vertexPosition);
-
-		// Tell WebGL how to pull out the colors from the color buffer
-		// into the vertexColor attribute.
-		this.colorsBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.colorsBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, this.colors, gl.STATIC_DRAW);
-		gl.vertexAttribPointer(
-			als.vertexColor,
-			4, gl.FLOAT,    // r, g, b, a, type float
-			false, 0, 0);  // normalize, stride, offset
-		gl.enableVertexAttribArray(als.vertexColor);
+// 		let als = this.programInfo.attribLocations;
+// 		this.positionsBuffer = gl.createBuffer();
+// 		gl.bindBuffer(gl.ARRAY_BUFFER, this.positionsBuffer);
+// 		gl.bufferData(gl.ARRAY_BUFFER, this.buffer.positions, gl.STATIC_DRAW);
+// 		gl.vertexAttribPointer(
+// 				als.vertexPosition,
+// 				3, gl.FLOAT,  // n numbers per vertex, n type
+// 				false, 0, 0);  // normalize, stride, offset
+// 		gl.enableVertexAttribArray(als.vertexPosition);
+// 
+// 		// Tell WebGL how to pull out the colors from the color buffer
+// 		// into the vertexColor attribute.
+// 		this.colorsBuffer = gl.createBuffer();
+// 		gl.bindBuffer(gl.ARRAY_BUFFER, this.colorsBuffer);
+// 		gl.bufferData(gl.ARRAY_BUFFER, this.buffer.colors, gl.STATIC_DRAW);
+// 		gl.vertexAttribPointer(
+// 			als.vertexColor,
+// 			4, gl.FLOAT,    // r, g, b, a, type float
+// 			false, 0, 0);  // normalize, stride, offset
+// 		gl.enableVertexAttribArray(als.vertexColor);
 	}
 
 	//********************************************************* Draw One Frame
@@ -436,7 +422,7 @@ class blanketPlot {
 		// rotate by latt
 		mat4.rotate(modelViewMatrix,  // destination matrix
 			modelViewMatrix,  // matrix to rotate
-			lattitude,   // tip north/south in radians
+			lattitude + π_2,   // tip north/south in radians
 			[1, 0, 0]);       // around x axis
 
 		// rotate by long
@@ -448,7 +434,7 @@ class blanketPlot {
 		// where to slide viewing eye to to, xy, to see it best
 		mat4.translate(modelViewMatrix,		 // destination matrix
 			modelViewMatrix,		 // matrix to translate
-			[-xLength/2, -yLength/2, -(this.zMax - this.zMin) / 2]);
+			[-xLength/2, -yLength/2, -(this.zMax + this.zMin) / 2]);
 
 		// apply the xPerCell and yPerCell scaling
 		mat4.scale(modelViewMatrix, modelViewMatrix, [this.xPerCell, this.yPerCell, 1])
@@ -459,6 +445,7 @@ class blanketPlot {
 		gl.uniformMatrix4fv(uls.modelViewMatrix, false, modelViewMatrix);
 	}
 	
+	// longitude and lattitude are in radians
 	drawOneFrame(longitude, lattitude) {
 		let gl = this.gl;
 		
@@ -480,110 +467,6 @@ class blanketPlot {
 		// actual drawing
 		this.triangles.draw(gl);
 		this.axes.draw(gl);
-// 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, this.triangles.nVertices);
-// 		this.checkOK();
-// 		gl.drawArrays(gl.LINES, this.triangles.nVertices, this.axes.nVertices);
-// 		this.checkOK();
-		// some alternate modes: gl.LINE_STRIP gl.POINTS
-	}
-	
-	//********************************************************* 
-	//********************************************************* 
-	
-	
-	//******************************************* interaction & animation
-	
-	// update the rotation velocities according to how much movement has happened
-	mouseNudge(ev) {
-	// 	console.log('event: %O', ev);
-	// 	console.log('x=%s, y=%s, button=%s buttons=%s ', ev.offsetX, ev.offsetY, 
-	// 		ev.button, ev.buttons);
-
-		if (ev.buttons && this.prevTimeStamp !== undefined) {
-			let dt = ev.timeStamp - this.prevTimeStamp;
-			let dx = ev.offsetX - this.prevX;
-			let dy = ev.offsetY - this.prevY;
-			if (dt > .1) {
-				// dt is zero or very small, the velocity skyrockets.  prevent.
-				this.longVelocity = - 6 * dx / dt;
-				this.lattVelocity = 6 * dy / dt;
-			}
-			
-			// in case arithmetic fumbles.  Doesn't seem to happen anymore.
-			if (isNaN(this.longRotation) || isNaN(this.lattRotation))
-				debugger;
-			if (isNaN(this.longRotation)) this.longRotation = 0;
-			if (isNaN(this.lattRotation)) this.lattRotation = 0;
-		}
-		this.prevX = ev.offsetX;
-		this.prevY = ev.offsetY;
-		this.prevTimeStamp = ev.timeStamp;
-	}
-
-	attachMouseHandlers(canvas) {
-		// this is all it takes!
-		
-		this.canvas.addEventListener('mousedown', ev => {
-			this.mouseNudge(ev);
-		});
-	
-		this.canvas.addEventListener('mousemove', ev => {
-			this.mouseNudge(ev);
-		});
-	
-		this.canvas.addEventListener('mouseup', ev => {
-			this.mouseNudge(ev);
-		});
-	}
-
-	// actually draw on canvas, one frame for animation
-	renderOneFrame(now) {
-		if (! document.getElementById('attitude-readout'))
-			return;
-			
-		now *= 0.001;  // convert to seconds
-		
-		// the first time, then is undefined and so are the others
-		let deltaTime = now - this.then;
-		this.then = now;
-
-		this.drawOneFrame();
-		
-		// Update the rotation for the next draw (but keep it to 0...whatever)
-		this.longRotation = (this.longRotation + this.longVelocity * deltaTime) / twoπ;
-		this.longRotation = (this.longRotation - Math.floor(this.longRotation)) * twoπ;
-
-		// constrain latt to 0...180°, stop it if it hits end
-		this.lattRotation = (this.lattRotation + this.lattVelocity * deltaTime);
-		if (this.lattRotation < 0) {
-			this.lattRotation = 0;
-			this.lattVelocity = -this.lattVelocity / 2;  // bang!
-		}
-		if (this.lattRotation > π) {
-			this.lattRotation = π;
-			this.lattVelocity = -this.lattVelocity / 2;  // bounce!
-		}
-		
-		// and some friction please
-		let factor = (1 - ROTATION_FRICTION) ** deltaTime;
-		this.longVelocity *= factor;
-		this.lattVelocity *= factor;
-
-		let r2d = radians => radians * 180 / Math.PI;
-		document.getElementById('attitude-readout').innerHTML = 
-			r2d(this.longRotation).toFixed() +'° long '+
-			r2d(this.lattRotation).toFixed() +'° lat';
-
-		// comment this out to just render one frame
-		requestAnimationFrame(this.renderOneFrame);
-	}
-	
-	// starts the whole thing up
-	startInteraction() {
-		this.createProgramInfo();
-
-		this.renderOneFrame = this.renderOneFrame.bind(this);
-		this.renderOneFrame(0);
 	}
 
 }
