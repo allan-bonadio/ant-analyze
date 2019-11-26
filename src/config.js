@@ -4,7 +4,7 @@ export let config = {
 	scenes: [
 		{
 			title: "Simple Sine Wave",
-			formula: "sin(x), cos(x)",
+			formula: "sin(<v>x</v>), cos(<v>x</v>)",
 			blurb: "The familiar Sine function crosses zero at integer multiples of π.  "+
 			"The angle is measured in radians, which is the angle you get when "+
 			"you crawl 1 radius length along the outside edge of a circle.",
@@ -23,8 +23,8 @@ export let config = {
 			xMax: 6,
 		},
 		{
-			title: "sin(x) / x",
-			formula: "sin(x) / x",
+			title: "sin(<v>x</v>) / <v>x</v>",
+			formula: "sin(<v>x</v>) / <v>x</v>",
 			blurb: "This is one of the most popular functions for graphing.  "+
 				"It actually has a singularity at x = 0, but it's a removable singularity.  "+
 				"The limit as x goes to zero is 1 because sin(x) is roughly equal "+
@@ -41,7 +41,7 @@ export let config = {
 		},
 		{
 			title: "Sine of Reciprocal",
-			formula: "sin(1/x)",
+			formula: "sin(1/<v>x</v>)",
 			blurb: "Because the reciprocal goes to infinity as you approach zero, "+
 				"the sine wave fluctuates wildly.  There is an essential singularity "+
 				"at x = 0; the value at zero is ambiguous, anywhere over -1 ... 1, "+
@@ -61,7 +61,7 @@ export let config = {
 		// 3d over complex plane
 		{
 			title: "Sine over Complex Plane",
-			formula: "sin(x+iy)",
+			formula: "sin(<v>x</v>+<v>iy<v>)",
 			blurb: "In the imaginary directions, the trig functions become "+
 				"hyperbolic functions, which end up rising exponentially.",
 			graphics: '3D',

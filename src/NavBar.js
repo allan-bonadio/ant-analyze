@@ -17,8 +17,8 @@ class NavBar extends Component {
 		let buttons = config.scenes.map((scene, ix) => {
 			let sel = (this.props.requestedIndex === ix) ? 'selected' : '';
 			return <div key={ix} index={ix} className={sel} onClick={this.clickNumber} 
-						onMouseDown={this.killTextSelection}  >
-				{scene.formula}
+						onMouseDown={this.killTextSelection}  
+						dangerouslySetInnerHTML={{__html: scene.formula}} >
 			</div>;
 		});
 

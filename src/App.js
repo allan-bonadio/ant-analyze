@@ -20,7 +20,9 @@ class App extends Component {
 
 		// the step index is 0...n-1, whereas the step number is 1...n
 		// this is just the initial one
-		this.state = {requestedIndex: 3};
+		this.state = {requestedIndex: 3, readout: ''};
+		
+		this.setReadout = this.setReadout.bind(this);
 	}
 	
 	render() {
@@ -29,10 +31,13 @@ class App extends Component {
 
 		return (
 			<div className='outer-wrapper'>
+				<div id='attitude-readout'>{this.state.readout}</div>
 				<Svg2D  requestedIndex={this.state.requestedIndex} 
-						name='area' show={scene.graphics == '2D'}/>
+						name='area' show={scene.graphics == '2D'}
+						setReadout={this.setReadout} />
 				<Webgl3D  requestedIndex={this.state.requestedIndex} 
-						name='volume' show={scene.graphics == '3D'}/>
+						name='volume' show={scene.graphics == '3D'}
+						setReadout={this.setReadout} />
 				<BlurbBox  requestedIndex={this.state.requestedIndex} />
 			</div>
 		);
@@ -42,6 +47,11 @@ class App extends Component {
 	static goToStep(stepIndex) {
 		App.me.setState({requestedIndex: stepIndex});
 		Svg2D.haltMomentum();
+	}
+	
+	// the little text thing in the northwest corner of the graph
+	setReadout(readout) {
+		this.setState({readout});
 	}
 }
 

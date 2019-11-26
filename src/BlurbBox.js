@@ -27,9 +27,10 @@ class BlurbBox extends Component {
 					<br/><big> ↔ </big> zoom along <i>x</i> axis
 					<br/><big> ↕ </big> zoom along <i>y</i> axis
 				</p>
-				<NavBar nSteps={config.scenes.length} requestedIndex={this.props.requestedIndex} />
-				<h2 className='blurb-title'>
-					{scene.title}
+				<NavBar nSteps={config.scenes.length} 
+						requestedIndex={this.props.requestedIndex} />
+				<h2 className='blurb-title' 
+						dangerouslySetInnerHTML={{__html: scene.title}}>
 				</h2>
 				<p className='blurb-text'>
 					{scene.blurb}

@@ -15,7 +15,12 @@ body {
 	height: 100%;
 }
 
-
+/* italic style used for variables in function formulas */
+v {
+	display: inline;
+	font-family: times, serif;
+	font-style: italic;
+}
 
 /* ******************************************************* responsive */
 
@@ -60,5 +65,13 @@ body {
 	h2 {
 		margin: .2em 0;
 	}
+}
+
+/* ******************************************************* misc */
+
+#attitude-readout {
+	position: absolute;
+	color: gray;
+	padding: .2em;
 }
 
