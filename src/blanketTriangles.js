@@ -60,7 +60,13 @@ class blanketTriangles {
 	}
 
 	draw(gl) {
-		gl.drawArrays(gl.TRIANGLE_STRIP, this.startVertex, this.nVertices);
+		gl.drawArrays(
+			//gl.POINTS, 
+			//gl.LINES, 
+			//gl.LINE_STRIP, 
+			//gl.TRIANGLES, 
+			gl.TRIANGLE_STRIP, // this is the normal one
+			this.startVertex, this.nVertices);
 		this.plot.checkOK();
 	}
 }
