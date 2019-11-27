@@ -21,9 +21,9 @@ const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
 
 // better.  choose n cells in x and y direction to make total xy cells
 // nice if this is a perfect square
-//const TARGET_CELLS = 1600;
+const TARGET_CELLS = 1600;
 //const TARGET_CELLS = 16;  // for testing
-const TARGET_CELLS = 144;  // for testing
+//const TARGET_CELLS = 144;  // for testing
 
 // if mouse is too powerful, increase these.  Adjust to work so moving q pixels 
 // to the right rotates the graph in a way that feels intuitive.
@@ -49,8 +49,11 @@ class Webgl3D extends Component {
 		// these affect the way mouse drags work.  Horiz repeats over 2π
 		this.horizCyclic = twoπ * HORIZ_EVENTS_FACTOR;  // 0....2π
 		
-		// constrain latt to -90°...90°, stop it if it hits end
-		this.vertClamp = [-π_2 * VERT_EVENTS_FACTOR, π_2 * VERT_EVENTS_FACTOR];
+		// constrain lat to -90°...90°, stop it if it hits end.  (Make sure [0] < [1]!)
+		let vc = this.vertClamp = [-π_2 * VERT_EVENTS_FACTOR, π_2 * VERT_EVENTS_FACTOR];
+		if (vc[0] > vc[1])
+			[vc[0], vc[1]] = [vc[1], vc[0]]
+			
 
 		this.state = {
 			// these are part of the state as they directly affect the canvas
