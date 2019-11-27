@@ -184,11 +184,11 @@ class graphicEvents {
 
 			this.horizPosition += dx;
 			this.vertPosition += dy;
-			console.log('shoveFunc hPos=%s, dh=%s , dh/dt=%s :::: vPos=%s, dv=%s, dv/dt=%s', 
-						this.horizPosition.toFixed(5), dx.toFixed(5), 
-						this.horizVelocity.toFixed(5),
-						this.vertPosition.toFixed(5), dy.toFixed(5), 
-						this.vertVelocity.toFixed(5));
+// 			console.log('shoveFunc hPos=%s, dh=%s , dh/dt=%s :::: vPos=%s, dv=%s, dv/dt=%s', 
+// 						this.horizPosition.toFixed(5), dx.toFixed(5), 
+// 						this.horizVelocity.toFixed(5),
+// 						this.vertPosition.toFixed(5), dy.toFixed(5), 
+// 						this.vertVelocity.toFixed(5));
 			this.shoveFunc(this.horizPosition, this.vertPosition, dx, dy);
 			
 			this.confirmSanity();
