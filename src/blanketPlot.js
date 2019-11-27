@@ -136,7 +136,7 @@ class blanketPlot {
 					* aVertexPosition;
 				vColor = aVertexColor;
 
-				//gl_PointSize = 2;  // dot size, apparently a square
+				gl_PointSize = 4.;  // dot size, actually a square
 			}
 		`;
 
@@ -157,9 +157,9 @@ class blanketPlot {
 
 			// See if it compiled successfully
 			if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+				let err = gl.getShaderInfoLog(shader);
 				gl.deleteShader(shader);
-				throw new Error('An error occurred compiling the shaders: ' +
-						gl.getShaderInfoLog(shader));
+				throw new Error('An error occurred compiling the shaders: '+ err);
 			}
 
 			return shader;
@@ -316,8 +316,6 @@ class blanketPlot {
 	// {x: 2.3, y: 4.5, z: 12.7, red: .4, green: .2, blue: .95, alpha: 1}
 	attachData(blanket) {
 		this.buffer = new vertexBuffer(this.nVertices);
-// 		this.positions = new Float32Array(this.nVertices * 3);
-// 		this.colors = new Float32Array(this.nVertices * 4);
 		this.blanket = blanket;
 		
 		this.deriveZScale();
@@ -326,37 +324,10 @@ class blanketPlot {
 		// each of these routines fills the arrays with data for different things being drawn
 		this.painters.forEach(painter => painter.layDownVertices());
 
-// 		this.triangles.layDownVertices();
-// 		
-// 		this.axes.layDownVertices();
-
 		this.dumpBuffer();
 
 		this.createProgramInfo();
 		this.buffer.attachToGL(this.gl, this.programInfo.attribLocations);
-
-		// Tell WebGL how to pull out the positions from the position
-		// buffer into the vertexPosition attribute.
-// 		let als = this.programInfo.attribLocations;
-// 		this.positionsBuffer = gl.createBuffer();
-// 		gl.bindBuffer(gl.ARRAY_BUFFER, this.positionsBuffer);
-// 		gl.bufferData(gl.ARRAY_BUFFER, this.buffer.positions, gl.STATIC_DRAW);
-// 		gl.vertexAttribPointer(
-// 				als.vertexPosition,
-// 				3, gl.FLOAT,  // n numbers per vertex, n type
-// 				false, 0, 0);  // normalize, stride, offset
-// 		gl.enableVertexAttribArray(als.vertexPosition);
-// 
-// 		// Tell WebGL how to pull out the colors from the color buffer
-// 		// into the vertexColor attribute.
-// 		this.colorsBuffer = gl.createBuffer();
-// 		gl.bindBuffer(gl.ARRAY_BUFFER, this.colorsBuffer);
-// 		gl.bufferData(gl.ARRAY_BUFFER, this.buffer.colors, gl.STATIC_DRAW);
-// 		gl.vertexAttribPointer(
-// 			als.vertexColor,
-// 			4, gl.FLOAT,    // r, g, b, a, type float
-// 			false, 0, 0);  // normalize, stride, offset
-// 		gl.enableVertexAttribArray(als.vertexColor);
 	}
 
 	//********************************************************* Draw One Frame
@@ -412,7 +383,9 @@ class blanketPlot {
 			[-xLength/2, -yLength/2, -(this.zMax + this.zMin) / 2]);
 
 		// apply the xPerCell and yPerCell scaling
-		mat4.scale(modelViewMatrix, modelViewMatrix, [this.xPerCell, this.yPerCell, 1])
+		mat4.scale(modelViewMatrix, modelViewMatrix, [this.xPerCell, this.yPerCell, -1]);
+		
+		// ok on this end, we're talking data - math units.
 
 		// Set the shader uniforms
 		let uls = this.programInfo.uniformLocations;
