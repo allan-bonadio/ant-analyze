@@ -53,10 +53,17 @@ export function generateBlanket(func, nXCells, nYCells, xc2xd, yc2yd) {
 	return blanket;
 }
 
+// ****************************************************************** painters
+
+// superclass of blanketTriangles and blanketAxes
+// no,not much shared between these; it'll be more of a pain in the butt
+// export class painter {
+// 	constructor(plot) {
+// 		this.plot = plot;
+// 	}
+// }
+
 // ****************************************************************** vertex buffers
-
-
-
 
 // handy for filling these buffers.  Decide ahead how many vertices you need room for.
 // then create it and call addVertex with each vertex info.
@@ -119,7 +126,7 @@ export class vertexBuffer {
 	// between startVertex and endVertexP1-1
 	dump(title, startVertex, nVertices) {
 		function f(q) {
-			return q.toFixed(2).padStart(6);
+			return Number(q).toFixed(2).padStart(6);
 		}
 		
 		console.log(` data put into ${title} vertex buffers`);

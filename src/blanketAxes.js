@@ -7,13 +7,14 @@
 import {mat4} from 'gl-matrix';
 
 import {vertexBuffer} from './genComplex';
+import Webgl3D from './Webgl3D';
 
 // don't try to type these names, just copy paste
 //const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
 
 // this ends up being a mixin for blanketPlot
-class blanketAxes {
-	constructor(plot, nXCells, nYCells) {
+export class blanketAxes {
+	constructor(plot) {
 		this.plot = plot;
 		this.name = 'axes';
 		
@@ -27,8 +28,6 @@ class blanketAxes {
 		this.startVertex = this.buffer.nVertices;
 		let x, y, z, xCells = this.plot.nXCells, yCells = this.plot.nYCells;
 		let zMin = this.plot.zMin, zMax = this.plot.zMax, zSize = zMax - zMin;
-		let pos = this.plot.positions;
-		let col = this.plot.colors;
 		
 		let addVertex = (x, y, z) => {
 			buffer.addVertex([x, y, z], [1, 1, 1, .5]);
@@ -65,4 +64,40 @@ class blanketAxes {
 };
 
 export default blanketAxes;
+
+/* ************************************************************** weatherVane */
+// include this if you're losing your orientation and you need to know which side is up
+
+// just draws this pointer at (0,0,0) pointing to +x, +y and +z
+export class weatherVane {
+	constructor(plot) {
+		this.plot = plot;
+		this.name = 'weatherVane';
+		
+		this.nVertices = 5;
+	}
+
+	layDownVertices() {
+		let buffer = this.buffer = this.plot.buffer;
+		this.startVertex = this.buffer.nVertices;
+		
+		let g = Webgl3D.me;
+		let p = this.plot;
+		let zero = {x: g.xScale(0), y: g.yScale(0), z: p.zScale(0)};
+		let one = {x: g.xScale(1), y: g.yScale(1), z: p.zScale(1)};
+		
+		// we want to use a triangle fan with the white corner at 0,0,0
+		buffer.addVertex([zero.x, zero.y, zero.z], [1, 1, 1, 1]);  // origin is white
+		buffer.addVertex([ one.x, zero.y, zero.z], [1, 0, 0, 1]);  // x direction is red
+		buffer.addVertex([zero.x,  one.y, zero.z], [0, 1, 0, 1]);  // y green
+		buffer.addVertex([zero.x, zero.y,  one.z], [0, 0, 1, 1]);  // z blue
+		buffer.addVertex([ one.x, zero.y, zero.z], [1, 0, 0, 1]);  // return again
+	}
+
+	draw(gl) {
+		gl.drawArrays(gl.TRIANGLE_FAN, this.startVertex, this.nVertices);
+		this.plot.checkOK();
+	}
+
+}
 

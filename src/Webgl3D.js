@@ -68,19 +68,12 @@ class Webgl3D extends Component {
 		this.xMax = this.yMax = 1;
 
 		this.nXCells = this.nYCells = 1;
+		
+		this.drawOneFrame = this.drawOneFrame.bind(this);
 	}
 	
 	componentDidMount() {
-		this.events = new graphicEvents(this, 
-			()=>{
-				// this actually does the webgl drawing
-				this.drawOneFrame();
-			}, 
-			()=>{
-				// maybe we don't need shove cuz the h/v positions 
-				// are passed in in drawOneFrame()
-			}
-		);
+		this.events = new graphicEvents(this, this.drawOneFrame, ()=>{});
 		
 		// now that the canvas is created, we can grab it for 3d
 		this.setScene(this.props.requestedIndex);
@@ -228,17 +221,8 @@ class Webgl3D extends Component {
 	/* ******************************************************* resize window & webgl */
 	
 	specialForResize(graphWidth, graphHeight) {
-		// um, maybe nothing needs to be done
-		// no lets try this
-		// redo the gl thing to see if it makes a difference
-// 		let canvas = document.getElementById(this.name + '3D');
-// 		this.plot.gl = canvas.getContext('webgl') || 
-// 					canvas.getContext('experimental-webgl');
-
 		// this is what we need (otherwise it's all distorted)
 		this.plot.gl.viewport(0, 0, graphWidth, graphHeight);
-
-
 	}
 	
 

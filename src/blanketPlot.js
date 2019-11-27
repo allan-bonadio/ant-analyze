@@ -15,7 +15,7 @@ import {mat4} from 'gl-matrix';
 
 import {vertexBuffer} from './genComplex';
 import blanketTriangles from './blanketTriangles';
-import blanketAxes from './blanketAxes';
+import {blanketAxes, weatherVane} from './blanketAxes';
 
 // don't try to type these names, just copy paste
 const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
@@ -49,11 +49,15 @@ class blanketPlot {
 		Object.assign(this, options);
 		
 		// these set up for the geometry, and calculate number of vertices they need
-		this.axes = new blanketAxes(this, options.nXCells, options.nYCells);
-		this.triangles = new blanketTriangles(this, options.nXCells, options.nYCells);
-		this.nVertices = this.triangles.nVertices + this.axes.nVertices;
+		this.axes = new blanketAxes(this);
+		this.triangles = new blanketTriangles(this);
 		
-		this.painters = [this.triangles, this.axes];
+		this.painters = [
+			this.triangles, this.axes, 
+			new weatherVane(this),
+		];
+
+		this.nVertices = this.painters.reduce((sum, painter) => sum + painter.nVertices, 0);
 
 		// set up and make sure gl is possible
 		this.gl = canvas.getContext('webgl') || 
@@ -381,12 +385,14 @@ class blanketPlot {
 		// then transform it as needed
 		const modelViewMatrix = mat4.create();
 		
+		// this starts with the viewer on this end, and ends with the data model on the other end
+		
 		// where to back up to, to see it best
 		let xLength = this.xPerCell * this.nXCells;  // overall dimensions in view space
 		let yLength = this.yPerCell * this.nYCells;
 		mat4.translate(modelViewMatrix,		 // destination matrix
 			modelViewMatrix,		 // matrix to translate
-			[0, 0, -0.7 * (xLength + yLength)]);
+			[0, 0, -0.9 * (xLength + yLength)]);
 		
 		// rotate by latt
 		mat4.rotate(modelViewMatrix,  // destination matrix

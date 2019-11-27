@@ -8,42 +8,25 @@
 import {vertexBuffer} from './genComplex';
 
 // don't try to type these names, just copy paste
-//const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
+//const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π didn't compile
 
 
 class blanketTriangles {
-	constructor(plot, nXCells, nYCells) {
+	constructor(plot) {
 		this.plot = plot;
 		this.name = 'triangles';
 		
 		// Blanket: 2 triangles per cell, 1 vertex per triangle + 2 to get started,
 		// then 2 extra every time you move from one x-row to the next
-		this.nVertices = 2 * (nXCells + 2) * nYCells - 2;
+		this.nVertices = 2 * (plot.nXCells + 2) * plot.nYCells - 2;
 	}
 
 	// generate all the vertices for the whole blanket
 	layDownVertices() {
 		let buffer = this.buffer = this.plot.buffer;
 		this.startVertex = buffer.nVertices;
-// 		let pos = this.plot.positions;  // the buffers
-// 		let col = this.plot.colors;  // we're filling
 		let bla = this.plot.blanket;  // where the data comes from
 		
-		// lay down one vertex.  and the color.  And collect z min and max. 
-// 		function addVertex(x, y) {
-// 			let b = bla[y][x];
-// 
-// 			// all single floats the way the gpu likes it
-// 			pos[pOffset++] = x;
-// 			pos[pOffset++] = y;
-// 			pos[pOffset++] = b.z;
-// 			
-// 			col[cOffset++] = b.red;
-// 			col[cOffset++] = b.green;
-// 			col[cOffset++] = b.blue;
-// 			col[cOffset++] = b.alpha;
-// 		}
-
 		let addVertex = (x, y) => {
 			let b = bla[y][x];
 			buffer.addVertex([x, y, b.z], [b.red, b.green, b.blue, 1]);
@@ -72,7 +55,7 @@ class blanketTriangles {
 			if (y < this.plot.nYCells-1)
 				addVertex(this.plot.nXCells, y+1);
 		}
-		this.nVertices = this.buffer.nVertices - this.startVertex;
+		this.nVertices = this.buffer.nVertices - this.startVertex;  // proper but redundant
 		return;
 	}
 
