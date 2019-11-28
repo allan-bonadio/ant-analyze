@@ -16,6 +16,9 @@ import {mat4} from 'gl-matrix';
 import {vertexBuffer} from './genComplex';
 import blanketTriangles from './blanketTriangles';
 import {blanketAxes, weatherVane} from './blanketAxes';
+import {axisTicsPainter} from './AxisTics';
+import Webgl3D from './Webgl3D';
+
 
 // don't try to type these names, just copy paste
 const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
@@ -51,13 +54,16 @@ class blanketPlot {
 		// these set up for the geometry, and calculate number of vertices they need
 		this.axes = new blanketAxes(this);
 		this.triangles = new blanketTriangles(this);
+		this.axisTics = new axisTicsPainter(this, Webgl3D.me);
 		
 		this.painters = [
-			this.triangles, this.axes, 
+			this.triangles, 
+			this.axes, 
 			new weatherVane(this),
+			this.axisTics,
 		];
 
-		this.nVertices = this.painters.reduce((sum, painter) => sum + painter.nVertices, 0);
+		this.maxVertices = this.painters.reduce((sum, painter) => sum + painter.maxVertices, 0);
 
 		// set up and make sure gl is possible
 		this.gl = canvas.getContext('webgl') || 
@@ -71,9 +77,6 @@ class blanketPlot {
 
 		// stuff to be done once
 		this.initShaderProgram();
-		//this.attachMouseHandlers();
-		//this.events.attachEventHandlers()
-		//this.createProgramInfo();
 
 		this.then = 0;
 	}
@@ -253,6 +256,11 @@ class blanketPlot {
 			.domain([mini, maxi]);
 		this.zMin = mini;
 		this.zMax = maxi;
+		
+		// must also be on the graph component
+		// this way you can index the dimensions if you have to eg this[dimension +'Scale']
+		let gr = Webgl3D.me;
+		gr.zMin = this.zMin; gr.zMax = this.zMax; gr.zScale = this.zScale;
 
 		// adjust the color algorithm for larger/smaller z magnitudes
 		this.lightnessScale = scaleLinear()
@@ -313,13 +321,16 @@ class blanketPlot {
 	//		[[el,el,el],[el,el,el],[el,el,el]]
 	// Blanket must have same dimensions as passed to blanketPlot constrctor.
 	// each value is an object like 
-	// {x: 2.3, y: 4.5, z: 12.7, red: .4, green: .2, blue: .95, alpha: 1}
+	// {x: 2.3, y: 4.5, z: 12.7, red: .4, green: .2, blue: .95, alpha: 1, ...misc}
 	attachData(blanket) {
-		this.buffer = new vertexBuffer(this.nVertices);
+		this.buffer = new vertexBuffer(this.maxVertices);
 		this.blanket = blanket;
 		
 		this.deriveZScale();
 		this.scaleBlanket();
+		
+		// decide on the tics.  Must be after deriveZScale() but before layDownVertices()
+		this.axisTics.generateAllTics();
 	
 		// each of these routines fills the arrays with data for different things being drawn
 		this.painters.forEach(painter => painter.layDownVertices());

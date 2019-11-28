@@ -73,8 +73,10 @@ export class vertexBuffer {
 	constructor(nVertices) {
 		this.allocatedVertices = nVertices
 		this.positions = new Float32Array(nVertices * 3);
-		this.posOffset = 0;
 		this.colors = new Float32Array(nVertices * 4);
+		
+		// these start at zero and grow as vertices are added; final count when done
+		this.posOffset = 0;
 		this.colOffset = 0;
 		this.nVertices = 0;
 	}

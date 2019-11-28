@@ -366,7 +366,7 @@ class graphicEvents {
 
 		this.confirmSanity();
 
-console.log("start of animateOneFrame(), now vs then, diff", now, this.then, (now - this.then))
+// 		console.log("start of animateOneFrame(), now vs then, diff", now, this.then, (now - this.then))
 
 
 		// the first time, then is undefined so punt
@@ -382,7 +382,7 @@ console.log("start of animateOneFrame(), now vs then, diff", now, this.then, (no
 			this.graph.setReadout(this.horizPosition, this.vertPosition);
 			this.drawFunc(this.horizPosition, this.vertPosition);
 			
-console.log("         animateOneFrame() hpos, vpos", this.horizPosition, this.vertPosition);
+	// 		console.log("         animateOneFrame() hpos, vpos", this.horizPosition, this.vertPosition);
 
 			// Update for the next draw
 			let dh = this.horizVelocity * deltaTime;
@@ -391,7 +391,7 @@ console.log("         animateOneFrame() hpos, vpos", this.horizPosition, this.ve
 			this.vertPosition = this.vertPosition + dv;
 			this.shoveFunc(this.horizPosition, this.vertPosition, dh, dv);
 
-console.log("         animateOneFrame() dh, dv", dh, dv);
+// 			console.log("         animateOneFrame() dh, dv", dh, dv);
 
 			// and some friction please.  All time in units of seconds.
 			// this is why a big deltaTime is a problem
@@ -399,7 +399,7 @@ console.log("         animateOneFrame() dh, dv", dh, dv);
 			this.horizVelocity *= factor;
 			this.vertVelocity *= factor;
 		
-console.log("         animateOneFrame() frict fac, velocity", factor, this.horizVelocity, this.vertVelocity);
+			// console.log("         animateOneFrame() frict fac, velocity", factor, this.horizVelocity, this.vertVelocity);
 
 			this.constrain();
 			
@@ -421,7 +421,7 @@ console.log("         animateOneFrame() frict fac, velocity", factor, this.horiz
 
 		}
 
-console.log("done with animateOneFrame()");
+		// console.log("done with animateOneFrame()");
 
 	}
 }

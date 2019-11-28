@@ -3,14 +3,15 @@
 //
 /* eslint-disable eqeqeq, no-throw-literal  */
 
+//import {mat4} from 'gl-matrix';
 
-import {mat4} from 'gl-matrix';
-
-import {vertexBuffer} from './genComplex';
+//import {vertexBuffer} from './genComplex';
 import Webgl3D from './Webgl3D';
 
 // don't try to type these names, just copy paste
 //const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
+
+/* ************************************************************** axis bars */
 
 // this ends up being a mixin for blanketPlot
 export class blanketAxes {
@@ -19,7 +20,7 @@ export class blanketAxes {
 		this.name = 'axes';
 		
 		// four axes with 8 vertices, times 3 dimensions
-		this.nVertices = 24;
+		this.maxVertices = 24;
 	}
 
 	// Always 24 vertices.
@@ -55,6 +56,8 @@ export class blanketAxes {
 				addVertex(x, yCells, z);
 			}
 		}
+		
+		this.nVertices = this.buffer.nVertices - this.startVertex;
 	}
 
 	draw(gl) {
@@ -68,13 +71,14 @@ export default blanketAxes;
 /* ************************************************************** weatherVane */
 // include this if you're losing your orientation and you need to know which side is up
 
-// just draws this pointer at (0,0,0) pointing to +x, +y and +z
+// just draws this triangular pyramid at (0,0,0) pointing to +x, +y and +z
+// all angles at zero are 90°; fourth face is equilateral but not drawn
 export class weatherVane {
 	constructor(plot) {
 		this.plot = plot;
 		this.name = 'weatherVane';
 		
-		this.nVertices = 5;
+		this.maxVertices = 5;
 	}
 
 	layDownVertices() {
@@ -92,6 +96,8 @@ export class weatherVane {
 		buffer.addVertex([zero.x,  one.y, zero.z], [0, 1, 0, 1]);  // y green
 		buffer.addVertex([zero.x, zero.y,  one.z], [0, 0, 1, 1]);  // z blue
 		buffer.addVertex([ one.x, zero.y, zero.z], [1, 0, 0, 1]);  // return again
+
+		this.nVertices = this.buffer.nVertices - this.startVertex;
 	}
 
 	draw(gl) {

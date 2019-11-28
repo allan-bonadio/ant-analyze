@@ -18,7 +18,7 @@ class blanketTriangles {
 		
 		// Blanket: 2 triangles per cell, 1 vertex per triangle + 2 to get started,
 		// then 2 extra every time you move from one x-row to the next
-		this.nVertices = 2 * (plot.nXCells + 2) * plot.nYCells - 2;
+		this.maxVertices = 2 * (plot.nXCells + 2) * plot.nYCells - 2;
 	}
 
 	// generate all the vertices for the whole blanket
@@ -55,7 +55,8 @@ class blanketTriangles {
 			if (y < this.plot.nYCells-1)
 				addVertex(this.plot.nXCells, y+1);
 		}
-		this.nVertices = this.buffer.nVertices - this.startVertex;  // proper but redundant
+		
+		this.nVertices = this.buffer.nVertices - this.startVertex;
 		return;
 	}
 
