@@ -9,18 +9,16 @@ import {scaleLinear} from 'd3-scale';
 
 import './Webgl3D.css';
 import config from './config';
-import blanketPlot from './blanketPlot';
+import blanketPlot from './3d/blanketPlot';
 import graphicEvents from './graphicEvents';
 
-import {generateBlanket} from './genComplex';
-import {AxisTics, axisTicsPainter} from './AxisTics';
+import {generateBlanket} from './3d/genComplex';
+import {AxisTics, axisTicsPainter} from './3d/AxisTics';
 
 // don't try to type these names, just copy paste
 const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
 
-//import {mat4} from 'gl-matrix';
-
-// better.  choose n cells in x and y direction to make total x*y cells
+// choose n cells in x and y direction to make total x*y cells
 // So, to make approx a 10x10 bed of cells, try 100.
 // typically this is a perfect square, but actually doesn't have to be; just a target.
 //const TARGET_CELLS = 1600;
@@ -38,9 +36,6 @@ class Webgl3D extends Component {
 	constructor(props) {
 		super(props);
 		Webgl3D.me = this;
-		
-// 		let innerWidth = props.innerWidth || window.innerWidth;
-// 		let innerHeight = props.innerHeight || window.innerHeight;
 		
 		// without the 2d/3d suffix
 		this.name = this.props.name || 'Graph';
@@ -60,9 +55,6 @@ class Webgl3D extends Component {
 			// size of canvas
 			// for testing, pass in innerWidth and innerHeight props
 			...graphicEvents.decideGraphDimensions(props.innerWidth? props : window),
-
-// 			graphWidth: innerWidth - 4,
-// 			graphHeight: innerHeight - 200,
 		};
 		
 		// you might think these are part of the state, 
@@ -103,12 +95,11 @@ class Webgl3D extends Component {
 		// Reshape the cell block according to the mins/maxes, 
 		// so the product ends up being approx TARGET_CELLS, 
 		// but still in approximate proportion of x vs y
+		// note the number of vertices in both directions is +1 more than cells
 		this.nYCells = Math.sqrt(TARGET_CELLS * 
 			(scene.yMax - scene.yMin) / (scene.xMax - scene.xMin));
 		this.nYCells = Math.round(this.nYCells);
 		this.nXCells = Math.round(TARGET_CELLS / this.nYCells);
-		//console.log("Webgl3D: So I get XCELLS=%s, YCELLS=%s", this.nXCells, this.nYCells);
-		// note the number of vertices in both directions is +1 more than cells
 		this.nZCells = 1;
 
 		this.setupIndex = sceneIndex;
@@ -249,8 +240,6 @@ class Webgl3D extends Component {
 		// this is what we need (otherwise it's all distorted)
 		this.plot.gl.viewport(0, 0, graphWidth, graphHeight);
 	}
-	
-
 }
 
 export default Webgl3D;

@@ -6,9 +6,6 @@
 
 import {extent} from 'd3-array';
 import {scaleLinear} from 'd3-scale';
-// import {line} from 'd3-shape';
-// import {axisTop, axisBottom, axisLeft, axisRight} from 'd3-axis';
-// import {select} from 'd3-selection';
 import {hsl} from 'd3-color';
 
 import {mat4, vec4} from 'gl-matrix';
@@ -17,7 +14,7 @@ import {vertexBuffer} from './genComplex';
 import blanketTriangles from './blanketTriangles';
 import {blanketAxes, weatherVane} from './blanketAxes';
 import {axisTicsPainter} from './AxisTics';
-import Webgl3D from './Webgl3D';
+import Webgl3D from '../Webgl3D';
 
 
 // don't try to type these names, just copy paste
@@ -61,9 +58,6 @@ canvas coords: If your canvas is 700 x 500, these coords traverse
 // 			{nXCells: xxxx, nYCells:xxx, ...});
 // 
 //      plot.attachData(blanketData);
-// 
-//    um, this is subject to change...
-//      plot.startInteraction();	
 
 // class to talk to graphics processor via webgl.  This doesn't touch science coordinates,
 // just cell coordinates and cellsize in viewable space
@@ -226,8 +220,6 @@ class blanketPlot {
 				vertexColor: gl.getAttribLocation(sp, 'aVertexColor'),
 			},
 			uniformLocations: {
-				//projectionMatrix: gl.getUniformLocation(sp, 'uProjectionMatrix'),
-				//modelViewMatrix: gl.getUniformLocation(sp, 'uModelViewMatrix'),
 				compositeMatrix: gl.getUniformLocation(sp, 'uCompositeMatrix'),
 			},
 		};
@@ -293,11 +285,9 @@ class blanketPlot {
 		if (isNaN(this.zScale(1))) debugger;
 	}
 	
-
-	// we always keep saturation at 100% for the complex plane
-
 	// take a complex value for vert.z (like {re: 1, im: -1}) 
 	// and fill in other components (color, height) to make the 3d complex graph
+	// we always keep saturation at 100% for the complex plane
 	complexScaleAndColor(vert, lightnessScale) {
 		let zre = vert.z_data.re, zim = vert.z_data.im;
 	
@@ -308,8 +298,6 @@ class blanketPlot {
 		vert.red = rgb.r / 255;
 		vert.green = rgb.g / 255;
 		vert.blue = rgb.b / 255;
-	// 	let rgb = rgbFromHl(hue, lightness);
-	// 	Object.assign(vert, rgb);
 		vert.z_science = zre;
 		//console.log(`(${zre},${zim}) ---> `, vert);
 	
@@ -333,7 +321,6 @@ class blanketPlot {
 					if (isNaN(vert.z_science + vert.red + vert.green)) debugger;
 				}
 
-				//vert.z = vert.z_science;
 				vert.z = zScale(vert.z_science);
 			}
 		}
@@ -454,10 +441,6 @@ class blanketPlot {
 
 		// Set the shader uniform(s) so glsl programs can get at them
 		let uls = this.programInfo.uniformLocations;
-		// gl.uniformMatrix4fv(uls.projectionMatrix, false, projectionMatrix);
-		// this.checkOK();
-		// gl.uniformMatrix4fv(uls.modelViewMatrix, false, modelViewMatrix);
-		// this.checkOK();
 
 		// can't we just put these together on the client so the gpu 
 		// doesn't have to multiply every time?
@@ -484,7 +467,7 @@ class blanketPlot {
 		gl.clearDepth(1.0);				 // Clear depth buffer (16 bits, distance from viewer)
 		gl.enable(gl.DEPTH_TEST);	 // Enable depth testing
 		gl.depthFunc(gl.LEQUAL);		// Near things obscure far things
-		gl.lineWidth(1.0);  // 1 works best but 2, 5 and .5 work well
+		gl.lineWidth(1.0);
 		this.checkOK();
 
 		// Clear the canvas before we start drawing on it.
@@ -496,16 +479,14 @@ class blanketPlot {
 		
 		
 		// sines and cosines
-		let fmt = num => num.toFixed(2).padStart(6);
-		console.log("longitude: l s c       latitude: l s c ", 
-			fmt(longitude), fmt(Math.sin(longitude)), fmt(Math.cos(longitude)), 
-			fmt(latitude), fmt(Math.sin(latitude)), fmt(Math.cos(latitude))
-		);
+// 		let fmt = num => num.toFixed(2).padStart(6);
+// 		console.log("longitude: l s c       latitude: l s c ", 
+// 			fmt(longitude), fmt(Math.sin(longitude)), fmt(Math.cos(longitude)), 
+// 			fmt(latitude), fmt(Math.sin(latitude)), fmt(Math.cos(latitude))
+// 		);
 
 		// actual drawing
 		this.painters.forEach(painter => painter.draw(gl));
-// 		this.triangles.draw(gl);
-// 		this.axes.draw(gl);
 	}
 
 }

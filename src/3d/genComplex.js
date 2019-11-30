@@ -54,15 +54,6 @@ export function generateBlanket(func, nXCells, nYCells, xCell2Science, yCell2Sci
 	return blanket;
 }
 
-// ****************************************************************** painters
-
-// superclass of blanketTriangles and blanketAxes
-// no,not much shared between these; it'll be more of a pain in the butt
-// export class painter {
-// 	constructor(plot) {
-// 		this.plot = plot;
-// 	}
-// }
 
 // ****************************************************************** vertex buffers
 

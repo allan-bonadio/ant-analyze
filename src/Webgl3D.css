@@ -21,7 +21,7 @@ aside {
 	z-index: 5;
 	background: transparent;
 	color: #eee;
-	width: 100%;    /* all the area of the canvas */
+	width: 100%;  /* all the area of the canvas */
 	height: 100%;
 	overflow: hidden;
 }
@@ -29,11 +29,11 @@ aside {
 
 /* tic label */
 tic-lab {
-    position: absolute;
-    font-size: 12px;
-    border-radius: 6px;
-    background-color: #0005;
-    
-    /*box-shadow: #0005 0 0 3px 2px;*/
-	/*box-shadow: #f0ff 0 0 17px;*/
+	position: absolute;
+	font-size: 12px;
+	border-radius: 12px / 6px;
+	background-color: #0004;
+	padding: 0 2px;
+	
+	box-shadow: #0003 0 0 3px 3px;
 }

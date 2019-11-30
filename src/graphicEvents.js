@@ -125,10 +125,6 @@ class graphicEvents {
 		this.horizVelocity = this.vertVelocity = 0
 	}
 
-	
-	
-	
-	
 	// sets event handlers on the canvas or svg dom element
 	// called by componentDidMount().  Note at this point the canvas should be there
 	attachEventHandlers() {
@@ -144,15 +140,13 @@ class graphicEvents {
 				.on('touchmove', this.touchMoveEvt)
 				.on('touchend', this.touchEndEvt)
 				.on('touchcancel', this.touchCancelEvt)
-				
-
 	}
 	
 	// this handles incremental moves from mouse/touch/gesture events.
 	// Eventually calls some shove functions on the graph
 	mouseShove(ev) {
-// 		console.log('mouseShove x=%s, y=%s, timeStamp=%s', ev.pageX, ev.pageY, 
-// 			ev.timeStamp);
+		// console.log('mouseShove x=%s, y=%s, timeStamp=%s', ev.pageX, ev.pageY, 
+		// 	ev.timeStamp);
 
 		this.confirmSanity();
 
@@ -181,11 +175,11 @@ class graphicEvents {
 
 			this.horizPosition += dx;
 			this.vertPosition += dy;
-// 			console.log('shoveFunc hPos=%s, dh=%s , dh/dt=%s :::: vPos=%s, dv=%s, dv/dt=%s', 
-// 						this.horizPosition.toFixed(5), dx.toFixed(5), 
-// 						this.horizVelocity.toFixed(5),
-// 						this.vertPosition.toFixed(5), dy.toFixed(5), 
-// 						this.vertVelocity.toFixed(5));
+			// console.log('shoveFunc hPos=%s, dh=%s , dh/dt=%s :::: vPos=%s, dv=%s, dv/dt=%s', 
+			// 			this.horizPosition.toFixed(5), dx.toFixed(5), 
+			// 			this.horizVelocity.toFixed(5),
+			// 			this.vertPosition.toFixed(5), dy.toFixed(5), 
+			// 			this.vertVelocity.toFixed(5));
 			this.shoveFunc(this.horizPosition, this.vertPosition, dx, dy);
 			
 			this.confirmSanity();
@@ -344,12 +338,6 @@ class graphicEvents {
 		nowCoasting = true;
 		this.then = timeStamp * .001;  // seconds
 		requestAnimationFrame(this.animateOneFrame);
-		
-		// and give it a little boost here.  It always seems like 
-		// it got jerked to a stop when I let go.
-// 		const boostDuration = .5;
-// 		this.horizPosition += this.horizVelocity * boostDuration;
-// 		this.vertPosition += this.vertVelocity * boostDuration;
 	}
 	
 	stopAnimating() {
@@ -363,7 +351,6 @@ class graphicEvents {
 		now *= 0.001;  // convert to seconds
 
 		this.confirmSanity();
-// 		console.log("start of animateOneFrame(), now vs then, diff", now, this.then, (now - this.then))
 
 		// the first time, then is undefined so punt
 		let deltaTime = this.then ? (now - this.then) : .1;
@@ -378,8 +365,6 @@ class graphicEvents {
 			this.graph.setReadout(this.horizPosition, this.vertPosition);
 			this.drawFunc(this.horizPosition, this.vertPosition);
 			
-	// 		console.log("         animateOneFrame() hpos, vpos", this.horizPosition, this.vertPosition);
-
 			// Update for the next draw
 			let dh = this.horizVelocity * deltaTime;
 			this.horizPosition = this.horizPosition + dh;
@@ -387,16 +372,12 @@ class graphicEvents {
 			this.vertPosition = this.vertPosition + dv;
 			this.shoveFunc(this.horizPosition, this.vertPosition, dh, dv);
 
-// 			console.log("         animateOneFrame() dh, dv", dh, dv);
-
 			// and some friction please.  All time in units of seconds.
 			// this is why a big deltaTime is a problem
 			let factor = (1 - FRICTION) ** deltaTime;
 			this.horizVelocity *= factor;
 			this.vertVelocity *= factor;
 		
-			// console.log("         animateOneFrame() frict fac, velocity", factor, this.horizVelocity, this.vertVelocity);
-
 			this.constrain();
 			
 

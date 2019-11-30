@@ -9,7 +9,7 @@ import React from 'react';
 
 import {mat4, vec4} from 'gl-matrix';
 
-import Webgl3D from './Webgl3D';
+import Webgl3D from '../Webgl3D';
 import blanketPlot from './blanketPlot';
 
 // these two work together, sharing the painter's axisLabels info that's precalcualted once
@@ -54,17 +54,10 @@ export class AxisTics extends React.Component {
 				// now we can tell if we need left or right justification
 				//let justification = (cellBase[0] < cellTip[0]) ? 'left' : 'right';
 				
-				// convert to canvas coords.  -6 for half the height of the 12px text
-// 				let canvasX = (cellTip[0] / cellTip[3] + 1) * canvas.clientWidth / 2,
-// 					canvasY = (1 - cellTip[1] / cellTip[3]) * canvas.clientHeight / 2 - 6;
-// 				let canvasX = (clipCoords[0] / clipCoords[3] + 1) * .5 * 
-// 							canvas.clientWidth,
-// 					canvasY = (clipCoords[1] / clipCoords[3] - 1) * .5 * 
-// 							canvas.clientHeight;
-// 				canvasX = canvas.clientWidth - canvasX;
-// 				canvasY = canvas.clientHeight - canvasY;
-
-				// form the style obj for this one.  Note the label goes on left or right depending on whether tic line goes left or right.  And if we use right alignment instead of left, must measure from other end of canvas!
+				// form the style obj for this one.  Note the label goes on left or 
+				// right depending on whether tic line goes left or right.  
+				// And if we use right alignment instead of left, 
+				// must measure from other end of canvas!
 				let canvasX,
 					canvasY = (1 - cellTip[1] / cellTip[3]) * canvas.clientHeight / 2 - 6;
 				let style = {top: (canvasY - 6).toFixed(1) + 'px'};
@@ -106,16 +99,6 @@ export class AxisTics extends React.Component {
 
 /* ************************************************************** the painter */
 
-
-// class tic {
-// 	// this tic should be drawn at x, y within the canvas and the AxisTics element
-// 	// text is what it'll say.  key is a unique id for React that describes the tic:
-// 	// like x2_00 for '2.00' along the x axis
-// 	constructor(x, y, text, key) {
-// 		this.x = x;
-// 	}
-// 	
-// }
 
 // Painter for the actual tic marks along some of the axes, 
 // meanwhile generating their text labels which display in html
@@ -186,7 +169,7 @@ export class axisTicsPainter {
 		
 		// gimme several science values for axis dimension that are good for tics
 		let labelValues = axisScale.ticks(3);
-		console.log("||| axisScale.ticks:", labelValues);
+		//console.log("||| axisScale.ticks:", labelValues);
 		
 		// different values get plugged in to this below
 		let loc = [...this.closestCorner];
@@ -200,7 +183,7 @@ export class axisTicsPainter {
 
 	// figure out how many of each kind of tic, where they are and what's their label
 	generateAllTics() {
-		console.log("||| axisScale.ticks x, y and z");
+		//console.log("||| axisScale.ticks x, y and z");
 		let g = this.graph;
 		let plot = this.plot;
 
@@ -260,7 +243,8 @@ export class axisTicsPainter {
 		});
 
 		this.nVertices = this.buffer.nVertices - this.startVertex;
-		console.log("&&& finished tics, used %d of %d vertices", this.nVertices, this.maxVertices)
+		console.log("&&& finished tics, used %d of %d vertices", 
+				this.nVertices, this.maxVertices)
 	}
 
 	draw(gl) {

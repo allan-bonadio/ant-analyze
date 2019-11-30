@@ -6,7 +6,7 @@
 //import {mat4} from 'gl-matrix';
 
 //import {vertexBuffer} from './genComplex';
-import Webgl3D from './Webgl3D';
+import Webgl3D from '../Webgl3D';
 
 // don't try to type these names, just copy paste
 //const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π

@@ -61,11 +61,12 @@ class blanketTriangles {
 	}
 
 	draw(gl) {
+		// change these for a diagnostic
 		gl.drawArrays(
-			//gl.POINTS, 
-			//gl.LINES, 
-			//gl.LINE_STRIP, 
-			//gl.TRIANGLES, 
+			//gl.POINTS,     // most useful and foolproof
+			//gl.LINES,      // tend to scribble all over
+			//gl.LINE_STRIP, // tend to scribble all over
+			//gl.TRIANGLES,  // more sparse triangles
 			gl.TRIANGLE_STRIP, // this is the normal one
 			this.startVertex, this.nVertices);
 		this.plot.checkOK();
