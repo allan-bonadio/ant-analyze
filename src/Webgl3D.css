@@ -8,6 +8,7 @@ canvas {
 
 .webgl-chart {
 	cursor: grab;
+	float: left;
 }
 
 .webgl-chart:active {
@@ -35,5 +36,5 @@ tic-lab {
 	background-color: #0004;
 	padding: 0 2px;
 	
-	box-shadow: #0003 0 0 3px 3px;
+	box-shadow: #0004 0 0 3px 3px;
 }

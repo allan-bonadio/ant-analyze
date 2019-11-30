@@ -339,6 +339,9 @@ class Svg2D extends Component {
 	// as a result of some kind of mouse/touch move
 	// the abs are the full horiz/vert coordinate; rel are change from last time
 	shoveFunc(hAbs, vAbs, hRel, vRel) {
+		if (! this.props.show)
+			return;
+
 		hRel = hRel / HORIZ_EVENTS_FACTOR;
 		vRel = vRel / VERT_EVENTS_FACTOR;
 		

@@ -1,6 +1,10 @@
 // configuration settings for the step widget, in particular the scenes
 
 export let config = {
+
+	// put on our best behavior, take down scaffolding
+	production: true,
+
 	scenes: [
 		{
 			title: "Simple Sine Wave",
@@ -75,10 +79,10 @@ export let config = {
 				nYCells: 5,
 				complex: true,
 			}],
-			xMin: -3,
-			xMax: 3,
-			yMin: -2,
-			yMax: 2,
+			xMin: -5.1,
+			xMax: 5.1,
+			yMin: -1.4,
+			yMax: 1.4,
 		},
 	],
 };

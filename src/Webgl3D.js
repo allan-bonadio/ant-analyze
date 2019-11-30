@@ -21,9 +21,7 @@ const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
 // choose n cells in x and y direction to make total x*y cells
 // So, to make approx a 10x10 bed of cells, try 100.
 // typically this is a perfect square, but actually doesn't have to be; just a target.
-//const TARGET_CELLS = 1600;
-//const TARGET_CELLS = 16;  // for testing
-const TARGET_CELLS = 144;  // for testing
+const TARGET_CELLS = config.production ? 1600 : 144;
 
 // if mouse is too powerful, increase these.  Adjust to work so moving q pixels 
 // to the right rotates the graph in a way that feels intuitive.
@@ -204,7 +202,7 @@ class Webgl3D extends Component {
 	}
 	
 	drawOneFrame() {
-		// if not supposed to be shown, or not mature, can it
+		// if not supposed to be shown, or not mature, drop it
 		if (! this.props.show || ! this.events || ! this.plot)
 			return;
 			
@@ -230,8 +228,8 @@ class Webgl3D extends Component {
 	// extra is for debugging mostly
 	setReadout(horizPosition, vertPosition, extra) {
 		let r2d = radians => radians * 180 / Math.PI;
-		this.props.setReadout(r2d(horizPosition / HORIZ_EVENTS_FACTOR).toFixed() +'°Long  '+
-				r2d(vertPosition/VERT_EVENTS_FACTOR).toFixed() +'°Lat '+ (extra || ''));
+		this.props.setReadout(r2d(horizPosition / HORIZ_EVENTS_FACTOR).toFixed() +'° long  '+
+				r2d(vertPosition/VERT_EVENTS_FACTOR).toFixed() +'° lat '+ (extra || ''));
 	}
 
 	/* ******************************************************* resize window & webgl */

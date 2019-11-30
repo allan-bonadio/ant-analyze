@@ -6,6 +6,8 @@
 
 import $ from 'jquery';
 
+import config from './config';
+
 // .20 is almost like none.  1.0 stops everything immediately
 const FRICTION = .90;
 
@@ -51,12 +53,10 @@ class graphicEvents {
 		this.vertPosition = 0;  // top - bottom
 		this.horizVelocity = 0;
 		this.vertVelocity = 0;
-
-		this.animateOneFrame = this.animateOneFrame.bind(this);
-
-
+		
 		// tedious
 		[
+			'animateOneFrame',
 			'mouseDownEvt', 'mouseMoveEvt', 'mouseUpEvt', 'mouseLeaveEvt',
 			//'mouseWheelEvt', 
 			//'touchStartEvt', 'touchMoveEvt', 'touchEndEvt', 'touchCancelEvt', 'touchForceChange',
@@ -65,6 +65,14 @@ class graphicEvents {
 		
 		// attach event handlers only AFTER they're bound
 		this.attachEventHandlers();
+
+		if (config.production) {
+			this.horizPosition = .7;  // about 45°
+			this.vertPosition = .5;  // maybe 30°
+			this.horizVelocity = .1;
+			setTimeout(() => this.startAnimating(0), 1);
+		}
+
 	}
 
 	// which instance of graphicEvents do you want to start using now?
@@ -189,9 +197,9 @@ class graphicEvents {
 		this.prevY = ev.pageY;
 		this.prevTimeStamp = ev.timeStamp;
 		
-		let extra = ' '+ 
-			(nowCoasting ? 'coasting ' : '') + (nowDragging ? 'dragging ' : '');
-		this.graph.setReadout(this.horizPosition, this.vertPosition, extra);
+		// let extra = ' '+ 
+		// 	(nowCoasting ? 'coasting ' : '') + (nowDragging ? 'dragging ' : '');
+		this.graph.setReadout(this.horizPosition, this.vertPosition);
 		this.drawFunc();
 	}
 	
@@ -382,7 +390,7 @@ class graphicEvents {
 			
 
 			if (Math.abs(this.horizVelocity) + Math.abs(this.vertVelocity) < .001) {
-				// kinetic friction kicks in where it grinds to a halt
+				// static friction kicks in where it grinds to a halt
 				this.stopAnimating();
 				console.log("         animateOneFrame() stops coasting");
 			}

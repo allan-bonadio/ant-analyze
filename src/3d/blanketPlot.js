@@ -10,9 +10,10 @@ import {hsl} from 'd3-color';
 
 import {mat4, vec4} from 'gl-matrix';
 
+import config from '../config';
 import {vertexBuffer} from './genComplex';
 import blanketTriangles from './blanketTriangles';
-import {blanketAxes, weatherVane} from './blanketAxes';
+import {axisBars, weatherVane} from './axisBars';
 import {axisTicsPainter} from './AxisTics';
 import Webgl3D from '../Webgl3D';
 
@@ -72,16 +73,18 @@ class blanketPlot {
 		
 		// these set up for the geometry, and calculate number of vertices they need
 		// for each set of graphical things they draw
-		this.axes = new blanketAxes(this);
+		this.axes = new axisBars(this);
 		this.triangles = new blanketTriangles(this);
 		this.axisTics = new axisTicsPainter(this, Webgl3D.me);
 		
 		this.painters = [
 			this.triangles, 
 			this.axes, 
-			new weatherVane(this),  // optional; a diagnostic
 			this.axisTics,
 		];
+
+		if (! config.production)
+			this.painters.push(new weatherVane(this));
 
 		this.maxVertices = this.painters.reduce((sum, painter) => sum + painter.maxVertices, 0);
 
@@ -349,6 +352,11 @@ class blanketPlot {
 		//this.dumpBuffer();
 
 		this.createProgramInfo();
+		this.attachBufferToGL();
+		this.buffer.attachToGL(this.gl, this.programInfo.attribLocations);
+	}
+
+	attachBufferToGL() {
 		this.buffer.attachToGL(this.gl, this.programInfo.attribLocations);
 	}
 
@@ -448,7 +456,7 @@ class blanketPlot {
 		mat4.multiply(compositeMatrix, projectionMatrix, modelViewMatrix);
 		Object.assign(this, {compositeMatrix, projectionMatrix, modelViewMatrix});
 		
-		// maybe this is all we need
+		// maybe this is all we need - one matrix that does it all
 		gl.uniformMatrix4fv(uls.compositeMatrix, false, compositeMatrix);
 		this.checkOK();
 		
@@ -461,6 +469,9 @@ class blanketPlot {
 		let gl = this.gl;
 		this.longitude = longitude;
 		this.latitude = latitude;
+		
+		// must MOVE the axis tic marks given a different long/lat
+		axisTicsPainter.me.repeatVertices();
 		
 		// set some gl variables
 		gl.clearColor(0.0, 0.0, 0.0, 1.0);	// Clear to black, fully opaque

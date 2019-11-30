@@ -14,7 +14,7 @@ import Webgl3D from '../Webgl3D';
 /* ************************************************************** axis bars */
 
 // this ends up being a mixin for blanketPlot
-export class blanketAxes {
+export class axisBars {
 	constructor(plot) {
 		this.plot = plot;
 		this.name = 'axes';
@@ -68,7 +68,7 @@ export class blanketAxes {
 	}
 };
 
-export default blanketAxes;
+export default axisBars;
 
 /* ************************************************************** weatherVane */
 // include this if you're losing your orientation and you need to know which side is up

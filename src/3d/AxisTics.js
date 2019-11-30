@@ -168,7 +168,7 @@ export class axisTicsPainter {
 		let axisScale = this.graph[dim +'Scale'];
 		
 		// gimme several science values for axis dimension that are good for tics
-		let labelValues = axisScale.ticks(3);
+		let labelValues = axisScale.ticks(5);
 		//console.log("||| axisScale.ticks:", labelValues);
 		
 		// different values get plugged in to this below
@@ -177,7 +177,7 @@ export class axisTicsPainter {
 		// we plug in the ticValue in the right dimension and that's a tic
 		return labelValues.map(ticValue => {
 			loc[dimension] = ticValue;
-			return this.generateOneTic(loc, ticValue.toFixed(2), dimension);
+			return this.generateOneTic(loc, ticValue.toFixed(1), dimension);
 		})
 	}
 
@@ -200,7 +200,7 @@ export class axisTicsPainter {
 
 		// hit the tic text layer so it redraws in new positions
 		AxisTics.setAxisLabels(this.axisLabels);
-		this.dumpAllTics();
+		//this.dumpAllTics();
 	}
 	
 	dumpAllTics() {
@@ -216,9 +216,9 @@ export class axisTicsPainter {
 	/* ****************************** the painter */
 
 	// this generates the line segments for the little tic marks for webgl.
-	layDownVertices() {
-		let buffer = this.buffer = this.plot.buffer;
-		this.startVertex = this.buffer.nVertices;
+	// note how it's called in two different ways: first time and afterwards
+	lay(startVertex) {
+		let buffer = this.buffer;
 		
 		// each one starts on the axis line but then goes off perpendicular 
 		// to the next dimension alphabetically
@@ -242,9 +242,37 @@ export class axisTicsPainter {
 			});
 		});
 
-		this.nVertices = this.buffer.nVertices - this.startVertex;
-		console.log("&&& finished tics, used %d of %d vertices", 
-				this.nVertices, this.maxVertices)
+		// console.log("&&& finished tics, used %d of %d vertices", 
+		// 		this.nVertices, this.maxVertices);
+		return this.buffer.nVertices - startVertex
+	}
+
+	// normal first call in prep for any drawing
+	layDownVertices() {
+		let buffer = this.buffer = this.plot.buffer;
+		this.startVertex = buffer.nVertices;
+		this.nVertices = this.lay(this.startVertex);
+	}
+
+	// replace the vertices in the buffer cuz the tic lines moved to a different axis bar
+	// but then you have to attachBufferToGL() again.  Messy way to do this ////
+	repeatVertices() {
+		let presentNVertices = this.buffer.nVertices;
+		let presentPosOffset = this.buffer.posOffset;
+		let presentColOffset = this.buffer.colOffset;
+		
+		this.buffer.nVertices = this.startVertex;
+		this.buffer.posOffset = this.startVertex * 3;
+		this.buffer.colOffset = this.startVertex * 4;
+		let nVert = this.lay(this.startVertex);
+		if (nVert != this.nVertices)
+			throw "nVert not equal nVertices";
+			
+		this.buffer.nVertices = presentNVertices;
+		this.buffer.posOffset = presentPosOffset;
+		this.buffer.colOffset = presentColOffset;
+		
+		this.plot.attachBufferToGL();
 	}
 
 	draw(gl) {
