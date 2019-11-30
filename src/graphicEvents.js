@@ -33,10 +33,11 @@ class graphicEvents {
 	// graphElement = dom node for canvas or svg
 	// we'll call shoveFn as long as user is doing stuff
 	// and drawFn until things stop moving.
-	constructor(graph, drawFn, shoveFn) {
+	constructor(graph, sensitiveElement, drawFn, shoveFn) {
 		// keep in touch
 		this.graph = graph;
 		this.graphElement = graph.graphElement;
+		this.sensitiveElement = sensitiveElement;
 		this.drawFunc = drawFn;
 		this.shoveFunc = shoveFn;
 		
@@ -132,7 +133,7 @@ class graphicEvents {
 	// called by componentDidMount().  Note at this point the canvas should be there
 	attachEventHandlers() {
 		// touch events on the graphicElement are effective
-		$(this.graphElement)
+		$(this.sensitiveElement)
 				.on('mousedown', this.mouseDownEvt)
 				.on('mousemove', this.mouseMoveEvt)
 				.on('mouseup', this.mouseUpEvt)
@@ -150,14 +151,10 @@ class graphicEvents {
 	// this handles incremental moves from mouse/touch/gesture events.
 	// Eventually calls some shove functions on the graph
 	mouseShove(ev) {
-	// 	console.log('event: %O', ev);
 // 		console.log('mouseShove x=%s, y=%s, timeStamp=%s', ev.pageX, ev.pageY, 
 // 			ev.timeStamp);
 
-
 		this.confirmSanity();
-
-
 
 		if (nowDragging && this.prevTimeStamp !== undefined) {
 			// timeStamp is NOT equal to Date.now() but is equal to event timeStamps
@@ -283,7 +280,9 @@ class graphicEvents {
 		let graphHeight = +win.innerHeight;
 		
 		// deduct the height of the blurb box, or if not created yet, just approximate
-		let blurbHeight = 200, blurbWidth = 400, blurbBox$ = $('.blurb-box')
+		let blurbHeight = 200;
+		let blurbWidth = 400;
+		let blurbBox$ = $('.blurb-box');
 		if (graphWidth > graphHeight) {
 			if (blurbBox$.length)
 				blurbWidth = blurbBox$[0].offsetWidth;
@@ -363,11 +362,8 @@ class graphicEvents {
 	animateOneFrame(now) {
 		now *= 0.001;  // convert to seconds
 
-
 		this.confirmSanity();
-
 // 		console.log("start of animateOneFrame(), now vs then, diff", now, this.then, (now - this.then))
-
 
 		// the first time, then is undefined so punt
 		let deltaTime = this.then ? (now - this.then) : .1;
@@ -414,15 +410,8 @@ class graphicEvents {
 			if (nowCoasting)
 				requestAnimationFrame(this.animateOneFrame);
 			
-			
 			this.confirmSanity();
-
-
-
 		}
-
-		// console.log("done with animateOneFrame()");
-
 	}
 }
 

@@ -3,7 +3,7 @@
 canvas {
 	display: block;
 	border: none;
-	background-color: cyan;
+	background-color: #088;
 }
 
 .webgl-chart {
@@ -21,11 +21,19 @@ aside {
 	z-index: 5;
 	background: transparent;
 	color: #eee;
+	width: 100%;    /* all the area of the canvas */
+	height: 100%;
+	overflow: hidden;
 }
 
 
 /* tic label */
 tic-lab {
-	position: absolute;
-	font-size: 12px;
+    position: absolute;
+    font-size: 12px;
+    border-radius: 6px;
+    background-color: #0005;
+    
+    /*box-shadow: #0005 0 0 3px 2px;*/
+	/*box-shadow: #f0ff 0 0 17px;*/
 }

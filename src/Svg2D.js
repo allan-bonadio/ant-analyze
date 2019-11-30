@@ -68,7 +68,7 @@ class Svg2D extends Component {
 		
 		// we don't need a draw function because shoveFunc changes the state
 		// which will end up redrawing
-		this.events = new graphicEvents(this, this.drawAtPos, this.shoveFunc);
+		this.events = new graphicEvents(this, this.graphElement, this.drawAtPos, this.shoveFunc);
 				
 		////$(window).on('resize', this.resizeEvt);
 		

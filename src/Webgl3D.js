@@ -13,7 +13,7 @@ import blanketPlot from './blanketPlot';
 import graphicEvents from './graphicEvents';
 
 import {generateBlanket} from './genComplex';
-import {AxisTics} from './AxisTics';
+import {AxisTics, axisTicsPainter} from './AxisTics';
 
 // don't try to type these names, just copy paste
 const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
@@ -24,8 +24,8 @@ const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
 // So, to make approx a 10x10 bed of cells, try 100.
 // typically this is a perfect square, but actually doesn't have to be; just a target.
 //const TARGET_CELLS = 1600;
-const TARGET_CELLS = 16;  // for testing
-//const TARGET_CELLS = 144;  // for testing
+//const TARGET_CELLS = 16;  // for testing
+const TARGET_CELLS = 144;  // for testing
 
 // if mouse is too powerful, increase these.  Adjust to work so moving q pixels 
 // to the right rotates the graph in a way that feels intuitive.
@@ -39,14 +39,11 @@ class Webgl3D extends Component {
 		super(props);
 		Webgl3D.me = this;
 		
-		// for testing, pass in innerWidth and innerHeight props
-		let innerWidth = props.innerWidth || window.innerWidth;
-		let innerHeight = props.innerHeight || window.innerHeight;
+// 		let innerWidth = props.innerWidth || window.innerWidth;
+// 		let innerHeight = props.innerHeight || window.innerHeight;
 		
 		// without the 2d/3d suffix
 		this.name = this.props.name || 'Graph';
-		
-		
 
 		// these affect the way mouse drags work.  Horiz repeats over 2π
 		this.horizCyclic = twoπ * HORIZ_EVENTS_FACTOR;  // 0....2π
@@ -56,32 +53,42 @@ class Webgl3D extends Component {
 		if (vc[0] > vc[1])
 			[vc[0], vc[1]] = [vc[1], vc[0]]
 			
-
+			
 		this.state = {
 			// these are part of the state as they directly affect the canvas
-			graphWidth: innerWidth - 4,
-			graphHeight: innerHeight - 200,
 			
+			// size of canvas
+			// for testing, pass in innerWidth and innerHeight props
+			...graphicEvents.decideGraphDimensions(props.innerWidth? props : window),
+
+// 			graphWidth: innerWidth - 4,
+// 			graphHeight: innerHeight - 200,
 		};
 		
 		// you might think these are part of the state, 
 		// but the state only applies to the canvas, not what's drawn in it 
-		// (which doesn't happen at render time);
+		// (which doesn't happen at render time).  It's an uncontrolled component.
 		this.setupIndex = -1;
 		
+		// some defaults to get us going
 		this.xMin = this.yMin = -1;
 		this.xMax = this.yMax = 1;
-
-		this.nXCells = this.nYCells = 1;
+		this.nXCells = this.nYCells = this.nZCells = 1;
 		
 		this.drawOneFrame = this.drawOneFrame.bind(this);
+		this.shove3D = this.shove3D.bind(this);
 	}
 	
 	componentDidMount() {
-		this.events = new graphicEvents(this, this.drawOneFrame, ()=>{});
+		this.events = new graphicEvents(this, this.sensitiveElement, 
+				this.drawOneFrame, this.shove3D);
 		
 		// now that the canvas is created, we can grab it for 3d
 		this.setScene(this.props.requestedIndex);
+	}
+	
+	shove3D() {
+		axisTicsPainter.rotateAllTics();
 	}
 	
 	setScene(sceneIndex) {
@@ -102,6 +109,7 @@ class Webgl3D extends Component {
 		this.nXCells = Math.round(TARGET_CELLS / this.nYCells);
 		//console.log("Webgl3D: So I get XCELLS=%s, YCELLS=%s", this.nXCells, this.nYCells);
 		// note the number of vertices in both directions is +1 more than cells
+		this.nZCells = 1;
 
 		this.setupIndex = sceneIndex;
 		this.xMin = scene.xMin;
@@ -122,7 +130,9 @@ class Webgl3D extends Component {
 		this.plot = new blanketPlot(
 			document.getElementById(this.name + '3D'), 
 			{
-				nXCells: this.nXCells, nYCells: this.nYCells,
+				nXCells: this.nXCells, 
+				nYCells: this.nYCells, 
+				nZCells: this.nZCells,
 				xPerCell: (scene.xMax - scene.xMin) / this.nXCells, 
 				yPerCell: (scene.yMax - scene.yMin) / this.nYCells,
 			}
@@ -138,20 +148,22 @@ class Webgl3D extends Component {
 		this.drawOneFrame();
 	}
 
-	static getDerivedStateFromError() {
+	static getDerivedStateFromError(errObj) {
 		console.error('getDerivedStateFromError:', arguments);
+		debugger;
 	}
 	
-	componentDidCatch() {
-		console.error('componentDidCatch:', arguments);
+	componentDidCatch(errObj, info) {
+		console.error('Webgl3D caught exception:', errObj.stack, info);
+		debugger;
 	}
 	
-	// create the pixel data based on the function.
+	// create the data based on the function, in the shape of the cells, but science coords.
 	calcPoints() {
 		this.blanket = generateBlanket(
 			this.scene.funcs[0].func, 
 			this.nXCells, this.nYCells,
-			this.xScale.invert, this.yScale.invert, this.zScale
+			this.xScale.invert, this.yScale.invert
 		);
 	}
 	
@@ -165,6 +177,12 @@ class Webgl3D extends Component {
 		this.yScale.domain([this.yMin, this.yMax]);
 	}
 	
+	// scale this 3-vector by our xyz scalers, and return a 4-vector - [3] often ignored
+	scaleXYZ(xyz) {
+		return [this.xScale(xyz[0]), this.yScale(xyz[1]), this.zScale(xyz[2]), 1];
+	}
+	
+	
 	// draw the canvas that'll show it.  
 	// if this.plot is there, the state, data, and scalers must be set up.
 	// These might have changed:
@@ -172,19 +190,20 @@ class Webgl3D extends Component {
 	// note render is NOT called when the 3d drawing is needed; 
 	// that's done in drawOneFrame()
 	render() {
-		// if 2d is on, forget it.  
-		// If no blanket, must be first render; not even any data yet.
-		let style = this.props.show ? {} : {display: 'none'};
+		// if 3d isn't on, forget it.  Otherwise, enforce wid & height with iron fist.
 		let state = this.state;
-
+		let canvasStyle = {width: state.graphWidth, height: state.graphHeight}
+		let showStyle = {display: (this.props.show ? 'block' : 'none'),
+				...canvasStyle};
 		
 		// react doesnt recognize touch events - needed for gestures
-		// so use jQuery in graphicEvents
+		// so use jQuery in graphicEvents instead of react events
 		return (
-			<div className='webgl-chart' style={style} >
-				<AxisTics />
+			<div className='webgl-chart' style={showStyle}
+					ref={webglChart => this.sensitiveElement = webglChart}>
+				<AxisTics style={canvasStyle} />
 				<canvas id={this.name + '3D'} 
-					width={state.graphWidth} height={state.graphHeight}
+					style={canvasStyle} width={state.graphWidth} height={state.graphHeight}
 					onMouseDown={this.events ? this.events.mouseDownEvt : ()=>{}}
 					ref={canvas => this.graphElement = canvas}>
 					This displays a 3-D image of the surface.

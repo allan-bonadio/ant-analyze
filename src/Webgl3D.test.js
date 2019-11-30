@@ -230,7 +230,7 @@ describe('Svg2D ', () => {
 			mDown(downEvent);
 			expect(instance.dragging).toBeTruthy();
 			
-			// these are all in data units
+			// these are all in science units
 ////			console.log(instance.downY, instance.downMinMax);////
 			expect(instance.downX).toBeCloseTo(0.12765957446808507, 2);
 			expect(instance.downY).toBeCloseTo(0.6091188518889805, 2);

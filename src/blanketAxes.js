@@ -27,8 +27,10 @@ export class blanketAxes {
 	layDownVertices() {
 		let buffer = this.buffer = this.plot.buffer;
 		this.startVertex = this.buffer.nVertices;
+		
+		// these are all in cell coords
 		let x, y, z, xCells = this.plot.nXCells, yCells = this.plot.nYCells;
-		let zMin = this.plot.zMin, zMax = this.plot.zMax, zSize = zMax - zMin;
+		let zMin = 0, zMax = this.plot.nZCells, zSize = this.plot.nZCells;
 		
 		let addVertex = (x, y, z) => {
 			buffer.addVertex([x, y, z], [1, 1, 1, .5]);
@@ -87,15 +89,17 @@ export class weatherVane {
 		
 		let g = Webgl3D.me;
 		let p = this.plot;
-		let zero = {x: g.xScale(0), y: g.yScale(0), z: p.zScale(0)};
-		let one = {x: g.xScale(1), y: g.yScale(1), z: p.zScale(1)};
+		let zero = g.scaleXYZ([0, 0, 0]);
+		let one  = g.scaleXYZ([1, 1, 1]);
+		////{x: g.xScale(0), y: g.yScale(0), z: p.zScale(0)};
+		//.let one = {x: g.xScale(1), y: g.yScale(1), z: p.zScale(1)};
 		
 		// we want to use a triangle fan with the white corner at 0,0,0
-		buffer.addVertex([zero.x, zero.y, zero.z], [1, 1, 1, 1]);  // origin is white
-		buffer.addVertex([ one.x, zero.y, zero.z], [1, 0, 0, 1]);  // x direction is red
-		buffer.addVertex([zero.x,  one.y, zero.z], [0, 1, 0, 1]);  // y green
-		buffer.addVertex([zero.x, zero.y,  one.z], [0, 0, 1, 1]);  // z blue
-		buffer.addVertex([ one.x, zero.y, zero.z], [1, 0, 0, 1]);  // return again
+		buffer.addVertex([zero[0], zero[1], zero[2]], [1, 1, 1, 1]);  // origin is white
+		buffer.addVertex([ one[0], zero[1], zero[2]], [1, 0, 0, 1]);  // x direction is red
+		buffer.addVertex([zero[0],  one[1], zero[2]], [0, 1, 0, 1]);  // y green
+		buffer.addVertex([zero[0], zero[1],  one[2]], [0, 0, 1, 1]);  // z blue
+		buffer.addVertex([ one[0], zero[1], zero[2]], [1, 0, 0, 1]);  // return again
 
 		this.nVertices = this.buffer.nVertices - this.startVertex;
 	}

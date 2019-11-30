@@ -11,10 +11,10 @@
 
 // decide which formula/generator to use, and use it to generate a matrix of 
 // vertex objects with keys x, y, z_data, red, green, blue, alpha
-// also hand in scalers for x, y from cell to data coords
+// also hand in scalers for x, y from cell to science coords
 // Unfortunately we can't map z values to cell coords yet 
 // cuz we need them all to figure out the scaler
-export function generateBlanket(func, nXCells, nYCells, xc2xd, yc2yd) {
+export function generateBlanket(func, nXCells, nYCells, xCell2Science, yCell2Science) {
 	let blanket = new Array(nYCells + 1);
 
 	for (let y = 0; y <= nYCells; y++) {
@@ -25,24 +25,25 @@ export function generateBlanket(func, nXCells, nYCells, xc2xd, yc2yd) {
 			let vert = row[x] = {
 				x, y,   // cell coords
 				
-				// still in data coords cuz we don't know the extent yet
-				z_data: func(xc2xd(x), yc2yd(y)),
+				// still in science coords cuz we don't know the extent yet
+				z_data: func(xCell2Science(x), yCell2Science(y)),
 				
 				// just a default color, set your own later if you care
-				red: 1, green: 1, blue: 0, alpha: 1,
+				red: .6, green: .6, blue: .3, alpha: 1,
 			};
 			
-			// z_height is the ultimate height on the 3d surface, data units, whether complex or not
+			// z_science is the ultimate height on the 3d surface, science units, 
+			// whether complex or not
 			if (typeof vert.z_data == 'object') {
 				// complex number
 				// the abs is used for complex coloring
 				vert.abs = Math.hypot(vert.z_data.re, vert.z_data.im);
-				vert.z_height = vert.z_data.re;
+				vert.z_science = vert.z_data.re;
 			}
 			else {
 				// real
 				vert.abs = 0;
-				vert.z_height = vert.z_data;
+				vert.z_science = vert.z_data;
 			}
 		}
 	}
