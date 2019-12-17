@@ -7,10 +7,10 @@
 import 'raf/polyfill';
 import React from 'react';
 
-import {mat4, vec4} from 'gl-matrix';
+import {vec4} from 'gl-matrix';
 
 import Webgl3D from '../Webgl3D';
-import blanketPlot from './blanketPlot';
+//import blanketPlot from './blanketPlot';
 
 // these two work together, sharing the painter's axisLabels info that's precalcualted once
 // after the z limits are decided
@@ -34,9 +34,10 @@ export class AxisTics extends React.Component {
 			return '';  // too early
 		
 		let plot = axisTicsPainter.me.plot
-		let cm = plot.compositeMatrix
-		let canvas = plot.canvas;
-		let clipCoords = vec4.create();
+		let cm = plot.compositeMatrix;
+		if (! cm)
+			return '';
+		let canvas = plot.graphElement;
 		let graph = Webgl3D.me;
 		
 		// https://webglfundamentals.org/webgl/lessons/webgl-text-html.html
@@ -70,6 +71,7 @@ export class AxisTics extends React.Component {
 					style.right = canvasX +'px';
 				}
 
+// 				let clipCoords = vec4.create();
 // 				console.log("clipCoords, canvas x and y:", 
 // 					cellTip[0].toFixed(2).padStart(6), 
 // 					cellTip[1].toFixed(2).padStart(6), 
@@ -91,7 +93,9 @@ export class AxisTics extends React.Component {
 	
 	// call this whenever the labels move around; that is, upon every manual rotation
 	static setAxisLabels(axisLabels) {
-		AxisTics.me.setState({axisLabels});
+		// too early?  before first render?  no prob.  nothing else is drawing anyway
+		if (AxisTics.me)
+			AxisTics.me.setState({axisLabels});
 	}
 
 }
@@ -210,7 +214,8 @@ export class axisTicsPainter {
 	}
 	
 	static rotateAllTics() {
-		axisTicsPainter.me.generateAllTics();
+		if (axisTicsPainter.me)
+			axisTicsPainter.me.generateAllTics();
 	}
 
 	/* ****************************** the painter */
@@ -221,12 +226,12 @@ export class axisTicsPainter {
 		let buffer = this.buffer;
 		
 		// each one starts on the axis line but then goes off perpendicular 
-		// to the next dimension alphabetically
+		// x axis has tics that point in +y direction; y axis in +z direction, and z axis in +x direction
 		let axisLabels = axisTicsPainter.me.axisLabels;
 		let g = this.graph;
-		let textLabels = axisLabels.map((axis, dimension) => {
-			let nextDimension = (dimension + 1) % 3;
-			let nextScale = this.graph['xyz'[nextDimension] +'Scale'];
+		axisLabels.forEach((axis, dimension) => {
+// 			let nextDimension = (dimension + 1) % 3;
+// 			let nextScale = this.graph['xyz'[nextDimension] +'Scale'];
 			return axis.forEach(tic => {
 				// append two vertices: start from axis tic location, 
 				// converting to cell coords
@@ -272,7 +277,7 @@ export class axisTicsPainter {
 		this.buffer.posOffset = presentPosOffset;
 		this.buffer.colOffset = presentColOffset;
 		
-		this.plot.attachBufferToGL();
+		//this.plot.attachCanvas(this.plot.graphElement);
 	}
 
 	draw(gl) {
