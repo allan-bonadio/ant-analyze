@@ -14,6 +14,7 @@ class NavBar extends Component {
 	}
 	
 	render() {
+		// all the buttons
 		let buttons = config.scenes.map((scene, ix) => {
 			let sel = (this.props.requestedIndex === ix) ? 'selected' : '';
 			return <div key={ix} index={ix} className={sel} onClick={this.clickNumber} 
@@ -22,7 +23,7 @@ class NavBar extends Component {
 			</div>;
 		});
 
-		// the next button
+		// the 'next' button
 		buttons.push(<div className='next-button' key='next' onClick={this.clickNext} onMouseDown={this.killTextSelection}>
 			NEXT &nbsp; ❯
 		</div>);
@@ -37,14 +38,14 @@ class NavBar extends Component {
 	// human clicks on one of the number buttons
 	clickNumber(ev) {
 		ev.stopPropagation();
-		App.goToStep(+ev.target.getAttribute('index'));
+		App.goToScene(+ev.currentTarget.getAttribute('index'));
 	}
 	
 	// click on the NEXT> button
 	clickNext(ev) {
 		ev.stopPropagation();
-		let stepIndex = (this.props.requestedIndex + 1) % config.scenes.length;
-		App.goToStep(stepIndex);
+		let sceneIndex = (this.props.requestedIndex + 1) % config.scenes.length;
+		App.goToScene(sceneIndex);
 	}
 	
 	killTextSelection(ev) {
