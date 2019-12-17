@@ -1,9 +1,9 @@
 body {
-	font-size: 14px;
 	position: fixed;
 	height: 100%;
 	width: 100%;
 	box-sizing: border-box;
+	background-color: black;
 }
 
 #root {
@@ -15,37 +15,26 @@ body {
 	height: 100%;
 }
 
-/* italic style used for variables in function formulas */
-v {
-	display: inline;
-	font-family: times, serif;
-	font-style: italic;
-}
-
 /* ******************************************************* responsive */
 
-
-@media screen and (orientation:portrait) {
-
-}
-
-@media screen and (orientation:landscape) {
-	svg, .blurb-box {
-		float: left;
-	}
-}
+/* 
+@media screen and (orientation:portrait) {}
+@media screen and (orientation:landscape) {svg, .blurb-box {float: left;}}
+ */
 
 @media screen and (max-width: 499px) {
-	/* narrow screen - make it more vertical */
+	/* narrow screen - like an iphone or android phone */
 	body {
-/* 
-		font-size: 12px;
- */
+		// 100 vmin = width or height of screen, whichever is smaller
+		font-size: 3vmin;
 	}
 }
 
 @media screen and (min-width: 500px) {
 	/* wide screen */
+	body {
+		font-size: 15px;  /* = 3vmin at 500px */
+	}
 }
 
 @media screen and (max-width: 499px), screen and (max-height: 499px) {
@@ -67,8 +56,27 @@ v {
 	}
 }
 
-/* ******************************************************* misc */
+/* ******************************************************* big layout */
 
+/* pretty much same as the whole window.  Holds only the graph element and the blurb. */
+.outer-wrapper {
+	display: flex;
+	flex-direction: row;  /* changes to column if it's tall; 
+			see graphicElements.decideGraphDimensions() */
+}
+
+/* the graph itself stays in upper left corner */
+.graph-wrapper {
+	flex: 1 1;
+}
+
+/* the box with the buttons and text is either on the right or below, 
+	dep on aspect ratio of window.  See graphicEvents.decideGraphDimensions() */
+.blurb-box {
+	flex: 0 0;
+}
+
+/* upper left corner */
 #attitude-readout {
 	position: absolute;
 	color: white;

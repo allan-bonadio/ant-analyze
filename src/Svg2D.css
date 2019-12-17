@@ -1,5 +1,7 @@
 .svg-chart {
 	cursor: grab;
+	background-color: black;
+	color: white;
 }
 
 .svg-chart:active {
@@ -9,6 +11,6 @@
 .line-paths {
 	fill: none;
 	stroke: #009;
-	stroke-width: 2px;
+	stroke-width: .14em;
 }
 

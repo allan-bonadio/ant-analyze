@@ -31,10 +31,10 @@ aside {
 /* tic label */
 tic-lab {
 	position: absolute;
-	font-size: 12px;
-	border-radius: 12px / 6px;
+	font-size: .86em;
+	border-radius: 1em / .5em;
 	background-color: #0004;
-	padding: 0 2px;
+	padding: 0 0;
 	
-	box-shadow: #0004 0 0 3px 3px;
+	box-shadow: #0004 0 0 .43em .43em;
 }
