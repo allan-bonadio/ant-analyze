@@ -27,40 +27,56 @@ const HORIZ_EVENTS_FACTOR = -.025;
 const VERT_EVENTS_FACTOR = .9;
 
 // there is one of these total, it displays differences depending on its 
-// requestedIndex prop passed in (see react lifecycle getDerivedStateFromProps())
+// requestedIndex prop passed in
 class Svg2D extends Component {
 	constructor(props) {
 		super(props);
 		Svg2D.me = this;
 		
-		// for testing, pass in innerWidth and innerHeight props
-		let innerWidth = props.innerWidth || window.innerWidth;
-		let innerHeight = props.innerHeight || window.innerHeight;
-		
-		// the inner size of the svg el - changes on window resize or iPhone rotate events
-		this.state = {
-			graphWidth: innerWidth - 4,
-			graphHeight: innerHeight - 200,
-			
-			renderedIndex: -1,  // rendered, not selected.  be patient.
-			xMin: -1,  // just defaults
-			xMax: 1,  // will quickly be overwritten
-		};
-		this.specialForResize(this.state.graphWidth, this.state.graphHeight);
-		
-		// just defaults for first render or for props.show false
-		this.yMin = -1;
-		this.yMax = 1;
+		// without the 2d/3d suffix
+		this.name = this.props.name + 'Graph';
 
-		this.needsScalerRecalc = true;
+		let sceneState = this.claimSceneState(this.props.requestedIndex);
 		
-		// no clamp or cyclic
+		// the inner size of the svg el - changes on window resize 
+		// or iPhone rotate events (you sure about that?)
+		this.state = {
+			// this is static - our graphEvents isn't even instantiated yet
+			
+			...sceneState,
+			
+// 			graphWidth: this.props.graphWidth,
+// 			graphHeight: this.props.graphHeight,
+			
+			// this is actually part of App's state.  
+			// We should refer to it as props.requestedIndex
+			//requestedIndex: this.props.requestedIndex,
+// 			xMin: -1,  // just defaults
+// 			xMax: 1,  // will quickly be overwritten
+
+			// The first draw, the y min/max comes from reRange().  After that, 
+			// it's state that the user can change by dragging
+			yMin: -1,
+			yMax: 1,
+		};
+		this.resetMargins(this.props.graphWidth, this.props.graphHeight);
+		this.createScales();
+		// that's what needs to be created if the 2d is hidden.
 		
-		// tedious
-		[
-			'mouseWheelEvt', 
-			'shoveFunc', 'drawAtPos',
-		].forEach(funcName => this[funcName] = this[funcName].bind(this));
+		if (this.scene.graphics == '2D') {
+			this.xScale.domain([this.state.xMin, this.state.xMax]);
+
+			// of course a calc is needed, but also set up the 'last' variables
+			this.ensureCalcPoints();
+			Object.assign(this.state, this.reRangeYAxis());
+			// all set up for the first render
+		}
+
+//		generateAndScale(true);
+
+		this.mouseWheelEvt = this.mouseWheelEvt.bind(this);
+		this.shoveFunc = this.shoveFunc.bind(this);
+		this.drawFunc = this.drawFunc.bind(this);
 	}
 	
 	componentDidMount() {
@@ -68,12 +84,8 @@ class Svg2D extends Component {
 		
 		// we don't need a draw function because shoveFunc changes the state
 		// which will end up redrawing
-		this.events = new graphicEvents(this, this.graphElement, this.drawAtPos, this.shoveFunc);
+		this.events = new graphicEvents(this, this.graphElement, this.drawFunc, this.shoveFunc);
 				
-		////$(window).on('resize', this.resizeEvt);
-		
-		// do this to re-render after the blurb box is sized properly
-		this.setState(graphicEvents.decideGraphDimensions(window));
 	}
 	
 	// graphicEvents calls us after the drag position changed to set the readout
@@ -84,38 +96,90 @@ class Svg2D extends Component {
 		this.props.setReadout(this.state.xMin.toFixed(2) +' ➜ '+ 
 				this.state.xMax.toFixed(2) +' '+ (extra || ''));
 	}
+	
+	// look up this scene and set us up for it.  
+	// DOESN'T set the state, instead returns the changes needed to the state, 
+	// including xMin/Max.  The scene and funcs are attached immediately.
+	claimSceneState(sceneIndex) {
+		this.scene = config.scenes[sceneIndex];
+		this.funcs = this.scene.funcs;
+
+		return {xMin: this.scene.xMin, xMax: this.scene.xMax};
+	}
+	
+	// change to given scene.  If it's 3d, then not much to do as we'll be hidden.
+	// calculate all that stuff.
+	newScene(sceneIndex) {
+		let scene = config.scenes[sceneIndex];
+		this.scene = scene;  // even if it's not for us
+		
+		if (scene.graphics == '2D') {
+			this.xScale.domain([scene.xMin, scene.xMax]);
+
+			// set this up for this scene.  xMin...xMax go into setState
+			this.setState(this.claimSceneState(sceneIndex));
+
+			// but we won't see those for a while.  But we can calc.
+			this.ensureCalcPoints();
+			
+			// now we have the mins/maxes and can set the Y ranges.
+			// Which also involve state changes.
+			this.setState(this.reRangeYAxis());
+			
+			// which graphicEvents do I want to use?  my own of course.
+			graphicEvents.use(this.events);
+		}
+	}
+	
+	// get ready, 'soon' we'll be rendering this new scene.
+	// NOT the first time this component has rendered a scene.
+	static prepForNewScene(sceneIndex) {
+		Svg2D.me.newScene(sceneIndex);
+
+		// um... stop scrolling pleeze
+		Svg2D.me.events.stopAnimating();
+	}
+	
+// 	setScene(sceneIndex) {
+// 		this.sceneState(sceneIndex);
+// 
+// 		// there's been a change in scene.  Reset the bounds & start over
+// 		this.setState(newState);
+// 		
+// 		generateAndScale(newState);
+// 	}
 
 	// called before the start of a render, this checks for a new index/scene, and changes stuff
 	// that's needed for this render
-	static getDerivedStateFromProps(props, state2b) {
-		if (!props.show)
-			return state2b;
-		graphicEvents.use(Svg2D.me.events);
+// 	static getDerivedStateFromProps(props, state2b) {
+// 		if (!props.show)
+// 			return state2b;
+// 		graphicEvents.use(Svg2D.me.events);
+// 		
+// 		// only if user changed scene
+// 		let index = props.requestedIndex;
+// 		if (index == state2b.requestedIndex)
+// 			return null;
 		
-		// only if user changed scene
-		let index = props.requestedIndex;
-		if (index == state2b.renderedIndex)
-			return null;
-		
-		let scene = config.scenes[index];
-		Svg2D.me.scene = scene;
-		Svg2D.me.funcs = scene.funcs;
-
-		// there's been a change in scene.  Reset the bounds & start over
-		state2b = {...state2b, 
-			xMin: scene.xMin, xMax: scene.xMax, 
-			renderedIndex: index,
-		};
+// 		let scene = config.scenes[index];
+// 		Svg2D.me.scene = scene;
+// 		Svg2D.me.funcs = scene.funcs;
+// 
+// 		// there's been a change in scene.  Reset the bounds & start over
+// 		state2b = {...state2b, 
+// 			xMin: scene.xMin, xMax: scene.xMax, 
+// 			requestedIndex: index,
+// 		};
 		
 		// now this will render with new scene
-		return state2b;
-	}
+// 		return state2b;
+// 	}
 	
 	
 	// create the pixel data based on the function.  (always)
 	calcPoints() {
 		let s = this.state;
-		let pixelsAr = [];  // no series
+		let vertexSeries = [];  // no series
 		for (let f = 0; f < this.funcs.length; f++) {
 			let func = this.funcs[f];
 			
@@ -123,86 +187,83 @@ class Svg2D extends Component {
 			const xPerK = (s.xMax - s.xMin) / (func.nPoints - 1);
 			if (isNaN(xPerK)) debugger;
 
-			pixelsAr[f] = [];  // add on a new series
+			vertexSeries[f] = [];  // add on a new series
 			for (let k = 0; k < func.nPoints; k++) {
 				let x = k * xPerK + s.xMin;  // range 0...nPoints maps to xmin...xmax
 				if (isNaN(x)) debugger;
 				let y = func.func(x);
+				
+				// the limit as x approaches... this only works for pinhole singularities
 				if (isNaN(y))
-					y = func.func(x + 1e-10);  // the limit as x approaches...
-				pixelsAr[f][k] = {x, y};
+					y = (func.func(x + 1e-10) + func.func(x - 1e-10)) / 2;
+					
+				vertexSeries[f][k] = {x, y};
 			}
 		}
-		this.pixelsAr = pixelsAr;
+		this.vertexSeries = vertexSeries;
 		
-		if (s.renderedIndex != this.lastCalcIndex)
-			this.needsScalerRecalc = true;
+		
+// 		if (s.requestedIndex != this.lastCalcIndex)
+// 			this.reRange();
 
 	}
 	
-	// it'll maybe call xxx.calcPoints()
+	// it'll maybe call this.calcPoints()
 	// if it needs to, and remembers stuff for next time
 	ensureCalcPoints() {
 		let s = this.state;
 	
-		// note how the y values are undefined for 2d but 
-		// undefined==undefined so it works
-		if (s.renderedIndex === this.lastCalcIndex && 
-					s.xMin == this.lastCalcXMin && s.xMax == this.lastCalcXMax &&
-					s.yMin == this.lastCalcYMin && s.yMax == this.lastCalcYMax)
-			return;  // it'll be the same
+		// not if it doesn't need it.  I bet this is so fast it doesn't matter.
+// 		if (s.requestedIndex === this.lastCalcIndex && 
+// 					s.xMin == this.lastCalcXMin && s.xMax == this.lastCalcXMax)
+// 			return;  // it'll be the same
 	
 		this.calcPoints();
 	
 		// save these so we can tell if calc needs to be redone
-		this.lastCalcIndex = s.renderedIndex;
+		this.lastCalcIndex = this.props.requestedIndex;
 		this.lastCalcXMin = s.xMin;
 		this.lastCalcXMax = s.xMax;
-		this.lastCalcYMin = s.yMin;
-		this.lastCalcYMax = s.yMax;
 	}
 
-	// derive the X scaler given the points calculated in calcPoints()
-	// called initially and for mouse drags (translations)
-	deriveIndependentScales() {
-		if (! this.pixelsAr)
-			throw "No Pixels Array in deriveIndependentScales()";
-
-		this.xScale = scaleLinear()
-			.range([this.marginLeft, this.marginRight]);
-
-		// use any series; the x values are all the same
-		// we don't really need to do this?  I thought I was going to omit NaN y values...
-		this.xScale.domain(extent(this.pixelsAr[0], d => d.x))
+	// set the range of the scales, pixel coordinates.  Do this after resetMargins()
+	// domains still need to be set!
+	setScaleRanges() {
+		this.xScale.range([this.marginLeft, this.marginRight]);
+		this.yScale.range([this.marginBottom, this.marginTop]);
 	}
 	
-	// derive Y scaler given the points calculated in calcPoints()
-	// called initially and upon scene changes
-	// don't call it on every render or else user won't be able to drag up or down!
-	deriveDependentScales() {
-		if (! this.pixelsAr)
-			throw "No Pixels Array in deriveDependentScales()";
-
-		this.yScale = scaleLinear()
-			.range([this.marginBottom, this.marginTop]);
-
-		// find the unified extent of all of the y values
+	// make the X and Y scalers, but their domains (science units) aren't set.
+	createScales() {
+		this.xScale = scaleLinear();
+		this.yScale = scaleLinear();
+		this.setScaleRanges();
+	}
+	
+	// Sample the calculated function, and choose y min & max, and set the state so
+	// that'll be how it's drawn.  Only when you need to set the default range.
+	// Don't call it on every render or else user won't be able to drag up or down!
+	// It doesn't set the state directly; it just hands back a state-change object.
+	// You have to either setState() or merge it into the state or whatever.
+	reRangeYAxis() {
+		// find the unified extent of all of the y values of all the functions
 		let mini = Infinity, maxi = -Infinity, mi, mx;
-		for (let f = 0; f < this.pixelsAr.length; f++) {
-			[mi, mx] = extent(this.pixelsAr[f], d => d.y);
+		for (let f = 0; f < this.vertexSeries.length; f++) {
+			[mi, mx] = extent(this.vertexSeries[f], d => d.y);
 			mini = Math.min(mi, mini);
 			maxi = Math.max(mx, maxi);
 		}
-		this.yScale.domain([mini, maxi]);
-
-		// the y range is calculated from values in the state, therefore not part of the state
-		this.yMin = mini;
-		this.yMax = maxi;
 		
+		// domain here refers to the y scaler, which takes the science y 
+		// values and converts to pix coords.
+		this.yScale.domain([mini, maxi]);
 		if (isNaN(this.yScale.domain()[0])) debugger;
+
+		return {yMin: mini, yMax: maxi};
 	}
 	
-	// render the axes, return an array [xAxis, yAxis].  Need xScale and yScale.
+	// render the axes, return an array [xAxis, yAxis] of React elements.  
+	// Need xScale and yScale.
 	renderAxes() {
 		if (!this.props.show)
 			return [];
@@ -210,7 +271,7 @@ class Svg2D extends Component {
 		// axis generation - choose which side so tic labels don't go off edge
 		let xAxis, yAxis;
 		let s = this.state;
-		if  (this.yMin + this.yMax > 0)
+		if  (s.yMin + s.yMax > 0)
 			xAxis = axisTop(this.xScale).ticks(7).tickPadding(9);
 		else
 			xAxis = axisBottom(this.xScale).ticks(7);
@@ -221,7 +282,7 @@ class Svg2D extends Component {
 			yAxis = axisLeft(this.yScale).ticks(5);
 		
 		// the axes need to still be on the chart.  We'd like zero-zero but figure out the best.
-		let xAxisY = Math.max(this.yMin, Math.min(this.yMax, 0));
+		let xAxisY = Math.max(s.yMin, Math.min(s.yMax, 0));
 		let yAxisX = Math.max(s.xMin, Math.min(s.xMax, 0));
 		
 		// wait! if some of the tick labels would overlap an axis, get rid of them
@@ -241,35 +302,38 @@ class Svg2D extends Component {
 	render() {
 		let style = {display: 'none'};
 
-		let state = this.state;
+		let props = this.props;
 		let linePaths = [];
-		if (this.props.show) {
+		if (props.show) {
 			style = {};
 			
-			this.ensureCalcPoints();
-			this.deriveIndependentScales();
-			if (this.needsScalerRecalc) {
-				this.deriveDependentScales();
-				this.needsScalerRecalc = false;
-			}
-			//console.log("Render: ", state, this.xScale.domain(), this.yScale.domain());////
-		
-			// Create a line path for each series in our data.
+			// Create a line paths for each series in our data.
+			
+			// lineSeries is a mapper that takes an entire series and churns 
+			// out the SVG coordinate string for the d attribute.  
+			// .x() and .y() set accessors into the items.
 			const lineSeries = line()
 				.x(d => this.xScale(d.x))
 				.y(d => this.yScale(d.y));
-			linePaths = this.pixelsAr.map((ar, ix) => 
-					<path className='series' d={lineSeries(ar)} key={ix} 
+			
+			// linePaths is an array of <path elements, each to be drawn.
+			// ready for sticking into an svg.
+			////this.vertexSeries.forEach((series, ix) => console.log('series, lineseries', series, lineSeries(series)));////
+			////console.log("kaboom");
+			linePaths = this.vertexSeries.map((series, ix) => 
+					<path className='series' d={lineSeries(series)} key={ix} 
 						stroke={this.funcs[ix].color} />);
 		}
 
-		let viewBox = `0 0 ${state.graphWidth} ${state.graphHeight}`;
+		let viewBox = `0 0 ${props.graphWidth} ${props.graphHeight}`;
 		
-		// react doesnt recognize touch events - needed for gestures - so use jQuery in DidMount
+		// react doesnt recognize touch events (doesn't list) - needed for gestures
+		// so use jQuery in DidMount
+		// I think we have to set width and height directly here; css doesn't do it
 		return (
 			<svg className='svg-chart'  
 						viewBox={viewBox}
-						width={state.graphWidth} height={state.graphHeight}
+						width={props.graphWidth} height={props.graphHeight}
 						preserveAspectRatio='none'
 						onMouseDown={this.events ? this.events.mouseDownEvt : ()=>{}}
 						onWheel={this.mouseWheelEvt} 
@@ -284,54 +348,24 @@ class Svg2D extends Component {
 		);
 	}
 
-	/* ******************************************************* resize window & svg */
-	// given the window obj, figure out margins and graphWidth/Height, return object to merge into state
-// 	decideSvgDimensions(win) {
-// 		// size of the screen (or phony size passed in by testing)
-// 		let graphWidth = +(this.props.innerWidth || window.innerWidth);
-// 		let graphHeight = +(this.props.innerHeight || window.innerHeight);
-// 		
-// 		// deduct the height of the blurb box, or if not created yet, just approximate
-// 		let blurbHeight = 200, blurbWidth = 400, blurbBox$ = $('.blurb-box')
-// 		if (graphWidth > graphHeight) {
-// 			if (blurbBox$.length)
-// 				blurbWidth = blurbBox$[0].offsetWidth;
-// 			graphWidth -= blurbWidth + 4;
-// 		}
-// 		else {
-// 			if (blurbBox$.length)
-// 				blurbHeight = blurbBox$[0].offsetHeight;
-// 			graphHeight -= blurbHeight + 4;
-// 		}
-// 
-// 		// where data drawn; slightly inside the full svg
-// 		this.marginLeft = this.marginTop = axisMargin;
-// 		this.marginRight = graphWidth - axisMargin;
-// 		this.marginBottom = graphHeight - axisMargin;
-// 		this.needsScalerRecalc = true;
-// 		
-// 		return {graphWidth, graphHeight};
-// 	}
-// 	
-// 	resizeEvt(ev) {
-// 		// size of the SVG changes in render() but tell it what
-// 		this.setState(this.decideSvgDimensions(ev.target));
-// 
-// 		console.log("resize ev", ev.target.innerWidth, ev.target.innerHeight, 
-// 						this.marginBottom);
-// 		console.log(this);
-// 		console.log(this.yScale);
-// 		console.log(this.yScale.range);
-// 		console.log(this.yScale.range());
-// 	}
-	
-	specialForResize(graphWidth, graphHeight) {
+	// called by ge when window gets resized, hence graph area is resized
+	resetMargins(graphWidth, graphHeight) {
 		// where data drawn; slightly inside the full graph
 		this.marginLeft = this.marginTop = axisMargin;
 		this.marginRight = graphWidth - axisMargin;
 		this.marginBottom = graphHeight - axisMargin;
-		this.needsScalerRecalc = true;
+	}
+	
+	// called by ge when window gets resized, hence graph area is resized
+	adjustForResize(graphWidth, graphHeight) {
+		this.resetMargins(graphWidth, graphHeight);
+
+		this.setScaleRanges();
+
+		if (this.props.show) {
+			this.setState(this.reRangeYAxis());
 		
+		}
 	}
 	
 	/* ******************************************************* drag move around */
@@ -346,28 +380,51 @@ class Svg2D extends Component {
 		vRel = vRel / VERT_EVENTS_FACTOR;
 		
 		// only these are in the state; all else are dependent
-		const old = this.state;
-		const newXRange = {xMin: old.xMin + hRel, xMax: old.xMax + hRel};
-		this.setState(newXRange);
+		const s = this.state;
+		const newRanges = {
+			xMin: s.xMin + hRel, xMax: s.xMax + hRel,
+			yMin: s.yMin + vRel, yMax: s.yMax + vRel,
+		};
+		this.setState(newRanges);
 		
-		this.yMin = this.yMin + vRel;
-		this.yMax = this.yMax + vRel;
+		this.xScale.domain([newRanges.xMin, newRanges.xMax]);
+		this.yScale.domain([newRanges.yMin, newRanges.yMax]);
+	}
+	
+	// called by graphicEvents when we've scrolled, but not yet redrawn.
+	// called after shoveFunc called.
+	drawFunc(horizPosition, vertPosition) {
+		this.ensureCalcPoints();
+	}
+	
+	// gets called from ge if user does a spreading gesture left & right
+	spreadHoriz(delta, lastDelta, touchMidPoint) {
+		let midi = this.xScale.invert(touchMidPoint[0]);
+		let factor = lastDelta[0] / delta[0];
+		////console.log("horiz, factor=", factor, lastDelta, delta);
+		let xMin = (this.state.xMin - midi) * factor +  midi;
+		let xMax = (this.state.xMax - midi) * factor +  midi;
+		this.setState({xMin , xMax});
 		
-		this.xScale.domain([newXRange.xMin, newXRange.xMax]);
-		this.yScale.domain([this.yMin, this.yMax]);
+		////console.log("xmin/max:", xMin, xMax);
+		this.xScale.domain([xMin, xMax]);
 	}
 	
-	drawAtPos(horizPosition, vertPosition) {
-	
+	// gets called from ge if user does a spreading gesture up & down
+	spreadVert(delta, lastDelta, touchMidPoint) {
+		let midi = this.yScale.invert(touchMidPoint[1]);
+		let factor = lastDelta[1] /  delta[1];
+		////console.log("vertical, factor=", factor, lastDelta, delta);
+		let s = this.state;
+		let yMin = (s.yMin - midi) * factor +  midi;
+		let yMax = (s.yMax - midi) * factor +  midi;
+		this.setState({yMin, yMax});
+		
+		////console.log("ymin/max:", this.yMin, this.yMax);
+		this.yScale.domain([yMin, yMax]);
 	}
 	
-	// sometimes momentum goes crazy like switching between scenes
-	//// fix this!
-	static haltMomentum() {
-		if (Svg2D.me)
-			Svg2D.me.offsetX = Svg2D.me.offsetY = 0;
-	}
-
+	
 	mouseWheelEvt(ev) {
 		console.log("mouseWheelEvt x y z", ev);
 		////console.log( ev.deltaX, ev.deltaY, ev.deltaZ);
@@ -386,11 +443,11 @@ class Svg2D extends Component {
 
 	// convert the 0th touch in this event to a pseudo-event good enough for the mouse funcs
 	// only call this in a one-touch situation
-	touchToEvent(ev) {
-		let t = ev.touches[0];
-		t.preventDefault = ev.preventDefault;  // make it look like an event
-		return t;
-	}
+// 	touchToEvent(ev) {
+// 		let t = ev.touches[0];
+// 		t.preventDefault = ev.preventDefault;  // make it look like an event
+// 		return t;
+// 	}
 	
 // 	touchStartEvt(ev) {
 // 		console.log("touch StartEvt", ev.pageX, ev.pageY, ev.touches);
@@ -434,85 +491,27 @@ class Svg2D extends Component {
 	/* ******************************************************* 2+ finger gestures */
 
 	// given array of touches, give me delta X and delta Y, over all fingers, top to bottom and L to R
-	// retutn array of two vectors: delta and midpoint
-	calcTouchFingers(touches) {
-		let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-		
-		// this should only happen on touch end events.  but i think they happen other times too.
-		if (touches.length <= 0)
-		 	return null;
-		
-		for (let t = 0; t < touches.length; t++) {
-			// these are all in pixel units
-			let touch = touches[t];
-			minX = Math.min(minX, touch.clientX);
-			minY= Math.min(minY, touch.clientY);
-			maxX = Math.max(maxX, touch.clientX);
-			maxY= Math.max(maxY, touch.clientY);
-		};
-		
-		return [[maxX - minX, maxY - minY], 
-				[this.xScale.invert((maxX + minX)/2), this.yScale.invert((maxY + minY)/2)]];
-	}
+	// return array of two vectors: delta and midpoint
+// 	calcTouchFingers(touches) {
+// 		let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+// 		
+// 		// this should only happen on touch end events.  but i think they happen other times too.
+// 		if (touches.length <= 0)
+// 		 	return null;
+// 		
+// 		for (let t = 0; t < touches.length; t++) {
+// 			// these are all in pixel units
+// 			let touch = touches[t];
+// 			minX = Math.min(minX, touch.clientX);
+// 			minY= Math.min(minY, touch.clientY);
+// 			maxX = Math.max(maxX, touch.clientX);
+// 			maxY= Math.max(maxY, touch.clientY);
+// 		};
+// 		
+// 		return [[maxX - minX, maxY - minY], 
+// 				[this.xScale.invert((maxX + minX)/2), this.yScale.invert((maxY + minY)/2)]];
+// 	}
 	
-// 	touchStartHandler(ev) {
-// 		// pull the plug on normal drag, which has been started
-// 		this.dragging = false;
-// 		this.setState(this.downMinMax);
-// 
-// 		[this.lastDelta, this.touchMidPoint] = this.calcTouchFingers(ev.touches);
-// 
-// 		this.spread = Math.abs(this.lastDelta[0]) > Math.abs(this.lastDelta[1]) ? 'x' : 'y';
-// 
-// 		ev.preventDefault();
-// 	}
-// 	
-// 	touchMoveHandler(ev) {
-// 		// eslint-disable-next-line
-// 		let delta, mid, factor, xMin, xMax, yMin, yMax;
-// 		let s = this.state;
-// 		let midi = this.touchMidPoint;
-// 		
-// 		delta = this.calcTouchFingers(ev.touches)[0];
-// 		// is it a vertical or horizontal gesture?
-// 		if (this.spread == 'x') {
-// 			// horizontal - stretch the x axis
-// 			factor = this.lastDelta[0] / delta[0];
-// 			////console.log("horiz, factor=", factor, this.lastDelta, delta);
-// 			xMin = (s.xMin - midi[0]) * factor +  midi[0];
-// 			xMax = (s.xMax - midi[0]) * factor +  midi[0];
-// 			this.setState({xMin , xMax});
-// 			////console.log("xmin/max:", xMin, xMax);
-// 			this.xScale.domain([xMin, xMax]);
-// 		}
-// 		else {
-// 			// vertical - stretch the y axis
-// 			factor =this.lastDelta[1] /  delta[1];
-// 			////console.log("vertical, factor=", factor, this.lastDelta, delta);
-// 			this.yMin = (this.yMin - midi[1]) * factor +  midi[1];
-// 			this.yMax = (this.yMax - midi[1]) * factor +  midi[1];
-// 			// must trigger rerendering even though state didn't change
-// 			this.setState({xMax: this.state.xMax + 1e-10});
-// 			////console.log("ymin/max:", this.yMin, this.yMax);
-// 			this.yScale.domain([this.yMin, this.yMax]);
-// 		}
-// 		this.lastDelta = delta;
-// 		
-// ////if (factor < .8 || factor > 1.2) debugger;
-// 		////console.log("tmh dom and range", this.xScale.domain(), this.xScale.range());
-// 
-// 		ev.preventDefault();
-// 	}
-// 	
-// 	touchEndHandler(ev) {
-// 		this.spread = false;
-// 		ev.preventDefault();
-// 	}
-// 	
-// 	touchCancelHandler(ev) {
-// 		this.spread = false;
-// 		ev.preventDefault();
-// 	}
 	
 	gestureStartHandler(ev) {
 		console.log("gestureStartHandler");

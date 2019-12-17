@@ -16,6 +16,7 @@ import {generateBlanket} from './3d/genComplex';
 import {AxisTics, axisTicsPainter} from './3d/AxisTics';
 
 // don't try to type these names, just copy paste
+// eslint-disable-next-line no-unused-vars
 const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
 
 // choose n cells in x and y direction to make total x*y cells
@@ -49,49 +50,70 @@ class Webgl3D extends Component {
 			
 		this.state = {
 			// these are part of the state as they directly affect the canvas
+			// sceneIndex - in props
+			// scene components and Scales are derived from the index
+			// which comes from the props.
+			// Maybe there's no state to be had.  This just renders a canvas.
 			
-			// size of canvas
+			
+			// size of canvas  NO it's in the props
 			// for testing, pass in innerWidth and innerHeight props
-			...graphicEvents.decideGraphDimensions(props.innerWidth? props : window),
+// 			graphWidth: this.props.graphWidth,
+// 			graphHeight: this.props.graphHeight,
 		};
 		
+		this.shoveFunc = this.shoveFunc.bind(this);
+
 		// you might think these are part of the state, 
 		// but the state only applies to the canvas, not what's drawn in it 
 		// (which doesn't happen at render time).  It's an uncontrolled component.
-		this.setupIndex = -1;
+		//this.setupIndex = props.requestedIndex;
 		
-		// some defaults to get us going
-		this.xMin = this.yMin = -1;
-		this.xMax = this.yMax = 1;
-		this.nXCells = this.nYCells = this.nZCells = 1;
+		this.newScene(props.requestedIndex);
 		
 		this.drawOneFrame = this.drawOneFrame.bind(this);
-		this.shove3D = this.shove3D.bind(this);
 	}
+	
 	
 	componentDidMount() {
+		// with the dom stuff in place, we can set up click and drag stuff
 		this.events = new graphicEvents(this, this.sensitiveElement, 
-				this.drawOneFrame, this.shove3D);
+				this.drawOneFrame, this.shoveFunc);
 		
-		// now that the canvas is created, we can grab it for 3d
-		this.setScene(this.props.requestedIndex);
+		if (this.props.show) {
+			// now that the canvas is created, we can grab it for 3d
+			// do the other part of blanket initialization
+			//done in render by ref this.plot.attachCanvas(this.graphElement);
+
+			// webgl needs the canvas to exist in order to draw into it
+			// we know it does now
+			this.drawOneFrame();
+		}
 	}
 	
-	shove3D() {
-		axisTicsPainter.rotateAllTics();
+	shoveFunc() {
+		if (this.props.show)
+			axisTicsPainter.rotateAllTics();
 	}
 	
-	setScene(sceneIndex) {
-		if (! this.props.show)
-			return;
-		
+	// start the component off with its first scene, or re-calibrate it to the
+	// scene passed in.  must have 'show' be true; ie scene.graphics == '3D'
+	// calculates everything down to cell coordinates.
+	newScene(sceneIndex) {
+		// set this.scene, even if it's not for us
 		let scene = this.scene = config.scenes[sceneIndex];
+		if (this.scene.graphics != '3D')
+			return;
 
 		this.funcs = scene.funcs;
-		graphicEvents.use(this.events);
 
-		// Reshape the cell block according to the mins/maxes, 
-		// so the product ends up being approx TARGET_CELLS, 
+		this.xMin = scene.xMin;
+		this.xMax = scene.xMax;
+		this.yMin = scene.yMin;
+		this.yMax = scene.yMax;
+
+		// shape the cell block according to the mins/maxes, 
+		// so the product (len*wid) ends up being approx TARGET_CELLS, 
 		// but still in approximate proportion of x vs y
 		// note the number of vertices in both directions is +1 more than cells
 		this.nYCells = Math.sqrt(TARGET_CELLS * 
@@ -100,53 +122,50 @@ class Webgl3D extends Component {
 		this.nXCells = Math.round(TARGET_CELLS / this.nYCells);
 		this.nZCells = 1;
 
-		this.setupIndex = sceneIndex;
-		this.xMin = scene.xMin;
-		this.xMax = scene.xMax;
-		this.yMin = scene.yMin;
-		this.yMax = scene.yMax;
+		this.createXYScales();
 
-		this.restartWebgl();
-		
-		this.setState({setupIndex: sceneIndex});
-	}
-	
-	// do this when the blanket data changes, or the canvas dimensions, 
-	// or the x/y mins/maxes change
-	restartWebgl() {
-		// set up the webgl canvas
-		let scene = this.scene;
-		this.plot = new blanketPlot(
-			document.getElementById(this.name + '3D'), 
+		// gotta calculate this whole thing over
+		this.plot = new blanketPlot(this, 
 			{
 				nXCells: this.nXCells, 
 				nYCells: this.nYCells, 
-				nZCells: this.nZCells,
+				nZCells: 1,
 				xPerCell: (scene.xMax - scene.xMin) / this.nXCells, 
 				yPerCell: (scene.yMax - scene.yMin) / this.nYCells,
 			}
 		);
 
-		this.deriveIndependentScales();
+		// this generates a blanket, and evaluates the function over the cell block
 		this.calcPoints(this);
 
-		// stick data into plot, and find its zScale
+		// stick data into plot, and find its zScale, and anything else you can do
+		// without the canvas or gl existing
 		this.plot.attachData(this.blanket);
+		
+		// use the right one.
+		graphicEvents.use(this.events);
 
-		// first render does not call componentDidUpdate()!
-		this.drawOneFrame();
-	}
 
-	static getDerivedStateFromError(errObj) {
-		console.error('getDerivedStateFromError:', arguments);
-		debugger;
+		// um... meanwhile, stop scrolling pleeze   --- ???
+		//me.events.stopAnimating();
 	}
 	
-	componentDidCatch(errObj, info) {
-		console.error('Webgl3D caught exception:', errObj.stack, info);
-		debugger;
+	// get ready, 'soon' we'll be rendering this new scene.
+	// calculate all that stuff.
+	static prepForNewScene(sceneIndex) {
+// 		if (! this.me.props.show)
+// 			return;
+		
+		let me = Webgl3D.me;
+		me.newScene(sceneIndex);
+
+		graphicEvents.use(me.events);
+
+		// um... stop scrolling pleeze
+		me.events.stopAnimating();
 	}
-	
+
+
 	// create the data based on the function, in the shape of the cells, but science coords.
 	calcPoints() {
 		this.blanket = generateBlanket(
@@ -156,17 +175,18 @@ class Webgl3D extends Component {
 		);
 	}
 	
-	// derive the X and Y scaler given the dimensions of the graph.
-	// they convert from dataspace coords to cell coords, use scale.invert for opposite
+	// derive the X and Y scaler given the dimensions of the graph in science and cell coords.
+	// they convert from science coords to cell coords, use scale.invert for opposite
 	// call before calculating data as it needs these!
-	deriveIndependentScales() {
-		this.xScale = scaleLinear().range([0, this.nXCells]);
-		this.xScale.domain([this.xMin, this.xMax]);
-		this.yScale = scaleLinear().range([0, this.nYCells]);
-		this.yScale.domain([this.yMin, this.yMax]);
+	createXYScales() {
+		this.xScale = scaleLinear().range([0, this.nXCells])
+									.domain([this.xMin, this.xMax]);
+		this.yScale = scaleLinear().range([0, this.nYCells])
+									.domain([this.yMin, this.yMax]);
 	}
 	
-	// scale this 3-vector by our xyz scalers, and return a 4-vector - [3] often ignored
+	// scale this 3-vector science coords, by our xyz scalers, into cell coords
+	// return a 4-vector - [3] often ignored
 	scaleXYZ(xyz) {
 		return [this.xScale(xyz[0]), this.yScale(xyz[1]), this.zScale(xyz[2]), 1];
 	}
@@ -180,27 +200,31 @@ class Webgl3D extends Component {
 	// that's done in drawOneFrame()
 	render() {
 		// if 3d isn't on, forget it.  Otherwise, enforce wid & height with iron fist.
-		let state = this.state;
-		let canvasStyle = {width: state.graphWidth, height: state.graphHeight}
-		let showStyle = {display: (this.props.show ? 'block' : 'none'),
+		let props = this.props;
+		let canvasStyle = {width: props.graphWidth, height: props.graphHeight}
+		let wrapperStyle = {display: (this.props.show ? 'block' : 'none'),
 				...canvasStyle};
+		let plot = this.plot;
 		
 		// react doesnt recognize touch events - needed for gestures
 		// so use jQuery in graphicEvents instead of react events
 		return (
-			<div className='webgl-chart' style={showStyle}
+			<div className='webgl-chart' style={wrapperStyle}
 					ref={webglChart => this.sensitiveElement = webglChart}>
 				<AxisTics style={canvasStyle} />
 				<canvas id={this.name + '3D'} 
-					style={canvasStyle} width={state.graphWidth} height={state.graphHeight}
+					style={canvasStyle} width={props.graphWidth} height={props.graphHeight}
 					onMouseDown={this.events ? this.events.mouseDownEvt : ()=>{}}
-					ref={canvas => this.graphElement = canvas}>
+					ref={canvas => plot && canvas && plot.attachCanvas(canvas)} >
 					This displays a 3-D image of the surface.
 				</canvas>
 			</div>
 		);
 	}
 	
+	// queue off a process to draw it thru webgl.  (Only if this is show ing)
+	// everything must have been calculated before.
+	// Called in compDidUpdate() and compDidMount(), no earlier
 	drawOneFrame() {
 		// if not supposed to be shown, or not mature, drop it
 		if (! this.props.show || ! this.events || ! this.plot)
@@ -218,10 +242,6 @@ class Webgl3D extends Component {
 		// we know it does now
 		this.drawOneFrame();
 		
-		if (prevProps.requestedIndex != this.state.setupIndex) {
-			this.setScene(this.props.requestedIndex);  // this sets state and triggers render
-		
-		}
 	}
 	
 	// graphicEvents calls us after the rotation position changed to set the readout
@@ -234,10 +254,15 @@ class Webgl3D extends Component {
 
 	/* ******************************************************* resize window & webgl */
 	
-	specialForResize(graphWidth, graphHeight) {
-		// this is what we need (otherwise it's all distorted)
-		this.plot.gl.viewport(0, 0, graphWidth, graphHeight);
+	adjustForResize(graphWidth, graphHeight) {
+		if (! this.props.show)
+			return;
+		
+		this.plot.adjustForResize(graphWidth, graphHeight);
 	}
+
+
+
 }
 
 export default Webgl3D;
