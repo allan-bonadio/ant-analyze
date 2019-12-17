@@ -88,7 +88,6 @@ export class weatherVane {
 		this.startVertex = this.buffer.nVertices;
 		
 		let g = Webgl3D.me;
-		let p = this.plot;
 		let zero = g.scaleXYZ([0, 0, 0]);
 		let one  = g.scaleXYZ([1, 1, 1]);
 		////{x: g.xScale(0), y: g.yScale(0), z: p.zScale(0)};
