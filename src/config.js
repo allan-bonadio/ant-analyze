@@ -16,11 +16,11 @@ export let config = {
 			funcs: [{
 					func: x => Math.sin(x),
 					nPoints: 100,
-					color: '#00c',
+					color: '#8cf',
 				}, {
 					func: x => Math.cos(x),
 					nPoints: 100,
-					color: '#0c0',
+					color: '#cf8',
 				}
 			],
 			xMin: -6,
@@ -38,7 +38,7 @@ export let config = {
 			funcs: [{
 				func: x => Math.sin(x) / x,
 				nPoints: 200,  // must be even to avoid singularity
-				color: '#008',
+				color: '#8fc',
 			}],
 			xMin: -20,
 			xMax: 20,
@@ -56,13 +56,13 @@ export let config = {
 			funcs: [{
 				func: x => Math.sin(1/x),
 				nPoints: 1000,  // needs more cuz of the tight curves
-				color: '#008',
+				color: '#c8f',
 			}],
 			xMin: -2,
 			xMax: 2,
 		},
 
-		// 3d over complex plane
+		// sin(x+iy) 3d over complex plane
 		{
 			title: "Sine over Complex Plane",
 			formula: "sin(<v>x</v>+<v>iy<v>)",
@@ -75,14 +75,32 @@ export let config = {
 					re: Math.sin(x) * Math.cosh(y),
 					im: Math.cos(x) * Math.sinh(y),
 				}),
-				nXCells: 5,
-				nYCells: 5,
 				complex: true,
 			}],
 			xMin: -5.1,
 			xMax: 5.1,
 			yMin: -1.4,
 			yMax: 1.4,
+		},
+
+		// log(x+iy) complex plane
+		{
+			title: "Natural Logarithm over Complex Plane",
+			formula: "log(<v>x</v>+<v>iy<v>)",
+			blurb: "Logarithm is actually multi-valued, in complex numbers.  You can add or subtract <v>πi</v>, or integer multiples, from any value to get other values that are also correct.  The results actually spiral in the imaginary direction.  The dividing line between two layers, here, is along the negative real axis.  Near zero, of course, the logarithm shoots down to –∞.",
+			graphics: '3D',
+			funcs: [{
+				// sin(x+iy) = sin(x) cosh(y) + i cos(x) sinh(y)
+				func: (x, y) => ({
+					re: Math.log(x*x + y*y) * .5,  // log(sqrt(x^2 + y^2))
+					im: Math.atan2(y, x),
+				}),
+				complex: true,
+			}],
+			xMin: -3.1,
+			xMax: 3.1,
+			yMin: -3.1,
+			yMax: 3.1,
 		},
 	],
 };
