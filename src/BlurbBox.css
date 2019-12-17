@@ -6,55 +6,16 @@
 	min-width: 350px;
 	background-color: black;
 	color: white;
-
-/*
-	display: grid;
-	grid-template-rows: 0 0 0 0;
-	grid-template-columns: auto;
-	grid: 'nav'
-		'title'
-		'blurb'
-		'instructions';
-*/
 }
 
 .blurb-title {
-/* 
-	grid-area: title;
- */
+	font-size: 1.5em;
 }
-
-.blurb-text {
-/* 
-	grid-area: blurb;
- */
-}
-
-/* 
-@media screen and (orientation:portrait) {
-	.blurb-box {
-		width: 100%;
-	}
-}
-
-@media screen and (orientation:landscape) {
-	.blurb-box {
-	max-width: 30%;
-	}
-}
- */
-
-
-
-
 
 /* ******************************************************* nav bar */
 
 /* one of those little square gray buttons, or the Next button which is wider */
 div.nav-bar {
-/* 
-	grid-area: nav;
- */
 	margin-left: -.167em
 }
 
@@ -70,9 +31,10 @@ div.nav-bar div {
 	background: #444;
 }
 
+/* extra for current scene */
 div.nav-bar div.selected {
 	font-weight: bold;
-	background: #777;
+	background: #999;
 }
 
 /* ******************************************************* instructions */

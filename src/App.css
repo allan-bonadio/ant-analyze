@@ -17,11 +17,6 @@ body {
 
 /* ******************************************************* responsive */
 
-/* 
-@media screen and (orientation:portrait) {}
-@media screen and (orientation:landscape) {svg, .blurb-box {float: left;}}
- */
-
 @media screen and (max-width: 499px) {
 	/* narrow screen - like an iphone or android phone */
 	body {

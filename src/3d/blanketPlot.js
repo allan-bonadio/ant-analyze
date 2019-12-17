@@ -477,7 +477,8 @@ class blanketPlot {
 
 
 
-	// longitude and latitude are in radians
+	// longitude and latitude are in radians.  Typically this takes about
+	// .5 to 15 millisecond to execute, so it queues off stuff to the gpu async.
 	drawOneFrame(longitude, latitude) {
 	//// temp benchmark hack
 // 		let pNow = performance.now();
@@ -500,7 +501,7 @@ class blanketPlot {
 		gl.enable(gl.DEPTH_TEST);	 // Enable depth testing
 		gl.depthFunc(gl.LEQUAL);		// Near things obscure far things
 		
-		gl.lineWidth(3.0);
+		gl.lineWidth(1.0);  // it's the only option anyway
 		this.checkOK();
 
 		// Clear the canvas before we start drawing on it.
@@ -521,6 +522,7 @@ class blanketPlot {
 		// actual drawing
 		this.painters.forEach(painter => painter.draw(gl));
 ////console.timeEnd('drawOneFrame');
+
 	}
 
 }

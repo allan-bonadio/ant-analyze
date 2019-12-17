@@ -251,6 +251,11 @@ class graphicEvents {
 		if (! this.dragging)
 			return;
 		
+		let timeDelta = window.performance.now() - this.mostRecentMoveTime;
+		if (timeDelta > 100)
+			console.log('graphicEvents.mouseMoveEvt, too slow ms:', timeDelta);
+		this.mostRecentMoveTime = window.performance.now();
+
 		// if no left mouse buttons are being pressed... it's over
 		// this happens when you never get the mousedown cuz of debugger, menu, etc
 		if (0 == (ev.buttons & 1)) {
@@ -304,7 +309,7 @@ class graphicEvents {
 
 	// one fingertip touches
 	touchStartEvt(ev) {
-		console.log("touch StartEvt", ev.pageX, ev.pageY, ev.touches);
+		console.log("touch StartEvt", ev.touches[0].pageX, ev.touches[0].pageY, ev.touches);
 
 		// when you set touch event handlers, mouse events stop coming.  
 		// So fake it unless there's 2 or more touches
@@ -316,7 +321,7 @@ class graphicEvents {
 	
 	// one (or more?) touches has moved
 	touchMoveEvt(ev) {
-		console.log("touchMoveEvt", ev.pageX, ev.pageY, ev.touches);
+		console.log("touchMoveEvt", ev.touches[0].pageX, ev.touches[0].pageY, ev.touches);
 		if (ev.touches.length == 1)
 			this.mouseMoveEvt(this.touchToEvent(ev));
 		else
@@ -325,7 +330,7 @@ class graphicEvents {
 	
 	// one fingertip releases
 	touchEndEvt(ev) {
-		console.log("touchEndEvt", ev.pageX, ev.pageY, ev.touches);
+		console.log("touchEndEvt", ev.touches);
 		if (ev.touches.length == 1)
 			this.mouseUpEvt(this.touchToEvent(ev));
 		else
@@ -334,7 +339,7 @@ class graphicEvents {
 	
 	// this is rare stuff like the program quits out from under your fingers
 	touchCancelEvt(ev) {
-		console.log("touchCancelEvt", ev.pageX, ev.pageY, ev.touches);
+		console.log("touchCancelEvt", ev.touches);
 		if (ev.touches.length == 1) 
 			this.mouseUpEvt(this.touchToEvent(ev));
 		else
@@ -448,7 +453,15 @@ class graphicEvents {
 	
 	/* ************************************************************ gesture events */
 	
-	
+	gestureStartHandler(ev) {
+		console.log("gestureStartHandler");
+	}
+	gestureChangeHandler(ev) {
+		console.log("gestureChangeHandler");
+	}
+	gestureEndHandler(ev) {
+		console.log("gestureEndHandler");
+	}
 	
 	
 	

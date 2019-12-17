@@ -91,11 +91,6 @@ class Webgl3D extends Component {
 		}
 	}
 	
-	shoveFunc() {
-		if (this.props.show)
-			axisTicsPainter.rotateAllTics();
-	}
-	
 	// start the component off with its first scene, or re-calibrate it to the
 	// scene passed in.  must have 'show' be true; ie scene.graphics == '3D'
 	// calculates everything down to cell coordinates.
@@ -250,6 +245,24 @@ class Webgl3D extends Component {
 		let r2d = radians => radians * 180 / Math.PI;
 		this.props.setReadout(r2d(horizPosition / HORIZ_EVENTS_FACTOR).toFixed() +'° long  '+
 				r2d(vertPosition/VERT_EVENTS_FACTOR).toFixed() +'° lat '+ (extra || ''));
+	}
+
+	/* ******************************************************* mouse/touch evts */
+
+	// called while user rotates graph
+	shoveFunc() {
+		if (this.props.show)
+			axisTicsPainter.rotateAllTics();
+	}
+	
+	// gets called from ge if user does a spreading gesture left & right
+	spreadHoriz(delta, lastDelta, touchMidPoint) {
+		// 'soon'
+	}
+	
+	// gets called from ge if user does a spreading gesture up & down
+	spreadVert(delta, lastDelta, touchMidPoint) {
+		// 'soon'
 	}
 
 	/* ******************************************************* resize window & webgl */

@@ -44,15 +44,6 @@ class Svg2D extends Component {
 			// this is static - our graphEvents isn't even instantiated yet
 			
 			...sceneState,
-			
-// 			graphWidth: this.props.graphWidth,
-// 			graphHeight: this.props.graphHeight,
-			
-			// this is actually part of App's state.  
-			// We should refer to it as props.requestedIndex
-			//requestedIndex: this.props.requestedIndex,
-// 			xMin: -1,  // just defaults
-// 			xMax: 1,  // will quickly be overwritten
 
 			// The first draw, the y min/max comes from reRange().  After that, 
 			// it's state that the user can change by dragging
@@ -71,8 +62,6 @@ class Svg2D extends Component {
 			Object.assign(this.state, this.reRangeYAxis());
 			// all set up for the first render
 		}
-
-//		generateAndScale(true);
 
 		this.mouseWheelEvt = this.mouseWheelEvt.bind(this);
 		this.shoveFunc = this.shoveFunc.bind(this);
@@ -140,42 +129,6 @@ class Svg2D extends Component {
 		Svg2D.me.events.stopAnimating();
 	}
 	
-// 	setScene(sceneIndex) {
-// 		this.sceneState(sceneIndex);
-// 
-// 		// there's been a change in scene.  Reset the bounds & start over
-// 		this.setState(newState);
-// 		
-// 		generateAndScale(newState);
-// 	}
-
-	// called before the start of a render, this checks for a new index/scene, and changes stuff
-	// that's needed for this render
-// 	static getDerivedStateFromProps(props, state2b) {
-// 		if (!props.show)
-// 			return state2b;
-// 		graphicEvents.use(Svg2D.me.events);
-// 		
-// 		// only if user changed scene
-// 		let index = props.requestedIndex;
-// 		if (index == state2b.requestedIndex)
-// 			return null;
-		
-// 		let scene = config.scenes[index];
-// 		Svg2D.me.scene = scene;
-// 		Svg2D.me.funcs = scene.funcs;
-// 
-// 		// there's been a change in scene.  Reset the bounds & start over
-// 		state2b = {...state2b, 
-// 			xMin: scene.xMin, xMax: scene.xMax, 
-// 			requestedIndex: index,
-// 		};
-		
-		// now this will render with new scene
-// 		return state2b;
-// 	}
-	
-	
 	// create the pixel data based on the function.  (always)
 	calcPoints() {
 		let s = this.state;
@@ -201,22 +154,12 @@ class Svg2D extends Component {
 			}
 		}
 		this.vertexSeries = vertexSeries;
-		
-		
-// 		if (s.requestedIndex != this.lastCalcIndex)
-// 			this.reRange();
-
 	}
 	
 	// it'll maybe call this.calcPoints()
 	// if it needs to, and remembers stuff for next time
 	ensureCalcPoints() {
 		let s = this.state;
-	
-		// not if it doesn't need it.  I bet this is so fast it doesn't matter.
-// 		if (s.requestedIndex === this.lastCalcIndex && 
-// 					s.xMin == this.lastCalcXMin && s.xMax == this.lastCalcXMax)
-// 			return;  // it'll be the same
 	
 		this.calcPoints();
 	
@@ -318,8 +261,6 @@ class Svg2D extends Component {
 			
 			// linePaths is an array of <path elements, each to be drawn.
 			// ready for sticking into an svg.
-			////this.vertexSeries.forEach((series, ix) => console.log('series, lineseries', series, lineSeries(series)));////
-			////console.log("kaboom");
 			linePaths = this.vertexSeries.map((series, ix) => 
 					<path className='series' d={lineSeries(series)} key={ix} 
 						stroke={this.funcs[ix].color} />);
@@ -434,94 +375,7 @@ class Svg2D extends Component {
 		//ev.preventDefault();
 	}
 
-	/* ******************************************************* touch & gesture events */
-	// touch events are like mouse events, eg touchStart ~= mouseDown.  
-	// But the start/end are delivered for events for each finger, and you can have several of them.  
-	// Each ev object also has a list of touches, one for each finger that's currently down.
-	// Also, you don't have to intercept Move and End events for the window or body;
-	// they guarantee the touch events are delivered to the touchStart element.
-
-	// convert the 0th touch in this event to a pseudo-event good enough for the mouse funcs
-	// only call this in a one-touch situation
-// 	touchToEvent(ev) {
-// 		let t = ev.touches[0];
-// 		t.preventDefault = ev.preventDefault;  // make it look like an event
-// 		return t;
-// 	}
 	
-// 	touchStartEvt(ev) {
-// 		console.log("touch StartEvt", ev.pageX, ev.pageY, ev.touches);
-// 
-// 		// when you set touch event handlers, mouse events stop coming.  
-// 		// So fake it unless there's 2 or more touches
-// 		if (ev.touches.length == 1)
-// 			this.mouseDownEvt(this.touchToEvent(ev));
-// 		else
-// 			this.touchStartHandler(ev)
-// 	}
-// 	
-// 	touchMoveEvt(ev) {
-// 		console.log("touchMoveEvt", ev.pageX, ev.pageY, ev.touches);
-// 		if (ev.touches.length == 1)
-// 			this.mouseMoveEvt(this.touchToEvent(ev));
-// 		else
-// 			this.touchMoveHandler(ev)
-// 	}
-// 	
-// 	touchEndEvt(ev) {
-// 		console.log("touchEndEvt", ev.pageX, ev.pageY, ev.touches);
-// 		if (ev.touches.length == 1)
-// 			this.mouseUpEvt(this.touchToEvent(ev));
-// 		else
-// 			this.touchEndHandler(ev)
-// 	}
-// 	
-// 	touchCancelEvt(ev) {
-// 		console.log("touchCancelEvt", ev.pageX, ev.pageY, ev.touches);
-// 		if (ev.touches.length == 1) 
-// 			this.mouseUpEvt(this.touchToEvent(ev));
-// 		else
-// 			this.touchCancelHandler(ev)
-// 	}
-// 	
-// 	touchForceChange(ev) {
-// 		////console.log("touchForceChange", ev.pageX, ev.pageY, ev.touches);
-// 	}
-	
-	/* ******************************************************* 2+ finger gestures */
-
-	// given array of touches, give me delta X and delta Y, over all fingers, top to bottom and L to R
-	// return array of two vectors: delta and midpoint
-// 	calcTouchFingers(touches) {
-// 		let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-// 		
-// 		// this should only happen on touch end events.  but i think they happen other times too.
-// 		if (touches.length <= 0)
-// 		 	return null;
-// 		
-// 		for (let t = 0; t < touches.length; t++) {
-// 			// these are all in pixel units
-// 			let touch = touches[t];
-// 			minX = Math.min(minX, touch.clientX);
-// 			minY= Math.min(minY, touch.clientY);
-// 			maxX = Math.max(maxX, touch.clientX);
-// 			maxY= Math.max(maxY, touch.clientY);
-// 		};
-// 		
-// 		return [[maxX - minX, maxY - minY], 
-// 				[this.xScale.invert((maxX + minX)/2), this.yScale.invert((maxY + minY)/2)]];
-// 	}
-	
-	
-	gestureStartHandler(ev) {
-		console.log("gestureStartHandler");
-	}
-	gestureChangeHandler(ev) {
-		console.log("gestureChangeHandler");
-	}
-	gestureEndHandler(ev) {
-		console.log("gestureEndHandler");
-	}
 }
 
 export default Svg2D;
