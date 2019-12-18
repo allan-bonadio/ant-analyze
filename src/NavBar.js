@@ -17,7 +17,7 @@ class NavBar extends Component {
 		// all the buttons
 		console.log("render of the nav bar, req ix:", this.props.requestedIndex);
 		let buttons = config.scenes.map((scene, ix) => {
-			let sel = (this.props.requestedIndex === ix) ? 'selected' : '';
+			let sel = (this.props.requestedIndex == ix) ? 'selected' : '';
 			return <div key={ix} index={ix} className={sel} onClick={this.clickNumber} 
 						onMouseDown={this.killTextSelection}  
 						dangerouslySetInnerHTML={{__html: scene.formula}} >

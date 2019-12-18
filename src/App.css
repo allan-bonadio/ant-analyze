@@ -1,8 +1,11 @@
+* {
+	box-sizing: border-box;
+}
+
 body {
 	position: fixed;
 	height: 100%;
 	width: 100%;
-	box-sizing: border-box;
 	background-color: black;
 }
 
@@ -13,42 +16,6 @@ body {
 .App {
 	margin: 3px;
 	height: 100%;
-}
-
-/* ******************************************************* responsive */
-
-@media screen and (max-width: 499px) {
-	/* narrow screen - like an iphone or android phone */
-	body {
-		// 100 vmin = width or height of screen, whichever is smaller
-		font-size: 3vmin;
-	}
-}
-
-@media screen and (min-width: 500px) {
-	/* wide screen */
-	body {
-		font-size: 15px;  /* = 3vmin at 500px */
-	}
-}
-
-@media screen and (max-width: 499px), screen and (max-height: 499px) {
-	/* small screen - shrink padding/margins, take out stuff */
-	.blurb-text {
-		display: none;
-	}
-	div.nav-bar div {
-		padding: .2em .4em;
-	}
-	div.nav-bar div.next-button {
-		display: none;
-	}
-	p {
-		margin: .2em 0;
-	}
-	h2 {
-		margin: .2em 0;
-	}
 }
 
 /* ******************************************************* big layout */
@@ -67,8 +34,9 @@ body {
 
 /* the box with the buttons and text is either on the right or below, 
 	dep on aspect ratio of window.  See graphicEvents.decideGraphDimensions() */
-.blurb-box {
+#blurb-box {
 	flex: 0 0;
+	z-index: 20;  /* or floating above */
 }
 
 /* upper left corner */
@@ -76,5 +44,48 @@ body {
 	position: absolute;
 	color: white;
 	padding: .2em;
+	z-index: 10;
+}
+
+/* user clicks to show blurb as a menu */
+#hamburger-button {
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 24px;
+	height: 24px;
+	z-index: 30;
+	border: 1px #aaa solid;
+	cursor: default;
+	display: none;
+}
+
+#hamburger-button div {
+	width: 14px;
+	height: 0;
+	color: white;
+	border-top: 2px white solid;
+	margin: 4px;
+	cursor: default;
+}
+
+/* ******************************************************* responsive */
+
+/* *** KEEP THIS IN SYNC WITH SIMILAR EXPRESSIONS IN BlurbBox.css and graphicEvents.js *** */
+@media (max-width: 499px), (max-height: 499px) {
+	/* small screen - shrink padding/margins, take out stuff */
+	body {
+		/* 100 vmin = width or height of screen, whichever is smaller */
+		font-size: 3vmin;
+	}
+	
+	.outer-wrapper {
+		display: block;  /* no flex! */
+	}
+
+	#hamburger-button {
+		display: block;
+	}
+	
 }
 

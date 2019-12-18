@@ -33,10 +33,12 @@ class App extends Component {
 			requestedIndex: chosenSceneIndex,
 			readout: '',
 			error: null,
+			secondError: null,
 			...graphicEvents.decideGraphDimensions(props.innerWidth? props : window),
 		};
 
 		this.setReadout = this.setReadout.bind(this);
+		this.hamburgerClickEvt = this.hamburgerClickEvt.bind(this);
 	}
 
 	// this intercepts exceptions from lower components during render.
@@ -86,11 +88,17 @@ class App extends Component {
 		error = Object.keys(error)[0];
 
 		// only one of svg3d or webgl3d will appear, boolean 'show'
-		///let scene = config.scenes[s.requestedIndex];
-
+		
+		// do the menu properly
+		let blurbStyle = {display: 'block'};
+		if (this.state.hamburgerButtonShowing && ! this.state.hamburgerMenuShowing)
+			blurbStyle.display = 'none';
+		
 		return (
 			<div className='outer-wrapper' style={{flexDirection: this.state.flexDirection}}>
-
+				<div id='hamburger-button' onClick={this.hamburgerClickEvt} >
+					<div /> <div /> <div />
+				</div>
 				<div className='graph-wrapper'
 							style={{width: this.state.graphWidth,
 									height: this.state.graphHeight}}>
@@ -112,7 +120,8 @@ class App extends Component {
 					/>
 				</div>
 
-				<BlurbBox  requestedIndex={s.requestedIndex} />
+				<BlurbBox  requestedIndex={s.requestedIndex} 
+					style={blurbStyle} />
 			</div>
 		);//// the height and width of graph-wrapper above
 	}
@@ -126,12 +135,17 @@ class App extends Component {
 		Svg2D.prepForNewScene(sceneIndex);
 		Webgl3D.prepForNewScene(sceneIndex);
 
-		localStorage.sceneIndex = sceneIndex;  // remember for later
+		localStorage.sceneIndex = sceneIndex;  // remember as user pref
 	}
 
 	// the little text thing in the northwest corner of the graph
 	setReadout(readout) {
 		this.setState({readout});
+	}
+	
+	// a click on the hamburger menu button to show the blurb
+	hamburgerClickEvt(ev) {
+		this.setState({hamburgerMenuShowing: ! this.state.hamburgerMenuShowing})
 	}
 }
 

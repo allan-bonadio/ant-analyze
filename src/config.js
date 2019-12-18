@@ -87,7 +87,7 @@ export let config = {
 		{
 			title: "Natural Logarithm over Complex Plane",
 			formula: "log(<v>x</v>+<v>iy<v>)",
-			blurb: "Logarithm is actually multi-valued, in complex numbers.  You can add or subtract <v>πi</v>, or integer multiples, from any value to get other values that are also correct.  The results actually spiral in the imaginary direction.  The dividing line between two layers, here, is along the negative real axis.  Near zero, of course, the logarithm shoots down to –∞.",
+			blurb: "Logarithm is actually multi-valued, in complex numbers.  You can add or subtract πi, or integer multiples, from any value to get other values that are also correct.  The results actually spiral in the imaginary direction.  The dividing line between two layers, here, is along the negative real axis.  Near zero, of course, the logarithm shoots down to – ∞.",
 			graphics: '3D',
 			funcs: [{
 				// sin(x+iy) = sin(x) cosh(y) + i cos(x) sinh(y)

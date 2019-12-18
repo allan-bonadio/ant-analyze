@@ -465,7 +465,7 @@ class graphicEvents {
 	
 	
 	
-	/* ***************************************************** resize / tilt events */
+	/* ***************************************************** resize / orientation events */
 	
 	// given the window obj (that prob just resized), figure out margins and graphWidth/Height, 
 	// return object to merge into state.  This is called by the App component.
@@ -474,27 +474,44 @@ class graphicEvents {
 		// just prepare a phony event and call resizeEvt())
 		let graphWidth = +win.innerWidth;
 		let graphHeight = +win.innerHeight;
-		let flexDirection;
+		let flexDirection, hamburgerButtonShowing;
 		
-		// deduct the height of the blurb box, or if not created yet, just approximate
-		let blurbHeight = 280, blurbWidth = 350;
-		////let blurbBox$ = $('.blurb-box'), flexDirection;
-		if (graphWidth > graphHeight) {
-			// landscape orientation - place blurb to right side
-// 			if (blurbBox$.length)
-// 				blurbWidth = blurbBox$[0].offsetWidth;
-			graphWidth -= blurbWidth + 4;
-			flexDirection = 'row';
+		// *** KEEP THIS IN SYNC WITH SIMILAR EXPRESSIONS IN App.css and BlurbBox.css ***
+		if (graphWidth < 500 || graphHeight < 500) {
+			// small screen - hide blurb until a click on the hamburger menu
+			hamburgerButtonShowing = true;
+			// and the whole screen is devoted to the graph
 		}
 		else {
-			// portrait orientation - place blurb below
-// 			if (blurbBox$.length)
-// 				blurbHeight = blurbBox$[0].offsetHeight;
-			graphHeight -= blurbHeight + 4;
-			flexDirection = 'column';
-		}
+			hamburgerButtonShowing = false;
 
-		return {graphWidth, graphHeight, flexDirection};
+			// deduct the height of the blurb box, or if not created yet, just approximate
+			// hmmm this works but should be fixed someday
+			let blurbHeight = 280, blurbWidth = 350;
+			////let blurbBox$ = $('.blurb-box'), flexDirection;
+			if (graphWidth > graphHeight) {
+				// landscape orientation - place blurb to right side
+				// if (blurbBox$.length)
+				// 	blurbWidth = blurbBox$[0].offsetWidth;
+				graphWidth -= blurbWidth + 4;
+				flexDirection = 'row';
+			}
+			else {
+				// portrait orientation - place blurb below
+				// if (blurbBox$.length)
+				// 	blurbHeight = blurbBox$[0].offsetHeight;
+				graphHeight -= blurbHeight + 4;
+				flexDirection = 'column';
+			}
+		
+		}
+		
+		// do not confuse!
+		// hamburgerButtonShowing = screen is small, so show hamburger button in 
+		//          northeast corner so user can see blurb
+		// hamburgerMenuShowing = user has clicked button so blurb/menu showing.
+		return {graphWidth, graphHeight, flexDirection, 
+			hamburgerButtonShowing, hamburgerMenuShowing: false};
 	}
 	
 	// this is set on the window as a resize handler.  Once and only once.

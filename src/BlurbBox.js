@@ -7,6 +7,11 @@ import NavBar from './NavBar';
 import './BlurbBox.css';
 
 class BlurbBox extends Component {
+	constructor(props) {
+		super(props);
+		
+		this.state = {menuShows: false};
+	}
 	// the calculated dimensions of the svg initially estimates this box to be some fixed height.
 	// once we've rendered once
 	componentDidMount() {
@@ -29,7 +34,7 @@ class BlurbBox extends Component {
 		
 		
 		return (
-			<div className='blurb-box' >
+			<div id='blurb-box' style={this.props.style} >
 				<NavBar nSteps={config.scenes.length} 
 						requestedIndex={this.props.requestedIndex} />
 				<h2 className='blurb-title' 

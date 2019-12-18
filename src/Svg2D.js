@@ -105,11 +105,12 @@ class Svg2D extends Component {
 		if (scene.graphics == '2D') {
 			this.xScale.domain([scene.xMin, scene.xMax]);
 
-			// set this up for this scene.  xMin...xMax go into setState
-			this.setState(this.claimSceneState(sceneIndex));
+			// set this up for this scene.  xMin...xMax go into state
+			let stateAdditions = this.claimSceneState(sceneIndex);
+			this.setState(stateAdditions);
 
 			// but we won't see those for a while.  But we can calc.
-			this.ensureCalcPoints();
+			this.ensureCalcPoints(stateAdditions);
 			
 			// now we have the mins/maxes and can set the Y ranges.
 			// Which also involve state changes.
@@ -130,19 +131,19 @@ class Svg2D extends Component {
 	}
 	
 	// create the pixel data based on the function.  (always)
-	calcPoints() {
-		let s = this.state;
+	// state passed in is the state you should use instead of this.state
+	calcPoints(state) {
 		let vertexSeries = [];  // no series
 		for (let f = 0; f < this.funcs.length; f++) {
 			let func = this.funcs[f];
 			
 			// x units per k increment.  min, max, n can change upon every redraw.
-			const xPerK = (s.xMax - s.xMin) / (func.nPoints - 1);
+			const xPerK = (state.xMax - state.xMin) / (func.nPoints - 1);
 			if (isNaN(xPerK)) debugger;
 
-			vertexSeries[f] = [];  // add on a new series
+			vertexSeries[f] = new Array(func.nPoints);  // add on a new series
 			for (let k = 0; k < func.nPoints; k++) {
-				let x = k * xPerK + s.xMin;  // range 0...nPoints maps to xmin...xmax
+				let x = k * xPerK + state.xMin;  // range 0...nPoints maps to xmin...xmax
 				if (isNaN(x)) debugger;
 				let y = func.func(x);
 				
@@ -158,10 +159,10 @@ class Svg2D extends Component {
 	
 	// it'll maybe call this.calcPoints()
 	// if it needs to, and remembers stuff for next time
-	ensureCalcPoints() {
-		let s = this.state;
+	ensureCalcPoints(stateAdditions = {}) {
+		let s = {...this.state, ...stateAdditions};
 	
-		this.calcPoints();
+		this.calcPoints(s);
 	
 		// save these so we can tell if calc needs to be redone
 		this.lastCalcIndex = this.props.requestedIndex;

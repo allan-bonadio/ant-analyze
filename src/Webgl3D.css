@@ -19,7 +19,7 @@ canvas {
 aside {
 	display: block;
 	position: absolute;  /* overlays the canvas */
-	z-index: 5;
+	z-index: 10;
 	background: transparent;
 	color: #eee;
 	width: 100%;  /* all the area of the canvas */
