@@ -58,13 +58,13 @@ body {
 	border: 1px #aaa solid;
 	cursor: default;
 	display: none;
+	background-color: #fff;
 }
 
 #hamburger-button div {
 	width: 14px;
 	height: 0;
-	color: white;
-	border-top: 2px white solid;
+	border-top: 2px #000 solid;
 	margin: 4px;
 	cursor: default;
 }
