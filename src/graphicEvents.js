@@ -321,7 +321,7 @@ class graphicEvents {
 	
 	// one (or more?) touches has moved
 	touchMoveEvt(ev) {
-		console.log("touchMoveEvt", ev.touches[0].pageX, ev.touches[0].pageY, ev.touches);
+		//console.log("touchMoveEvt", ev.touches[0].pageX, ev.touches[0].pageY, ev.touches);
 		if (ev.touches.length == 1)
 			this.mouseMoveEvt(this.touchToEvent(ev));
 		else
@@ -410,27 +410,10 @@ class graphicEvents {
 		if (this.spread == 'horiz') {
 			// horizontal - stretch the x axis in 2d
 			this.graph.spreadHoriz(this.delta, this.lastDelta, this.touchMidPoint);
-			
-// 			factor = this.lastDelta[0] / delta[0];
-// 			////console.log("horiz, factor=", factor, this.lastDelta, delta);
-// 			xMin = (s.xMin - midi[0]) * factor +  midi[0];
-// 			xMax = (s.xMax - midi[0]) * factor +  midi[0];
-// 			this.setState({xMin , xMax});
-// 			////console.log("xmin/max:", xMin, xMax);
-// 			this.xScale.domain([xMin, xMax]);
 		}
 		else {
 			// vertical - stretch the y axis in 2d
 			this.graph.spreadVert(this.delta, this.lastDelta, this.touchMidPoint);
-			
-// 			factor =this.lastDelta[1] /  delta[1];
-// 			////console.log("vertical, factor=", factor, this.lastDelta, delta);
-// 			this.yMin = (this.yMin - midi[1]) * factor +  midi[1];
-// 			this.yMax = (this.yMax - midi[1]) * factor +  midi[1];
-// 			// must trigger rerendering even though state didn't change
-// 			this.setState({xMax: this.state.xMax + 1e-10});
-// 			////console.log("ymin/max:", this.yMin, this.yMax);
-// 			this.yScale.domain([this.yMin, this.yMax]);
 		}
 		
 ////if (factor < .8 || factor > 1.2) debugger;
@@ -474,7 +457,7 @@ class graphicEvents {
 		// just prepare a phony event and call resizeEvt())
 		let graphWidth = +win.innerWidth;
 		let graphHeight = +win.innerHeight;
-		let flexDirection, hamburgerButtonShowing;
+		let flexDirection = 'row', hamburgerButtonShowing = false;
 		
 		// *** KEEP THIS IN SYNC WITH SIMILAR EXPRESSIONS IN App.css and BlurbBox.css ***
 		if (graphWidth < 500 || graphHeight < 500) {
