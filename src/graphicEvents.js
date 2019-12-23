@@ -251,10 +251,17 @@ class graphicEvents {
 		if (! this.dragging)
 			return;
 		
-		let timeDelta = window.performance.now() - this.mostRecentMoveTime;
-		if (timeDelta > 100)
-			console.log('graphicEvents.mouseMoveEvt, too slow ms:', timeDelta);
-		this.mostRecentMoveTime = window.performance.now();
+		ev.preventDefault();
+		ev.stopPropagation();
+
+		let now = window.performance.now();
+		let timeDelta = now - this.mostRecentMoveTime;
+		this.mostRecentMoveTime = now;
+		if (timeDelta > 100) {
+			// this happens upon a mousedown and a new shove, after a macroscopic 
+			// amount of time.  Just ignore it.
+			return;
+		}
 
 		// if no left mouse buttons are being pressed... it's over
 		// this happens when you never get the mousedown cuz of debugger, menu, etc
@@ -263,9 +270,6 @@ class graphicEvents {
 			return;
 		}
 		this.mouseShove(ev);
-
-		ev.preventDefault();
-		ev.stopPropagation();
 	}
 
 	mouseUpEvt(ev) {
@@ -542,7 +546,7 @@ class graphicEvents {
 	
 	// start animating/coasting given a timeStamp from a recent event
 	startAnimating(timeStamp) {
-		if (! this.graph.show)
+		if (! this.graph.props.show)
 			return;
 			
 		this.coasting = true;
@@ -551,7 +555,7 @@ class graphicEvents {
 	}
 	
 	stopAnimating() {
-		if (! this.graph.show)
+		if (! this.graph.props.show)
 			return;
 			
 		cancelAnimationFrame(this.aniId);  // aborts upcoming one
