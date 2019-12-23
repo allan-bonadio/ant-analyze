@@ -1,9 +1,9 @@
-/* ******************************************************* blurb grid */
+/* ******************************************************* blurb  */
 
 #blurb-box {
 	margin: .25em;
 	padding: .25em;
-	width: 23em;
+	min-width: 23em;
 	background-color: black;
 	background-color: #0008;
 	color: white;
