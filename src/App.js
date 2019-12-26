@@ -27,7 +27,7 @@ class App extends Component {
 		let chosenSceneIndex = localStorage.sceneIndex || INITIAL_SCENE_INDEX;
 		this.scene = config.scenes[chosenSceneIndex];
 
-		// the step index is 0...n-1, whereas the step number is 1...n
+		// the scene index is 0...n-1 and i keep adding more
 		// this is just the initial one
 		this.state = {
 			requestedIndex: chosenSceneIndex,
@@ -68,6 +68,7 @@ class App extends Component {
 	render() {
 		let s = this.state;
 
+		// if we've got an error attached, show it
 		let error = {};
 		if (s.error) {
 			// show this oopsey on the screen but draw the rest of it anyway
@@ -79,7 +80,7 @@ class App extends Component {
 						(er, ix) => <h1 key={ix} style={{color: 'red'}}>{er.message}</h1>
 					);
 
-				// and don't try that again.
+				// and don't try that again.  (secondError ensures this.)
 				return <div>
 					{error}
 				</div>;

@@ -5,7 +5,7 @@ To run React server, npm install; npm start
 
 ## Coordinate Systems
 
-*science coords:* the ideal numbers used as the ranges and domains of the variables in the demo.  2d: Convert to pixel coords with Svg2D.xScale() and .yScale()  3d: Convert to cell coords with Webgl3D.xScale(), .yScale() and .zScale(), or .scaleXYZ() for vectors. The real and imaginary parts of the indep var become the x and y coordinate. The complex result of the function becomes the z and lightness coordinates.
+*science coords:* the ideal numbers used as the ranges and domains of the variables in the demo.  2d: Convert to pixel coords with Svg2D.xScale() and .yScale()  3d: Convert to cell coords with Webgl3D.xScale(), .yScale() and .zScale(), or .scaleXYZ1() for vectors. The real and imaginary parts of the indep var become the x and y coordinate. The complex result of the function becomes the z and lightness coordinates.
 
 *cell coords:* The xy plane is broken into 'cells' with vertices at the corners. So if you have 5 cells by 8 cells, that's 6 vertices by 9 vertices. Cell coords start at 0, 0 and only go positive. The buffer's arrays are filled with cell coordinate numbers. Integer values are cell boundaries, and typically the only values we use for vertices. The size of the cell space rectangle comes from WebGL3d's TARGET_CELLS and the domains; may change in the future. There are no cells along the Z axis: whole range mapped to 0...1.
 
