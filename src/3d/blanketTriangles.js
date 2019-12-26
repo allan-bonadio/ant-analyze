@@ -29,7 +29,7 @@ class blanketTriangles {
 		
 		let addVertex = (x, y) => {
 			let b = bla[y][x];
-			buffer.addVertex([x, y, b.z], [b.red, b.green, b.blue, 1]);
+			buffer.addVertex([x, y, b.z, 0], [b.red, b.green, b.blue, 1]);
 		};
 		
 		// now go through all blanket vertices
@@ -63,7 +63,7 @@ class blanketTriangles {
 	draw(gl) {
 		// change these for a diagnostic
 		gl.drawArrays(
-			//gl.POINTS,     // most useful and foolproof
+			//gl.POINTS,     // most useful and foolproof but set width in vertex shader
 			//gl.LINES,      // tend to scribble all over
 			//gl.LINE_STRIP, // tend to scribble all over
 			//gl.TRIANGLES,  // more sparse triangles

@@ -19,10 +19,10 @@ import {AxisTics, axisTicsPainter} from './3d/AxisTics';
 // eslint-disable-next-line no-unused-vars
 const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
 
-// choose n cells in x and y direction to make total x*y cells
+// choose n cells in x and y direction to make total x*y cells, approx.
 // So, to make approx a 10x10 bed of cells, try 100.
-// typically this is a perfect square, but actually doesn't have to be; just a target.
-const TARGET_CELLS = config.production ? 1600 : 144;
+// this actually doesn't have to be perfect square; just a target. min: 4
+const TARGET_CELLS = config.production ? 6000 : 20;
 
 // if mouse is too powerful, increase these.  Adjust to work so moving q pixels 
 // to the right rotates the graph in a way that feels intuitive.
@@ -44,33 +44,29 @@ class Webgl3D extends Component {
 		
 		// constrain lat to -90°...90°, stop it if it hits end.  (Make sure [0] < [1]!)
 		let vc = this.vertClamp = [-π_2 * VERT_EVENTS_FACTOR, π_2 * VERT_EVENTS_FACTOR];
-		if (vc[0] > vc[1])
-			[vc[0], vc[1]] = [vc[1], vc[0]]
+		if (vc[0] > vc[1]) [vc[0], vc[1]] = [vc[1], vc[0]];
 			
-			
-		this.state = {
-			// these are part of the state as they directly affect the canvas
-			// sceneIndex - in props
-			// scene components and Scales are derived from the index
-			// which comes from the props.
-			// Maybe there's no state to be had.  This just renders a canvas.
-			
-			
-			// size of canvas  NO it's in the props
-			// for testing, pass in innerWidth and innerHeight props
-// 			graphWidth: this.props.graphWidth,
-// 			graphHeight: this.props.graphHeight,
-		};
+		// no state!  all particulars are handed in via props.
+		// the state only applies to the canvas, not what's drawn in it 
+		// (which doesn't happen at render time).  It's an uncontrolled component.
+		// typically graphWidth, graphHeight, requestedIndex, .show - in props
+		this.state = {};
 		
 		this.shoveFunc = this.shoveFunc.bind(this);
 
-		// you might think these are part of the state, 
-		// but the state only applies to the canvas, not what's drawn in it 
-		// (which doesn't happen at render time).  It's an uncontrolled component.
-		//this.setupIndex = props.requestedIndex;
+		// these are on 'this', just added later
+		// events - points to graphicEvents object
+		// plot - points to blanketPlot object
+		// blanket - raw science coords in n x m array
+		
+		// for each x y z:
+		// xMin, xMax, nXCells
+		// xScale -  convert science coords to cell coords
+		// xPerCell - slope of scale
 		
 		this.newScene(props.requestedIndex);
 		
+		// ok to call this in constructor cuz it just triggers WebGL
 		this.drawOneFrame = this.drawOneFrame.bind(this);
 	}
 	
@@ -91,8 +87,8 @@ class Webgl3D extends Component {
 		}
 	}
 	
-	// start the component off with its first scene, or re-calibrate it to the
-	// scene passed in.  must have 'show' be true; ie scene.graphics == '3D'
+	// re-calibrate this to the scene passed in.  
+	// must have 'show' be true; ie scene.graphics == '3D'
 	// calculates everything down to cell coordinates.
 	newScene(sceneIndex) {
 		// set this.scene, even if it's not for us
@@ -139,10 +135,6 @@ class Webgl3D extends Component {
 		
 		// use the right one.
 		graphicEvents.use(this.events);
-
-
-		// um... meanwhile, stop scrolling pleeze   --- ???
-		//me.events.stopAnimating();
 	}
 	
 	// get ready, 'soon' we'll be rendering this new scene.
@@ -182,7 +174,7 @@ class Webgl3D extends Component {
 	
 	// scale this 3-vector science coords, by our xyz scalers, into cell coords
 	// return a 4-vector - [3] often ignored
-	scaleXYZ(xyz) {
+	scaleXYZ1(xyz) {
 		return [this.xScale(xyz[0]), this.yScale(xyz[1]), this.zScale(xyz[2]), 1];
 	}
 	
@@ -249,10 +241,11 @@ class Webgl3D extends Component {
 
 	/* ******************************************************* mouse/touch evts */
 
-	// called while user rotates graph
+	// called while user rotates graph.
+	// we no longer have to regenerate all the tics; the shader automatically positions them
 	shoveFunc() {
 		if (this.props.show)
-			axisTicsPainter.rotateAllTics();
+			AxisTics.userRotated();
 	}
 	
 	// gets called from ge if user does a spreading gesture left & right

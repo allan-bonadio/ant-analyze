@@ -29,6 +29,7 @@ export function generateBlanket(func, nXCells, nYCells, xCell2Science, yCell2Sci
 				z_data: func(xCell2Science(x), yCell2Science(y)),
 				
 				// just a default color, set your own later if you care
+				// i don't think these numbers do anything; just placeholders
 				red: .6, green: .6, blue: .3, alpha: 1,
 			};
 			
@@ -64,7 +65,7 @@ export function generateBlanket(func, nXCells, nYCells, xCell2Science, yCell2Sci
 export class vertexBuffer {
 	constructor(nVertices) {
 		this.allocatedVertices = nVertices
-		this.positions = new Float32Array(nVertices * 3);
+		this.positions = new Float32Array(nVertices * 4);
 		this.colors = new Float32Array(nVertices * 4);
 		
 		// these start at zero and grow as vertices are added; final count when done
@@ -74,11 +75,12 @@ export class vertexBuffer {
 	}
 
 	// call this with an array of the three x y z, and the four r g b a
-	addVertex(posArray3, colArray4) {
+	addVertex(posArray4, colArray4) {
 		let p = this.positions;
-		p[this.posOffset++] = posArray3[0];
-		p[this.posOffset++] = posArray3[1];
-		p[this.posOffset++] = posArray3[2];
+		p[this.posOffset++] = posArray4[0];
+		p[this.posOffset++] = posArray4[1];
+		p[this.posOffset++] = posArray4[2];
+		p[this.posOffset++] = posArray4[3];
 	
 		let c = this.colors;
 		c[this.colOffset++] = colArray4[0];
@@ -92,18 +94,18 @@ export class vertexBuffer {
 	// after filling in your vertices, come here to bless it and attach it to a gl
 	// context so it'll be used in drawing
 	attachToGL(gl, attribLocations) {
-		// Tell WebGL how to pull out the positions from the position
+		// Tell WebGL how to pull out the Positions from the position
 		// buffer into the vertexPosition attribute.
 		this.positionsBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.positionsBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, this.positions, gl.STATIC_DRAW);
 		gl.vertexAttribPointer(
 				attribLocations.vertexPosition,
-				3, gl.FLOAT,  // n numbers per vertex, n type
+				4, gl.FLOAT,  // xyz & f (fields) per vertex, n type
 				false, 0, 0);  // normalize, stride, offset
 		gl.enableVertexAttribArray(attribLocations.vertexPosition);
 
-		// Tell WebGL how to pull out the colors from the color buffer
+		// Tell WebGL how to pull out the Colors from the color buffer
 		// into the vertexColor attribute.
 		this.colorsBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.colorsBuffer);
@@ -130,10 +132,10 @@ export class vertexBuffer {
 		let p, c, v;
 
 		for (v = 0; v < nVertices; v++) {
-			p = (startVertex + v) * 3;
+			p = (startVertex + v) * 4;
 			c = (startVertex + v) * 4;
-			console.log("v%s: p%s %s %s - c%s %s %s  %s", 
-				v.toFixed().padStart(4), f(pos[p]), f(pos[p+1]), f(pos[p+2]),
+			console.log("v%s: p%s %s %s f%s - c%s %s %s  %s", 
+				v.toFixed().padStart(4), f(pos[p]), f(pos[p+1]), f(pos[p+2]), pos[p+3],
 				f(col[c]), f(col[c+1]), f(col[c+2]), f(col[c+3])
 			);
 		}
