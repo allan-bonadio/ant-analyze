@@ -79,7 +79,7 @@ class graphicEvents {
 		this.attachEventHandlers();
 
 		// when it starts up, give it a tiny kick to show people they can rotate it
-		if (config.production && this.graph.scene.graphics == '3D') {
+		if (config.production) {  // also in 2d.   && this.graph.scene.graphics == '3D'
 			this.horizPosition = .7;  // about 45°
 			this.vertPosition = .5;  // maybe 30°
 			this.horizVelocity = .1;
@@ -91,7 +91,12 @@ class graphicEvents {
 	// which instance of graphicEvents do you want to start using now?
 	// pass it in here and all of this's settings are saved till next time
 	static use(grEv) {
+		if (!grEv)
+			return;  // too early
+		
 		graphicEvents.using = grEv;
+		
+		grEv.stopAnimating();
 	}
 
 
@@ -464,7 +469,7 @@ class graphicEvents {
 		let flexDirection = 'row', hamburgerButtonShowing = false;
 		
 		// *** KEEP THIS IN SYNC WITH SIMILAR EXPRESSIONS IN App.css and BlurbBox.css ***
-		if (graphWidth < 500 || graphHeight < 500) {
+		if (graphWidth < 700 || graphHeight < 500) {
 			// small screen - hide blurb until a click on the hamburger menu
 			hamburgerButtonShowing = true;
 			// and the whole screen is devoted to the graph

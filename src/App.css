@@ -2,10 +2,24 @@
 	box-sizing: border-box;
 }
 
+
+
+
+
 body {
-	position: fixed;
-	height: 100%;
-	width: 100%;
+}
+
+
+
+
+
+
+body {
+	position: fixed;  /* no overall page scrolling */
+	width: 100%; height: 100%;	
+	padding: 0; margin: 0;
+	font-family: american typewriter regular, helvetica, sans-serif;
+	
 	background-color: black;
 }
 
@@ -72,8 +86,9 @@ body {
 /* ******************************************************* responsive */
 
 /* *** KEEP THIS IN SYNC WITH SIMILAR EXPRESSIONS IN BlurbBox.css and graphicEvents.js *** */
-@media (max-width: 499px), (max-height: 499px) {
-	/* small screen - shrink padding/margins, take out stuff */
+@media (max-width: 699px), (max-height: 499px) {
+	/* small screen - shrink padding/margins, take out stuff,
+		activate hamburger menu */
 	body {
 		/* 100 vmin = width or height of screen, whichever is smaller */
 		font-size: 3vmin;
