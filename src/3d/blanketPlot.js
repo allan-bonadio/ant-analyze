@@ -14,7 +14,7 @@ import config from '../config';
 import {vertexBuffer} from './genComplex';
 import blanketTriangles from './blanketTriangles';
 import {axisBars, weatherVane} from './axisBars';
-import {axisTicsPainter} from './AxisTics';
+import {AxisTics, axisTicsPainter} from './AxisTics';
 import Webgl3D from '../Webgl3D';
 
 
@@ -46,6 +46,8 @@ const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π didn't work
 // Class to talk to graphics processor via webgl.  This use science coordinates much,
 // just cell coordinates and cellsize in viewable space
 class blanketPlot {
+			debugger;
+
 	// options object: nXCells, nYCells = cell dimensions of xy area
 	// xPerCell, yPerCell, zPerCell = size of a cell in science space
 	constructor(graph, options) {
@@ -68,8 +70,8 @@ class blanketPlot {
 		if (! config.production)
 			this.painters.push(new weatherVane(this));
 
+		// total worst-case number of vertices we'll use (each is a pos and a col vertex)
 		this.maxVertices = this.painters.reduce((sum, painter) => sum + painter.maxVertices, 0);
-
 
 		this.then = 0;
 	}
@@ -105,7 +107,7 @@ class blanketPlot {
 			default:
 				msg = "Unknown error from GL: "+ err;
 			}
-			console.error("error from webgl: ", msg);
+			console.error("error code from webgl: ", err, msg);
 		}
 	}
 
@@ -122,15 +124,39 @@ class blanketPlot {
 			attribute vec4 aVertexColor;
 
 			uniform mat4 uCompositeMatrix;
+			uniform vec4 uClosestCorner;
 
 			varying lowp vec4 vColor;
 
 			void main() {
-				gl_Position = uCompositeMatrix 
-					* aVertexPosition;
+				vec4 vertexPosition = aVertexPosition;
+				vertexPosition.w = 1.0;  // or zero?  doesn't seem to matter
+				
+				// for axis tics and labels, always put them in front.
+				// the key is the fourth pos component, a bit field stored as a float.
+				// notice if 4th component is zero, coordinates stay unmolested
+				int bits = int(aVertexPosition.w);
+				if (bits > 0) {
+					// i can't believe they don't have bitwise and/or
+					if (bits >= 4) {
+						vertexPosition.z = uClosestCorner.z;
+						bits -= 4;
+					}
+					if (bits >= 2) {
+						vertexPosition.y = uClosestCorner.y;
+						bits -= 2;
+					}
+					if (bits == 1)
+						vertexPosition.x = uClosestCorner.x;
+					;
+				}
+					
+				gl_Position = uCompositeMatrix * vertexPosition;
+				
 				vColor = aVertexColor;
 
-				gl_PointSize = 10.;  // dot size, actually a crude square
+				//gl_PointSize = 10.;  // dot size, actually a crude square
+				// default is zero so set it if you want to see anything
 				// diagnostic: change to POINTS in blanketTriangle's draw method
 			}
 		`;
@@ -194,6 +220,7 @@ class blanketPlot {
 			},
 			uniformLocations: {
 				compositeMatrix: gl.getUniformLocation(sp, 'uCompositeMatrix'),
+				closestCorner: gl.getUniformLocation(sp, 'uClosestCorner'),
 			},
 		};
 
@@ -286,7 +313,7 @@ class blanketPlot {
 
 	// call this after you've figured out the Z scaling from science coords to cell coords
 	// zScale is a function that converts from z_data values to z cell coords
-	scaleBlanket() {
+	colorComplexValues() {
 		let blanket = this.blanket;
 		let zScale = this.zScale;
 		for (let y = 0; y <= blanket.nYCells; y++) {
@@ -318,7 +345,7 @@ class blanketPlot {
 		this.blanket = blanket;
 		
 		this.deriveZScale();
-		this.scaleBlanket();
+		this.colorComplexValues();
 		
 		// decide on the tics.  Must be after deriveZScale() but before layDownVertices()
 		this.axisTics.generateAllTics();
@@ -384,6 +411,23 @@ class blanketPlot {
 		});
 	}
 	
+	// find the corner of our space closest to the user.  In Cell coords.
+	// changes every time it rotates
+	// returns a 3 vector, useful for tic positioning
+	findClosestCorner() {
+		let graph = this.graph;
+		if (! ('longitude' in this && 'latitude' in this))
+			return [graph.xMin, graph.yMin, graph.zMin];  // too early
+		
+		// convert to cell coords on the way out
+		return graph.scaleXYZ1([
+			Math.sin(this.longitude) < 0 ? graph.xMin : graph.xMax, 
+			Math.cos(this.longitude) < 0 ? graph.yMin : graph.yMax, 
+			this.latitude < 0 ? graph.zMin : graph.zMax
+		]);
+	}
+
+
 	// calculate the matrices that position and rotate it all into view
 	// attach them to this.  Mostly, just the calculation.  No GL.
 	deriveMatrices(longitude, latitude) {
@@ -464,6 +508,19 @@ class blanketPlot {
 		// one matrix that does it all
 		gl.uniformMatrix4fv(uls.compositeMatrix, false, this.compositeMatrix);
 		this.checkOK();
+
+		// for axes' tic marks, find the corner of the graph bounds that's closest 
+		// to the user's eye.  In cell coords. We never actually do anything at this vertex,
+		// but each coordinate is used for the other dimensions.  see code.
+		this.closestCorner = this.findClosestCorner();
+		//console.log("..setting closest corener:", this.closestCorner);
+		
+		// tell the shader about the closest corner
+		gl.uniform4fv(uls.closestCorner, this.closestCorner);
+		this.checkOK();
+		
+		// tell the axis tics machinery about both
+		AxisTics.userRotated(this.closestCorner, this.compositeMatrix);
 	}
 	
 	// called by Webgl3D when the size of the canvas changes; we have to know!
@@ -476,23 +533,16 @@ class blanketPlot {
 	}
 
 
-
+	// trigger WebGL to execute the shaders and consume the big tables and draw it.
 	// longitude and latitude are in radians.  Typically this takes about
 	// .5 to 15 millisecond to execute, so it queues off stuff to the gpu async.
 	drawOneFrame(longitude, latitude) {
-	//// temp benchmark hack
-// 		let pNow = performance.now();
-// 		let delta = pNow - this.lTime
-// 		this.lTime = pNow;
-// 		console.log(`drawOneFrame(longitude=${longitude.toFixed(2)}, latitude=${latitude.toFixed(2)}) every ${delta.toFixed(2).padStart(7)}ms`);
-////console.time('drawOneFrame');
-
 		let gl = this.gl;
 		this.longitude = longitude;
 		this.latitude = latitude;
 		
 		// must MOVE the axis tic marks given a different long/lat
-		axisTicsPainter.me.repeatVertices();
+		// no it's now done in the v shader.  axisTicsPainter.me.repeatVertices();
 		
 		// set some gl variables
 		gl.clearColor(0.0, 0.0, 0.0, 1.0);	// Clear to black, fully opaque
@@ -512,16 +562,8 @@ class blanketPlot {
 		this.createMatrices(longitude, latitude);
 		
 		
-		// sines and cosines
-// 		let fmt = num => num.toFixed(2).padStart(6);
-// 		console.log("longitude: l s c       latitude: l s c ", 
-// 			fmt(longitude), fmt(Math.sin(longitude)), fmt(Math.cos(longitude)), 
-// 			fmt(latitude), fmt(Math.sin(latitude)), fmt(Math.cos(latitude))
-// 		);
-
 		// actual drawing
 		this.painters.forEach(painter => painter.draw(gl));
-////console.timeEnd('drawOneFrame');
 
 	}
 

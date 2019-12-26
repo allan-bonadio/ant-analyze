@@ -33,11 +33,11 @@ export class axisBars {
 		let zMin = 0, zMax = this.plot.nZCells, zSize = this.plot.nZCells;
 		
 		let addVertex = (x, y, z) => {
-			buffer.addVertex([x, y, z], [1, 1, 1, .5]);
+			buffer.addVertex([x, y, z, 0], [1, 1, 1, .5]);
 		};
 		
 		// these are individual line segments, drawn with gl.LINES.
-		// each pair of vertices is one line.  Each loop goes around 2ice.
+		// each pair of vertices is one line.  Each loop goes around 2ice, inner or outer.
 		for (x = 0; x <= xCells; x += xCells) {
 			for (y = 0; y <= yCells; y += yCells) {
 				addVertex(x, y, zMin);
@@ -88,17 +88,17 @@ export class weatherVane {
 		this.startVertex = this.buffer.nVertices;
 		
 		let g = Webgl3D.me;
-		let zero = g.scaleXYZ([0, 0, 0]);
-		let one  = g.scaleXYZ([1, 1, 1]);
+		let zero = g.scaleXYZ1([0, 0, 0]);
+		let one  = g.scaleXYZ1([1, 1, 1]);
 		////{x: g.xScale(0), y: g.yScale(0), z: p.zScale(0)};
 		//.let one = {x: g.xScale(1), y: g.yScale(1), z: p.zScale(1)};
 		
 		// we want to use a triangle fan with the white corner at 0,0,0
-		buffer.addVertex([zero[0], zero[1], zero[2]], [1, 1, 1, 1]);  // origin is white
-		buffer.addVertex([ one[0], zero[1], zero[2]], [1, 0, 0, 1]);  // x direction is red
-		buffer.addVertex([zero[0],  one[1], zero[2]], [0, 1, 0, 1]);  // y green
-		buffer.addVertex([zero[0], zero[1],  one[2]], [0, 0, 1, 1]);  // z blue
-		buffer.addVertex([ one[0], zero[1], zero[2]], [1, 0, 0, 1]);  // return again
+		buffer.addVertex([zero[0], zero[1], zero[2], 0], [1, 1, 1, 1]);  // origin is white
+		buffer.addVertex([ one[0], zero[1], zero[2], 0], [1, 0, 0, 1]);  // x direction is red
+		buffer.addVertex([zero[0],  one[1], zero[2], 0], [0, 1, 0, 1]);  // y green
+		buffer.addVertex([zero[0], zero[1],  one[2], 0], [0, 0, 1, 1]);  // z blue
+		buffer.addVertex([ one[0], zero[1], zero[2], 0], [1, 0, 0, 1]);  // return again
 
 		this.nVertices = this.buffer.nVertices - this.startVertex;
 	}
