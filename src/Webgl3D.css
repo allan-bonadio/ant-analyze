@@ -38,3 +38,9 @@ tic-lab {
 	
 	box-shadow: #0004 0 0 .43em .43em;
 }
+
+tic-lab i {
+	font-family: palatino, times, serif;
+	font-style: italic;
+}
+
