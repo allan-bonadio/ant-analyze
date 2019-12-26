@@ -69,7 +69,7 @@ export class AxisTics extends React.Component {
 
 		// convert to clip coords, -1...1 on all dimensions
 		// just like the vertex shader does
-		debugger;
+		//debugger;
 		vec4.transformMat4(cellBase, cellBase, cm);
 		vec4.transformMat4(cellTip, cellTip, cm);
 		
@@ -359,5 +359,9 @@ console.log(`           tip at ${pos[0].toFixed(3)} ${pos[1].toFixed(3)} ${pos[2
 		this.plot.checkOK();
 	}
 
+	dispose() {
+		this.plot = this.buffer = this.axisLabels = AxisTics.axisLabels = this.graph = null;
+		AxisTics.me = axisTicsPainter.me = null;
+	}
 }
 

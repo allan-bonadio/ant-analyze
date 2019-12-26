@@ -39,6 +39,9 @@ class App extends Component {
 
 		this.setReadout = this.setReadout.bind(this);
 		this.hamburgerClickEvt = this.hamburgerClickEvt.bind(this);
+		this.beforeUnloadEvt = this.beforeUnloadEvt.bind(this);
+		
+		window.addEventListener('beforeunload', this.beforeUnloadEvt);
 	}
 
 	// this intercepts exceptions from lower components during render.
@@ -147,6 +150,15 @@ class App extends Component {
 	// a click on the hamburger menu button to show the blurb
 	hamburgerClickEvt(ev) {
 		this.setState({hamburgerMenuShowing: ! this.state.hamburgerMenuShowing})
+	}
+	
+	// this gets called before reload; must dispose of some stuff to avoid 
+	// error messages and garbage collection problems.
+	beforeUnloadEvt(ev) {
+		ev.preventDefault();
+		Svg2D.me.dispose();
+		Webgl3D.me.dispose();
+		return 'are you sure';
 	}
 }
 

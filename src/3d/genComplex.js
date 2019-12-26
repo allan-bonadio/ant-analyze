@@ -117,7 +117,6 @@ export class vertexBuffer {
 		gl.enableVertexAttribArray(attribLocations.vertexColor);
 	}
 	
-
 	// list out ALL the vertices and their colors
 	// between startVertex and endVertexP1-1
 	dump(title, startVertex, nVertices) {
@@ -140,6 +139,13 @@ export class vertexBuffer {
 			);
 		}
 		console.log(' ');
+	}
+	
+	// free up big stuff
+	dispose(gl) {
+		gl.deleteBuffer(this.colorsBuffer);
+		gl.deleteBuffer(this.positionsBuffer);
+		this.colorsBuffer = this.colors = this.positionsBuffer = this.positions = null;
 	}
 }
 

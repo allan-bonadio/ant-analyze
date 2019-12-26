@@ -46,7 +46,6 @@ const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π didn't work
 // Class to talk to graphics processor via webgl.  This use science coordinates much,
 // just cell coordinates and cellsize in viewable space
 class blanketPlot {
-			debugger;
 
 	// options object: nXCells, nYCells = cell dimensions of xy area
 	// xPerCell, yPerCell, zPerCell = size of a cell in science space
@@ -420,6 +419,7 @@ class blanketPlot {
 			return [graph.xMin, graph.yMin, graph.zMin];  // too early
 		
 		// convert to cell coords on the way out
+		// ought to be able to do this without trig functions! ////
 		return graph.scaleXYZ1([
 			Math.sin(this.longitude) < 0 ? graph.xMin : graph.xMax, 
 			Math.cos(this.longitude) < 0 ? graph.yMin : graph.yMax, 
@@ -561,12 +561,26 @@ class blanketPlot {
 		gl.useProgram(this.programInfo.program);
 		this.createMatrices(longitude, latitude);
 		
-		
 		// actual drawing
 		this.painters.forEach(painter => painter.draw(gl));
 
 	}
 
+	// break up potentially circularly-pointing data structures and big data structures
+	dispose() {
+		this.painters.forEach(painter => painter.dispose());
+		this.painters = this.triangles = this.axes = this.axisTics = null;
+		
+		this.buffer.dispose(this.gl);
+		this.blanket = this.buffer = this.axisTics = this.graph = null;
+		this.gl.getExtension('WEBGL_lose_context').loseContext();
+		this.gl = null;
+		
+		this.graphElement.width = this.graphElement.height = 1;
+		this.gl.deleteProgram(this.shaderProgram);
+		this.shaderProgram = this.programInfo = this.graphElement = null;
+		blanketPlot.me = null;
+	}
 }
 
 export default blanketPlot;

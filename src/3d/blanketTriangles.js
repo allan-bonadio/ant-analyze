@@ -71,6 +71,10 @@ class blanketTriangles {
 			this.startVertex, this.nVertices);
 		this.plot.checkOK();
 	}
+	
+	dispose() {
+		this.plot = this.buffer = null;
+	}
 }
 
 export default blanketTriangles;

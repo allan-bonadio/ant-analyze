@@ -628,6 +628,22 @@ class graphicEvents {
 			this.confirmSanity();
 		}
 	}
+	
+	// break up potentially circularly-pointing data structures and big data structures
+	dispose() {
+		this.stopAnimating();
+
+		this.graph = this.graphElement = this.sensitiveElement = this.vertexSeries = null;
+		graphicEvents.allGraphs = null;
+		graphicEvents.using = null;
+		
+		$(document.body).off();
+		$('div.outer-wrapper').off();		
+		window.removeEventListener('resize', graphicEvents.resizeEvt);
+		$(this.sensitiveElement).off();
+		this.shoveFunc = this.drawFunc = null;
+	}
+
 }
 
 export default graphicEvents;

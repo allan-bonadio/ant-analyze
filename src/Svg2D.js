@@ -376,7 +376,13 @@ class Svg2D extends Component {
 		//ev.preventDefault();
 	}
 
-	
+	// break up potentially circularly-pointing data structures and big data structures
+	dispose() {
+		this.funcs = this.vertexSeries = null;
+		this.events.dispose();
+		this.events = null;
+		Svg2D.me = null;
+	}
 }
 
 export default Svg2D;

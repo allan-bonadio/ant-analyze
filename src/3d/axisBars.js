@@ -66,6 +66,10 @@ export class axisBars {
 		gl.drawArrays(gl.LINES, this.startVertex, this.nVertices);
 		this.plot.checkOK();
 	}
+
+	dispose() {
+		this.plot = this.buffer = null;
+	}
 };
 
 export default axisBars;
@@ -108,5 +112,8 @@ export class weatherVane {
 		this.plot.checkOK();
 	}
 
+	dispose() {
+		this.plot = null;
+	}
 }
 

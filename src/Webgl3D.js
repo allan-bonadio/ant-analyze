@@ -268,6 +268,15 @@ class Webgl3D extends Component {
 	}
 
 
+	// break up potentially circularly-pointing data structures and big data structures
+	dispose() {
+		this.blanket = this.funcs = this.vertexSeries = null;
+		this.events.dispose();
+		this.events = null;
+		this.plot.dispose();
+		this.plot = null;
+		Webgl3D.me = null;
+	}
 
 }
 
