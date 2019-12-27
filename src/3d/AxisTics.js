@@ -196,7 +196,7 @@ export class axisTicsPainter {
 		}
 		else if (typeof key == 'object') {
 			// must be the axis label.  The object is a react node.
-			key = 'xyz'[dimension] | 'Label';
+			key = 'xyz'[dimension]  +'_Label';
 		}
 		
 		// the end of the tic line, away from the axis.  Also needed for labels.
@@ -239,13 +239,14 @@ export class axisTicsPainter {
 		});
 		
 		// add one more for labeling each axis, between the first two tics
+		let labText = ['re', 'im', 'z'][dimension];
 		let labLoc = [
 			(firstLoc[0] + secondLoc[0]) / 2,
 			(firstLoc[1] + secondLoc[1]) / 2,
 			(firstLoc[2] + secondLoc[2]) / 2,
 		];
 		let labelTic = this.generateOneTic(labLoc, 
-			<i> {'xyz'[dimension]} </i>, 
+			<i> {labText} </i>, 
 			dimension);
 		labelTic.noLine = true;  // don't draw a tic line
 		ticsThisAxis.push(labelTic);
