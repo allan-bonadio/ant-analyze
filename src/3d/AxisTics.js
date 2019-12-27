@@ -14,6 +14,9 @@ import Webgl3D from '../Webgl3D';
 
 const AXIS_TIC_COLOR = [1, 1, 1, 1];
 
+// how many pix to move a label upward to look right
+const HI_LABEL = 6;
+
 // these two work together, sharing the painter's axisLabels info that's precalcualted once
 // after the z limits are decided
 
@@ -53,55 +56,62 @@ export class AxisTics extends React.Component {
 	static userRotated(closestCorner, compositeMatrix) {
 		////debugger;////
 		this.me.setState({closestCorner, compositeMatrix});
+		////console.log(`AxisTics.userRotated(${closestCorner}, ${compositeMatrix})`)
 	}
 	
-	// generate the permanent info for the given tic mark and label
-	generateOneTicLabel(tic) {
+	// calculate the location and stuff for this tic, and return React tree for it.
+	// Just the text, the line is in webgl.
+	makeTicLab(tic, cMatrix, closestCorner, canvas) {
 		let graph = Webgl3D.me;
-		let canvas = graph.graphElement;
+//		let canvas = graph.graphElement;
 		let plot = axisTicsPainter.me.plot
-		let cm = this.state.compositeMatrix;
+//		let cMatrix = this.state.compositeMatrix;
 
 		// convert sci coords to cell coords
 		let cellBase = graph.scaleXYZ1(tic.xyz);
 		let cellTip = graph.scaleXYZ1(tic.tip);
 		////console.log('    tip', cellBase[0], cellBase[1], cellBase[2]);////
+		
+		// alter per closestCorner, which is also in cell coords
+		if (tic.dimension != 0)
+			cellBase[0] = cellTip[0] = closestCorner[0];
+		if (tic.dimension != 1)
+			cellBase[0] = cellTip[1] = closestCorner[1];
+		if (tic.dimension != 2)
+			cellBase[0] = cellTip[2] = closestCorner[2];
 
 		// convert to clip coords, -1...1 on all dimensions
 		// just like the vertex shader does
+		//console.log("cellBase, cellTip cMatrix", cellBase, cellTip, cMatrix)
 		//debugger;
-		vec4.transformMat4(cellBase, cellBase, cm);
-		vec4.transformMat4(cellTip, cellTip, cm);
+		let clipBase = [], clipTip = [];
+		vec4.transformMat4(clipBase, cellBase, cMatrix);
+		vec4.transformMat4(clipTip, cellTip, cMatrix);
 		
 		// now we can tell if we need left or right justification
-		//let justification = (cellBase[0] < cellTip[0]) ? 'left' : 'right';
+		//let justification = (clipBase[0] < clipTip[0]) ? 'left' : 'right';
 		
 		// form the style obj for this one.  Note the label goes on left or 
 		// right depending on whether tic line goes left or right.  
 		// And if we use right alignment instead of left, 
 		// must measure from other end of canvas!
+		// these are clip coords corresponding to locations on the screen/canvas,
+		// so just -1...1 for x and y.  the z slot is i think always 1.
 		let canvasX,
-			canvasY = (1 - cellTip[1] / cellTip[3]) * canvas.clientHeight / 2 - 6;
-		let style = {top: (canvasY - 6).toFixed(1) + 'px'};
-		if (cellBase[0] < cellTip[0]) {
-			canvasX = (cellTip[0] / cellTip[3] + 1) * canvas.clientWidth / 2;
+			canvasY = (1 - clipTip[1] / clipTip[3]) * canvas.clientHeight / 2 - HI_LABEL;
+		let style = {top: (canvasY - HI_LABEL).toFixed(1) + 'px'};
+		if (clipBase[0] < clipTip[0]) {
+			// the tic line is pointing to the Right of us, convert to canvas coords
+			// the x coord is -1...1 so remap that to 0...2 & divide by 2 later
+			canvasX = (clipTip[0] / clipTip[3] + 1) * canvas.clientWidth / 2;
 			style.left = canvasX +'px';
 		}
 		else {
-			canvasX = (1 - cellTip[0] / cellTip[3]) * canvas.clientWidth / 2;
+			// the tic line is pointing to the Left of us, convert to canvas coords
+			// remap the -1..1 x coord to 2...0, then divide the 2 out later
+			canvasX = (1 - clipTip[0] / clipTip[3]) * canvas.clientWidth / 2;
 			style.right = canvasX +'px';
 		}
-
-// 				let clipCoords = vec4.create();
-// 				console.log("clipCoords, canvas x and y:", 
-// 					cellTip[0].toFixed(2).padStart(6), 
-// 					cellTip[1].toFixed(2).padStart(6), 
-// 					cellTip[2].toFixed(2).padStart(6), 
-// 					' - ', 
-// 					canvasX.toFixed(2).padStart(6), 
-// 					(graph.state.graphWidth - canvasX).toFixed(2).padStart(6), 
-// 					canvasY.toFixed(2).padStart(6),
-// 					tic.tip);
 
 		return <tic-lab style={style} key={tic.key} >
 			{tic.text}
@@ -114,15 +124,16 @@ export class AxisTics extends React.Component {
 		
 		let plot = axisTicsPainter.me.plot
 		let canvas = Webgl3D.me.graphElement;
-		let cm = plot.compositeMatrix;
-		if (! cm)
+		let cMatrix = plot.compositeMatrix;
+		let closestCorner = this.state.closestCorner;
+		if (! cMatrix)
 			return '';
 		
 		// https://webglfundamentals.org/webgl/lessons/webgl-text-html.html
 		
 		let textLabels = AxisTics.axisLabels.map((axis, dim) => {
 			////console.log('Axis', dim);////
-			return axis.map(tic => this.generateOneTicLabel(tic, cm, canvas));
+			return axis.map(tic => this.makeTicLab(tic, cMatrix, closestCorner, canvas));
 		});
 
 		return <aside style={this.props.style}> {textLabels} </aside>;
@@ -173,7 +184,7 @@ export class axisTicsPainter {
 	// generate one tic at xyz for the dimension axis (0 1 or 2) with utf8 text
 	// this will be used by the component to generate each <tic-lab> element for HTML
 	// and to generate the vertices for WebGL
-	// the xyz is in science coordinates
+	// the xyz & tip are in Science coordinates
 	generateOneTic(xyz, text, dimension) {
 		// the React key is a sanitized version of the text.  If it's text.
 		let key = text;  //.replace(/\W*(.*)\W*/, '\1');  // trim off the ends
@@ -307,7 +318,7 @@ console.log(`Axis ${dimension} mask ${mask4axis}`);////
 				// converting to cell coords
 				let pos = g.scaleXYZ1(tic.xyz);
 				pos[3] = mask4axis;
-console.log(`    '${tic.text.padStart(8)}' at ${pos[0].toFixed(3)} ${pos[1].toFixed(3)} ${pos[2].toFixed(3)}`);////
+console.log(`    "${tic.text.padStart(8)}" at ${pos[0].toFixed(3)} ${pos[1].toFixed(3)} ${pos[2].toFixed(3)}`);////
 				buffer.addVertex(pos, AXIS_TIC_COLOR);  // same color as axis lines
 
 				// and the tip
@@ -355,10 +366,16 @@ console.log(`           tip at ${pos[0].toFixed(3)} ${pos[1].toFixed(3)} ${pos[2
 //	}
 
 	draw(gl) {
-		gl.drawArrays(gl.LINES, this.startVertex, this.nVertices);
+		gl.drawArrays(
+			//gl.POINTS, // diagnostic
+			gl.LINES,  // the correct one
+			this.startVertex, this.nVertices);
 		this.plot.checkOK();
+//		gl.drawArrays(gl.LINES, this.startVertex, this.nVertices);
+//		this.plot.checkOK();
 	}
-
+	
+	// break up big and potentially circularly-pointing data structures
 	dispose() {
 		this.plot = this.buffer = this.axisLabels = AxisTics.axisLabels = this.graph = null;
 		AxisTics.me = axisTicsPainter.me = null;

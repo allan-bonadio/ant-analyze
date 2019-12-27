@@ -629,7 +629,7 @@ class graphicEvents {
 		}
 	}
 	
-	// break up potentially circularly-pointing data structures and big data structures
+	// break up big and potentially circularly-pointing data structures
 	dispose() {
 		this.stopAnimating();
 

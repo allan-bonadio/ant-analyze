@@ -244,8 +244,8 @@ class Webgl3D extends Component {
 	// called while user rotates graph.
 	// we no longer have to regenerate all the tics; the shader automatically positions them
 	shoveFunc() {
-		if (this.props.show)
-			AxisTics.userRotated();
+		////if (this.props.show)
+		////	AxisTics.userRotated();
 	}
 	
 	// gets called from ge if user does a spreading gesture left & right
@@ -268,7 +268,7 @@ class Webgl3D extends Component {
 	}
 
 
-	// break up potentially circularly-pointing data structures and big data structures
+	// break up big and potentially circularly-pointing data structures
 	dispose() {
 		this.blanket = this.funcs = this.vertexSeries = null;
 		this.events.dispose();

@@ -158,7 +158,7 @@ class App extends Component {
 		ev.preventDefault();
 		Svg2D.me.dispose();
 		Webgl3D.me.dispose();
-		return 'are you sure';
+		return null;
 	}
 }
 

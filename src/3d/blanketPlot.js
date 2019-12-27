@@ -154,7 +154,7 @@ class blanketPlot {
 				
 				vColor = aVertexColor;
 
-				//gl_PointSize = 10.;  // dot size, actually a crude square
+				gl_PointSize = 10.;  // dot size, actually a crude square
 				// default is zero so set it if you want to see anything
 				// diagnostic: change to POINTS in blanketTriangle's draw method
 			}
@@ -566,18 +566,18 @@ class blanketPlot {
 
 	}
 
-	// break up potentially circularly-pointing data structures and big data structures
+	// break up big and potentially circularly-pointing data structures
 	dispose() {
 		this.painters.forEach(painter => painter.dispose());
 		this.painters = this.triangles = this.axes = this.axisTics = null;
 		
 		this.buffer.dispose(this.gl);
+		this.gl.deleteProgram(this.shaderProgram);
 		this.blanket = this.buffer = this.axisTics = this.graph = null;
 		this.gl.getExtension('WEBGL_lose_context').loseContext();
 		this.gl = null;
 		
 		this.graphElement.width = this.graphElement.height = 1;
-		this.gl.deleteProgram(this.shaderProgram);
 		this.shaderProgram = this.programInfo = this.graphElement = null;
 		blanketPlot.me = null;
 	}
