@@ -155,10 +155,10 @@ class App extends Component {
 	// this gets called before reload; must dispose of some stuff to avoid 
 	// error messages and garbage collection problems.
 	beforeUnloadEvt(ev) {
-		ev.preventDefault();
+		////ev.preventDefault();
 		Svg2D.me.dispose();
 		Webgl3D.me.dispose();
-		return null;
+		////return null;
 	}
 }
 
