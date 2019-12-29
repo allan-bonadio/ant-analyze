@@ -54,7 +54,6 @@ export class AxisTics extends React.Component {
 	
 	// called on each twitch, to trigger rerender
 	static userRotated(closestCorner, compositeMatrix) {
-		////debugger;////
 		this.me.setState({closestCorner, compositeMatrix});
 		////console.log(`AxisTics.userRotated(${closestCorner}, ${compositeMatrix})`)
 	}
@@ -63,27 +62,32 @@ export class AxisTics extends React.Component {
 	// Just the text, the line is in webgl.
 	makeTicLab(tic, cMatrix, closestCorner, canvas) {
 		let graph = Webgl3D.me;
-//		let canvas = graph.graphElement;
 		let plot = axisTicsPainter.me.plot
-//		let cMatrix = this.state.compositeMatrix;
 
 		// convert sci coords to cell coords
 		let cellBase = graph.scaleXYZ1(tic.xyz);
 		let cellTip = graph.scaleXYZ1(tic.tip);
-		////console.log('    tip', cellBase[0], cellBase[1], cellBase[2]);////
 		
 		// alter per closestCorner, which is also in cell coords
-		if (tic.dimension != 0)
-			cellBase[0] = cellTip[0] = closestCorner[0];
-		if (tic.dimension != 1)
-			cellBase[0] = cellTip[1] = closestCorner[1];
-		if (tic.dimension != 2)
-			cellBase[0] = cellTip[2] = closestCorner[2];
+		// and for which the minimum is always zero
+		////console.log(`makeTicLab(closestCorner = [${closestCorner.join(' , ')}]) `+
+		////		`cellBase/Tip=`, cellBase, cellTip);////
+		if (tic.dimension != 0) {
+			cellBase[0] += closestCorner[0];
+			cellTip[0] += closestCorner[0];
+		}
+		if (tic.dimension != 1) {
+			cellBase[1] += closestCorner[1];
+			cellTip[1] += closestCorner[1];
+		}
+		if (tic.dimension != 2) {
+			cellBase[2] += closestCorner[2];
+			cellTip[2] += closestCorner[2];
+		}
 
 		// convert to clip coords, -1...1 on all dimensions
 		// just like the vertex shader does
 		//console.log("cellBase, cellTip cMatrix", cellBase, cellTip, cMatrix)
-		//debugger;
 		let clipBase = [], clipTip = [];
 		vec4.transformMat4(clipBase, cellBase, cMatrix);
 		vec4.transformMat4(clipTip, cellTip, cMatrix);
@@ -98,7 +102,8 @@ export class AxisTics extends React.Component {
 		// these are clip coords corresponding to locations on the screen/canvas,
 		// so just -1...1 for x and y.  the z slot is i think always 1.
 		let canvasX,
-			canvasY = (1 - clipTip[1] / clipTip[3]) * canvas.clientHeight / 2 - HI_LABEL;
+			canvasY = (1 - clipTip[1] / clipTip[3]) * canvas.clientHeight / 2 - 
+					HI_LABEL;
 		let style = {top: (canvasY - HI_LABEL).toFixed(1) + 'px'};
 		if (clipBase[0] < clipTip[0]) {
 			// the tic line is pointing to the Right of us, convert to canvas coords
@@ -129,6 +134,7 @@ export class AxisTics extends React.Component {
 		if (! cMatrix)
 			return '';
 		
+		////console.log("About to render tic labs; closestCorner=", closestCorner);
 		// https://webglfundamentals.org/webgl/lessons/webgl-text-html.html
 		
 		let textLabels = AxisTics.axisLabels.map((axis, dim) => {
@@ -186,6 +192,8 @@ export class axisTicsPainter {
 	// and to generate the vertices for WebGL
 	// the xyz & tip are in Science coordinates
 	generateOneTic(xyz, text, dimension) {
+		xyz = [...xyz];
+	
 		// the React key is a sanitized version of the text.  If it's text.
 		let key = text;  //.replace(/\W*(.*)\W*/, '\1');  // trim off the ends
 		if (typeof key == 'string') {
@@ -258,12 +266,12 @@ export class axisTicsPainter {
 	generateAllTics() {
 		//console.log("||| axisScale.ticks x, y and z");
 		let g = this.graph;
-		////let plot = this.plot;
 
 		// each dimension xyz has to choose among 4 different edge/corners where the 
 		// axis bar could have tics.  But that's handled elsewhere.
 		// That code in the shader depends on this being all mins.
 		this.minimalCorner = [g.xMin, g.yMin, g.zMin];
+		////console.log("minimalCorner-- ", this.minimalCorner);
 
 		// each tic with label
 		this.axisLabels = [];
@@ -274,12 +282,12 @@ export class axisTicsPainter {
 		}
 
 		AxisTics.axisLabels = this.axisLabels;
-		this.dumpAllTics();
+		////this.dumpAllTics();
 	}
 	
 	dumpAllTics() {
 		for (let dimension = 0; dimension < 3; dimension++) {
-			console.log("ticks along axis %d:", dimension, this.axisLabels[dimension]);
+			console.info("ticks along axis %d:", dimension, this.axisLabels[dimension]);
 		}
 	}
 	
@@ -306,27 +314,26 @@ export class axisTicsPainter {
 		axisLabels.forEach((axis, dimension) => {
 			// Each is 7 minus bitvalue of that color  x=1, y=2, z=4
 			let mask4axis = [0b110, 0b101, 0b011][dimension];
-//mask4axis=0;
-console.log(`Axis ${dimension} mask ${mask4axis}`);////
+			////console.log(`Axis ${dimension} mask ${mask4axis}`, axis);////
 			
-// 			let nextDimension = (dimension + 1) % 3;
-// 			let nextScale = this.graph['xyz'[nextDimension] +'Scale'];
 			return axis.forEach(tic => {
 				if (tic.noLine)
-					return;  // axis label like x y z
+					return;  // axis label like x y z has no tic line
 				
 				// append two vertices: start from axis tic location, 
 				// converting to cell coords
 				let pos = g.scaleXYZ1(tic.xyz);
 				pos[3] = mask4axis;
-console.log(`    "${tic.text.padStart(8)}" at ${pos[0].toFixed(3)} ${pos[1].toFixed(3)} ${pos[2].toFixed(3)}`);////
+				////console.log(`    "${tic.text.padStart(8)}" at ${pos[0].toFixed(3)} `+
+				////	`${pos[1].toFixed(3)} ${pos[2].toFixed(3)}`);////
 				buffer.addVertex(pos, AXIS_TIC_COLOR);  // same color as axis lines
 
 				// and the tip
-				pos = g.scaleXYZ1(tic.tip);
-				pos[3] = mask4axis;
-console.log(`           tip at ${pos[0].toFixed(3)} ${pos[1].toFixed(3)} ${pos[2].toFixed(3)}`);////
-				buffer.addVertex(pos, AXIS_TIC_COLOR);  // same color as axis lines
+				let tpos = g.scaleXYZ1(tic.tip);
+				tpos[3] = mask4axis;
+				////console.log(`           tip at ${tpos[0].toFixed(3)} `+
+				////	`${tpos[1].toFixed(3)} ${tpos[2].toFixed(3)}`);////
+				buffer.addVertex(tpos, AXIS_TIC_COLOR);  // same color as axis lines
 			});
 		});
 
@@ -341,30 +348,6 @@ console.log(`           tip at ${pos[0].toFixed(3)} ${pos[1].toFixed(3)} ${pos[2
 		this.startVertex = buffer.nVertices;
 		this.nVertices = this.depositVertices(this.startVertex);
 	}
-
-	// replace the vertices in the buffer cuz the tic lines moved to a different axis bar
-	// but then you have to attachBufferToGL() again.  Messy way to do this ////
-//	repeatVertices() {
-//		if (Math.random() > .999) console.warn("//// remove repeat vertices")
-//		return;
-//		
-//		let presentNVertices = this.buffer.nVertices;
-//		let presentPosOffset = this.buffer.posOffset;
-//		let presentColOffset = this.buffer.colOffset;
-//		
-//		this.buffer.nVertices = this.startVertex;
-//		this.buffer.posOffset = this.startVertex * 4;
-//		this.buffer.colOffset = this.startVertex * 4;
-//		let nVert = this.depositVertices(this.startVertex);
-//		if (nVert != this.nVertices)
-//			throw "nVert not equal nVertices";
-//			
-//		this.buffer.nVertices = presentNVertices;
-//		this.buffer.posOffset = presentPosOffset;
-//		this.buffer.colOffset = presentColOffset;
-//		
-//		//this.plot.attachCanvas(this.plot.graphElement);
-//	}
 
 	draw(gl) {
 		gl.drawArrays(

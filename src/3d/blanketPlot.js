@@ -138,15 +138,15 @@ class blanketPlot {
 				if (bits > 0) {
 					// i can't believe they don't have bitwise and/or
 					if (bits >= 4) {
-						vertexPosition.z = uClosestCorner.z;
+						vertexPosition.z += uClosestCorner.z;
 						bits -= 4;
 					}
 					if (bits >= 2) {
-						vertexPosition.y = uClosestCorner.y;
+						vertexPosition.y += uClosestCorner.y;
 						bits -= 2;
 					}
 					if (bits == 1)
-						vertexPosition.x = uClosestCorner.x;
+						vertexPosition.x += uClosestCorner.x;
 					;
 				}
 					
@@ -230,7 +230,7 @@ class blanketPlot {
 	// list out ALL the vertices and their colors
 	dumpBuffer() {
 		
-		console.log("actual data put into vertex buffer")
+		console.info("actual data put into vertex buffer")
 		this.painters.forEach(painter => 
 			this.buffer.dump(painter.name, painter.startVertex, painter.nVertices));
 	}
@@ -253,7 +253,6 @@ class blanketPlot {
 		for (let f = 0; f < b.length; f++) {
 			[mi, mx] = extent(b[f], d => d.z_science);
 			[small, big] = extent(b[f], d => d.abs);
-			//console.log(`mi=${mi} mx=${mx} from d.z=`, b[f].map(d => d.z_science));
 			if (isNaN(mi + mx)) debugger;
 
 			// collect these but avoid infinity (log over complex plane)
@@ -270,7 +269,7 @@ class blanketPlot {
 		// but z values converted to 'cell coords' for webgl
 		// note we're scaling z backwards
 		this.zScale = scaleLinear()
-			.domain([maxi, mini])
+			.domain([mini, maxi])
 			.range([0, Webgl3D.me.nZCells]);  // it's 0...1
 		this.zMin = mini;
 		this.zMax = maxi;
@@ -353,7 +352,6 @@ class blanketPlot {
 		this.painters.forEach(painter => painter.layDownVertices());
 
 		//this.dumpBuffer();
-
 	}
 
 	// This must be called AFTER the canvas and gl are created; pass in the canvas
@@ -385,13 +383,13 @@ class blanketPlot {
 		this.buffer.attachToGL(this.gl, this.programInfo.attribLocations);
 	}
 
-	//********************************************************* Draw One Frame
+	// ********************************************************* Draw One Frame
 	
 	// diagnostic: make sure these are ok
 	verifyMatrices(compositeMatrix) {
 		let graph = Webgl3D.me;
 		
-		console.log("verify all 8 corners of cell space");
+		console.info("verify all 8 corners of cell space");
 		let vec = vec4.create(), out = vec4.create();
 		vec[3] = 1;
 		[0, graph.nXCells].forEach(x => {
@@ -401,7 +399,7 @@ class blanketPlot {
 				[0, graph.nZCells].forEach(z => {
 					vec[2] = z;
 					vec4.transformMat4(out, vec, compositeMatrix);
-					console.log('%d %d %d =>', x, y, z, 
+					console.info('%d %d %d =>', x, y, z, 
 						(out[0]/out[3]).toFixed(2).padStart(6), 
 						(out[1]/out[3]).toFixed(2).padStart(6), 
 						(out[2]/out[3]).toFixed(2).padStart(6));
@@ -419,10 +417,9 @@ class blanketPlot {
 			return [graph.xMin, graph.yMin, graph.zMin];  // too early
 		
 		// convert to cell coords on the way out
-		// ought to be able to do this without trig functions! ////
 		return graph.scaleXYZ1([
-			Math.sin(this.longitude) < 0 ? graph.xMin : graph.xMax, 
-			Math.cos(this.longitude) < 0 ? graph.yMin : graph.yMax, 
+			Math.floor(this.longitude / π) & 1 ? graph.xMin : graph.xMax, 
+			Math.floor(this.longitude / π + 1/2) & 1 ? graph.yMax : graph.yMin, 
 			this.latitude < 0 ? graph.zMin : graph.zMax
 		]);
 	}
@@ -464,13 +461,13 @@ class blanketPlot {
 		// rotate by latitude
 		mat4.rotate(modelViewMatrix,  // destination matrix
 			modelViewMatrix,  // matrix to rotate
-			π_2 + latitude,   // tip north/south in radians
+			-π_2 + latitude,   // tip north/south in radians
 			[1, 0, 0]);       // around x axis
 
 		// rotate by longitude
 		mat4.rotate(modelViewMatrix,  // destination matrix
 			modelViewMatrix,  // matrix to rotate
-			longitude,   // east-west rotate in radians
+			-longitude,   // east-west rotate in radians
 			[0, 0, 1]);       // rotate around z
 
 		// cell units go 0...n which isn't symmetric
@@ -503,20 +500,20 @@ class blanketPlot {
 		this.deriveMatrices(longitude, latitude);
 
 		// Set the shader uniform(s) so glsl programs can get at them
-		let uls = this.programInfo.uniformLocations;
+		let uniformLocs = this.programInfo.uniformLocations;
 
 		// one matrix that does it all
-		gl.uniformMatrix4fv(uls.compositeMatrix, false, this.compositeMatrix);
+		gl.uniformMatrix4fv(uniformLocs.compositeMatrix, false, this.compositeMatrix);
 		this.checkOK();
 
 		// for axes' tic marks, find the corner of the graph bounds that's closest 
 		// to the user's eye.  In cell coords. We never actually do anything at this vertex,
 		// but each coordinate is used for the other dimensions.  see code.
 		this.closestCorner = this.findClosestCorner();
-		//console.log("..setting closest corener:", this.closestCorner);
+		////console.log("..Setting closest corner in cell coords:", this.closestCorner);
 		
 		// tell the shader about the closest corner
-		gl.uniform4fv(uls.closestCorner, this.closestCorner);
+		gl.uniform4fv(uniformLocs.closestCorner, this.closestCorner);
 		this.checkOK();
 		
 		// tell the axis tics machinery about both
