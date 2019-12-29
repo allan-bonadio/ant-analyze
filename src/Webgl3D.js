@@ -22,7 +22,7 @@ const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
 // choose n cells in x and y direction to make total x*y cells, approx.
 // So, to make approx a 10x10 bed of cells, try 100.
 // this actually doesn't have to be perfect square; just a target. min: 4
-const TARGET_CELLS = config.production ? 6000 : 20;
+const TARGET_CELLS = config.production ? 6000 : 100;
 
 // if mouse is too powerful, increase these.  Adjust to work so moving q pixels 
 // to the right rotates the graph in a way that feels intuitive.

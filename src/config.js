@@ -4,6 +4,7 @@ export let config = {
 
 	// put on our best behavior, take down scaffolding
 	production: false,
+	//production: true,
 
 	scenes: [
 		{
