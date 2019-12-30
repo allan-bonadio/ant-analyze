@@ -13,7 +13,7 @@ import blanketPlot from './3d/blanketPlot';
 import graphicEvents from './graphicEvents';
 
 import {generateBlanket} from './3d/genComplex';
-import {AxisTics, axisTicsPainter} from './3d/AxisTics';
+import {AxisTics} from './3d/AxisTics';
 
 // don't try to type these names, just copy paste
 // eslint-disable-next-line no-unused-vars

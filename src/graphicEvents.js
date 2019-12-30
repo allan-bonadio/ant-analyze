@@ -425,9 +425,6 @@ class graphicEvents {
 			this.graph.spreadVert(this.delta, this.lastDelta, this.touchMidPoint);
 		}
 		
-////if (factor < .8 || factor > 1.2) debugger;
-		////console.log("tmh dom and range", this.xScale.domain(), this.xScale.range());
-
 		ev.preventDefault();
 	}
 	
