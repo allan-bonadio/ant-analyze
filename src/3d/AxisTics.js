@@ -62,7 +62,6 @@ export class AxisTics extends React.Component {
 	// Just the text, the line is in webgl.
 	makeTicLab(tic, cMatrix, closestCorner, canvas) {
 		let graph = Webgl3D.me;
-		let plot = axisTicsPainter.me.plot
 
 		// convert sci coords to cell coords
 		let cellBase = graph.scaleXYZ1(tic.xyz);
@@ -230,6 +229,14 @@ export class axisTicsPainter {
 		let labelValues = axisScale.ticks(5);
 		//console.log("||| axisScale.ticks:", labelValues);
 		
+		// what kind of increment?  see distance between the first two
+		// so we can decide number of decimal places
+		let delta = labelValues[1] - labelValues[0], decimalPlaces = 0;
+		delta = Math.floor(Math.log10(delta));
+		if (delta < 0)
+			decimalPlaces = -delta;
+		// future: expand this to multiple-of-three powers and add SI prefixes
+		
 		// different values get plugged in to this below.  Keep this in science 
 		// coords so everybody else can use it
 		let loc = [...this.minimalCorner];
@@ -243,7 +250,7 @@ export class axisTicsPainter {
 			if (! firstLoc) firstLoc = [...loc];
 			else if (! secondLoc) secondLoc = [...loc];
 			
-			return this.generateOneTic(loc, ticValue.toFixed(1), dimension);
+			return this.generateOneTic(loc, ticValue.toFixed(decimalPlaces), dimension);
 		});
 		
 		// add one more for labeling each axis, between the first two tics
