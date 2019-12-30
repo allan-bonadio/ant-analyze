@@ -1,11 +1,13 @@
 // configuration settings for the step widget, in particular the scenes
 
+console.log('process.env.NODE_ENV', process.env.NODE_ENV);
+
 export let config = {
 
 	// put on our best behavior, take down scaffolding
-	production: false,
+	production: false || process.env.NODE_ENV == 'production',
 	//production: true,
-
+	
 	scenes: [
 		{
 			title: "Simple Sine Wave",
