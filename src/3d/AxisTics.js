@@ -10,7 +10,7 @@ import React from 'react';
 import {vec4} from 'gl-matrix';
 
 import Webgl3D from '../Webgl3D';
-//import blanketPlot from './blanketPlot';
+import config from '../config';
 
 const AXIS_TIC_COLOR = [1, 1, 1, 1];
 
@@ -357,6 +357,10 @@ export class axisTicsPainter {
 	}
 
 	draw(gl) {
+		// the axis bars look aliased and gunky so get rid of them
+		if (config.aniGifFrames)
+			return;
+
 		gl.drawArrays(
 			//gl.POINTS, // diagnostic
 			gl.LINES,  // the correct one

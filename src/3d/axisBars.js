@@ -3,13 +3,8 @@
 //
 /* eslint-disable eqeqeq, no-throw-literal  */
 
-//import {mat4} from 'gl-matrix';
-
-//import {vertexBuffer} from './genComplex';
+import config from '../config';
 import Webgl3D from '../Webgl3D';
-
-// don't try to type these names, just copy paste
-//const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
 
 /* ************************************************************** axis bars */
 
@@ -33,7 +28,7 @@ export class axisBars {
 		let zMin = 0, zMax = this.plot.nZCells, zSize = this.plot.nZCells;
 		
 		let addVertex = (x, y, z) => {
-			buffer.addVertex([x, y, z, 0], [1, 1, 1, .5]);
+			buffer.addVertex([x, y, z, 0], [1, 1, 1, 1]);
 		};
 		
 		// these are individual line segments, drawn with gl.LINES.
@@ -63,6 +58,10 @@ export class axisBars {
 	}
 
 	draw(gl) {
+		// the axis bars look aliased and gunky so get rid of them
+		if (config.aniGifFrames)
+			return;
+
 		gl.drawArrays(gl.LINES, this.startVertex, this.nVertices);
 		this.plot.checkOK();
 	}

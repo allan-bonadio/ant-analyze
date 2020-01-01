@@ -73,6 +73,10 @@ class blanketPlot {
 		this.maxVertices = this.painters.reduce((sum, painter) => sum + painter.maxVertices, 0);
 
 		this.then = 0;
+		
+		// only for generating frames for an ani gif
+		if (config.aniGifFrames)
+			setTimeout(this.createVideoFrames.bind(this), 5000);
 	}
 	
 	// check for a WebGL error.  This is taken out of some documentation.
@@ -560,6 +564,47 @@ class blanketPlot {
 		
 		// actual drawing
 		this.painters.forEach(painter => painter.draw(gl));
+	}
+	
+	// this is internal code to help create an ani gif.
+	// It will become a global.  Just call createVideoFrames();
+	// remember to tweak the numbers in here ahead of time
+	createVideoFrames() {
+		debugger;
+		const N_FRAMES = 16;
+		let 𝜃 = 0;
+		let frameNum = 0;
+		let 𝛥𝜃 = 2 * Math.PI / N_FRAMES;
+		let interval = setInterval(() => {
+		
+			// cook up a sequence of positions (h, v) that look cool, in a circle
+			let long = 2.5 + .17 * Math.sin(𝜃);
+			let lat = 0 + .14 * Math.cos(𝜃);
+			this.drawOneFrame(long, lat);
+			
+			let h2 = document.createElement('h2');
+			h2.appendChild(document.createTextNode(`frame ` + frameNum));
+			h2.style.color = 'white';
+			document.body.appendChild(h2);
+			let frameDataUrl = this.graphElement.toDataURL();
+			let img = document.createElement('IMG');
+			img.src = frameDataUrl;
+			document.body.appendChild(img);
+		
+			// kindof like a for() loop
+			frameNum++;
+			𝜃 += 𝛥𝜃;
+			// end BEFORE the last frame cuz its identical to the first
+			if (𝜃 > 6.28) {
+				clearInterval(interval);
+				interval = null;
+				
+				// do this so I can get at them in the browser
+				//document.getElementById('root').style.display = 'none';
+				document.body.style.position = 'static';
+				alert("generation done.  download them all.");
+			}
+		}, 1000);
 
 	}
 
@@ -581,4 +626,7 @@ class blanketPlot {
 }
 
 export default blanketPlot;
+
+window.createVideoFrames = blanketPlot.createVideoFrames;
+
 

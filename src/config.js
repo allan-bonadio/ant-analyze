@@ -1,4 +1,5 @@
 // configuration settings for the step widget, in particular the scenes
+/* eslint-disable eqeqeq, no-throw-literal  */
 
 console.log('process.env.NODE_ENV', process.env.NODE_ENV);
 
@@ -6,7 +7,10 @@ export let config = {
 
 	// put on our best behavior, take down scaffolding
 	production: false || process.env.NODE_ENV == 'production',
-	//production: true,
+	production: true,
+	
+	// set true to generate ani gif frames (proprietary)
+	aniGifFrames: true,
 	
 	scenes: [
 		{
