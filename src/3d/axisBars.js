@@ -3,7 +3,7 @@
 //
 /* eslint-disable eqeqeq, no-throw-literal  */
 
-import config from '../config';
+////import config from '../config';
 import Webgl3D from '../Webgl3D';
 
 /* ************************************************************** axis bars */
@@ -59,8 +59,8 @@ export class axisBars {
 
 	draw(gl) {
 		// the axis bars look aliased and gunky so get rid of them
-		if (config.aniGifFrames)
-			return;
+//		if (config.aniGifFrames)
+//			return;
 
 		gl.drawArrays(gl.LINES, this.startVertex, this.nVertices);
 		this.plot.checkOK();

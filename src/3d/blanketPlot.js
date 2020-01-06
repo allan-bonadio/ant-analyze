@@ -566,20 +566,30 @@ class blanketPlot {
 		this.painters.forEach(painter => painter.draw(gl));
 	}
 	
-	// this is internal code to help create an ani gif.
-	// It will become a global.  Just call createVideoFrames();
-	// remember to tweak the numbers in here ahead of time
+	// ******************************************************** misc 
+	
+	// this is proprietary code to help create an ani gif.
+	// It will become a global.  Just set config.aniGifFrames and reload.
+	// remember to tweak the numbers in here ahead of time.
+	// use makeAniGif.sh to merge the frames into an ani gif
 	createVideoFrames() {
 		debugger;
-		const N_FRAMES = 16;
-		let 𝜃 = 0;
+		
+		// set the canvas to the size we need
+		let wh = [300, 300];
+		this.graphElement.setAttribute('width', wh[0]);
+		this.graphElement.setAttribute('height', wh[1]);
+		this.adjustForResize(wh[0], wh[1]);
+		
+		const N_FRAMES = 32;
+		let angle = 0;
 		let frameNum = 0;
-		let 𝛥𝜃 = 2 * Math.PI / N_FRAMES;
+		let delta = 2 * Math.PI / N_FRAMES;
 		let interval = setInterval(() => {
 		
-			// cook up a sequence of positions (h, v) that look cool, in a circle
-			let long = 2.5 + .17 * Math.sin(𝜃);
-			let lat = 0 + .14 * Math.cos(𝜃);
+			// cook up a sequence of positions (h, v) that look cool, in a circle sortof
+			let long = 4.45 + .09 * Math.sin(angle);
+			let lat = .35 + .09 * Math.cos(angle);
 			this.drawOneFrame(long, lat);
 			
 			let h2 = document.createElement('h2');
@@ -593,9 +603,9 @@ class blanketPlot {
 		
 			// kindof like a for() loop
 			frameNum++;
-			𝜃 += 𝛥𝜃;
+			angle += delta;
 			// end BEFORE the last frame cuz its identical to the first
-			if (𝜃 > 6.28) {
+			if (angle > 6.28) {
 				clearInterval(interval);
 				interval = null;
 				
