@@ -7,9 +7,9 @@ npm run build
 
 # upload the build directory to my website
 # sorry I couldn't get recursive to work with scp or sftp
-sftp allan@ojibwe << APPLETREE
+sftp allan@nakoda << APPLETREE
 
-cd /usr/local/nginx/ant-analyze
+cd /var/www/ant
 pwd
 lcd build
 lpwd
