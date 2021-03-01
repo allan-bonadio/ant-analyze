@@ -7,7 +7,10 @@ npm run build
 
 # upload the build directory to my website
 # sorry I couldn't get recursive to work with scp or sftp
-sftp allan@nakoda << APPLETREE
+
+# use something like this ofr your SFTP_LOGIN_INFO:
+#   -i ../myServersSecretKey   allan@nakoda
+sftp $SFTP_LOGIN_INFO   << APPLETREE
 
 cd /var/www/ant
 pwd
