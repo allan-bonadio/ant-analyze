@@ -1,7 +1,22 @@
 # ant-analyze
 A website for mathematical visualization.
 
-To run React server, npm install; npm start
+
+
+## Running & Building
+
+All of these are from the root level ant-analyze directory.
+
+To run React server for development
+
+	npm install
+	npm start
+
+To build the production version:
+
+	./deploy.sh
+
+see [README.react.md](README.react.md) for more such info.
 
 ## Coordinate Systems
 
