@@ -40,7 +40,7 @@ class App extends Component {
 		this.setReadout = this.setReadout.bind(this);
 		this.hamburgerClickEvt = this.hamburgerClickEvt.bind(this);
 		this.beforeUnloadEvt = this.beforeUnloadEvt.bind(this);
-		
+
 		window.addEventListener('beforeunload', this.beforeUnloadEvt);
 	}
 
@@ -92,39 +92,39 @@ class App extends Component {
 		error = Object.keys(error)[0];
 
 		// only one of svg3d or webgl3d will appear, boolean 'show'
-		
+
 		// do the menu properly
-		let blurbStyle = {display: 'block'};
-		if (this.state.hamburgerButtonShowing && ! this.state.hamburgerMenuShowing)
+		let blurbStyle = {display: 'block', minWidth: 23 * s.fontSize};
+		if (s.hamburgerButtonShowing && ! s.hamburgerMenuShowing)
 			blurbStyle.display = 'none';
-		
+
 		return (
-			<div className='outer-wrapper' style={{flexDirection: this.state.flexDirection}}>
+			<div className='outer-wrapper' style={{flexDirection: s.flexDirection}}>
 				<div id='hamburger-button' onClick={this.hamburgerClickEvt} >
 					<div /> <div /> <div />
 				</div>
 				<div className='graph-wrapper'
-							style={{width: this.state.graphWidth,
-									height: this.state.graphHeight}}>
+							style={{width: s.graphWidth,
+									height: s.graphHeight}}>
 					<div id='attitude-readout'>{s.readout}</div>
 					{error}
 
 					<Svg2D  requestedIndex={s.requestedIndex}
 							name='line' show={this.scene.graphics == '2D'}
 							setReadout={this.setReadout}
-							graphWidth={this.state.graphWidth}
-							graphHeight={this.state.graphHeight}
+							graphWidth={s.graphWidth}
+							graphHeight={s.graphHeight}
 					/>
 
 					<Webgl3D  requestedIndex={s.requestedIndex}
 							name='surface' show={this.scene.graphics == '3D'}
 							setReadout={this.setReadout}
-							graphWidth={this.state.graphWidth}
-							graphHeight={this.state.graphHeight}
+							graphWidth={s.graphWidth}
+							graphHeight={s.graphHeight}
 					/>
 				</div>
 
-				<BlurbBox  requestedIndex={s.requestedIndex} 
+				<BlurbBox  requestedIndex={s.requestedIndex}
 					style={blurbStyle} />
 			</div>
 		);//// the height and width of graph-wrapper above
@@ -146,13 +146,13 @@ class App extends Component {
 	setReadout(readout) {
 		this.setState({readout});
 	}
-	
+
 	// a click on the hamburger menu button to show the blurb
 	hamburgerClickEvt(ev) {
 		this.setState({hamburgerMenuShowing: ! this.state.hamburgerMenuShowing})
 	}
-	
-	// this gets called before reload; must dispose of some stuff to avoid 
+
+	// this gets called before reload; must dispose of some stuff to avoid
 	// error messages and garbage collection problems.
 	beforeUnloadEvt(ev) {
 		////ev.preventDefault();

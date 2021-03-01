@@ -6,12 +6,12 @@ console.log('process.env.NODE_ENV', process.env.NODE_ENV);
 export let config = {
 
 	// put on our best behavior, take down scaffolding
-	production: false || process.env.NODE_ENV == 'production',
+	production: process.env.NODE_ENV == 'production',
 	//production: true,
-	
+
 	// set true to generate ani gif frames (don't ask me how it works)
 	aniGifFrames: false,
-	
+
 	scenes: [
 		{
 			title: "Simple Sine Wave",

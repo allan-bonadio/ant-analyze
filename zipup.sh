@@ -1,4 +1,5 @@
 #!/bin/bash
+# Pack up the sources for moving to another machine or system
 
 # make sure cur dir is the one above this script
 cd `dirname $0`
