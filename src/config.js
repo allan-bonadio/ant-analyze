@@ -1,17 +1,12 @@
 // configuration settings for the step widget, in particular the scenes
 /* eslint-disable eqeqeq, no-throw-literal  */
-
 console.log('process.env.NODE_ENV', process.env.NODE_ENV);
-
 export let config = {
-
 	// put on our best behavior, take down scaffolding
 	production: process.env.NODE_ENV == 'production',
 	//production: true,
-
 	// set true to generate ani gif frames (don't ask me how it works)
 	aniGifFrames: false,
-
 	scenes: [
 		{
 			title: "Simple Sine Wave",
@@ -68,7 +63,6 @@ export let config = {
 			xMin: -2,
 			xMax: 2,
 		},
-
 		// sin(x+iy) 3d over complex plane
 		{
 			title: "Sine over Complex Plane",
@@ -89,7 +83,6 @@ export let config = {
 			yMin: -1.4,
 			yMax: 1.4,
 		},
-
 		// log(x+iy) complex plane
 		{
 			title: "Natural Logarithm over Complex Plane",
@@ -111,5 +104,4 @@ export let config = {
 		},
 	],
 };
-
 export default config;

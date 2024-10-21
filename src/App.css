@@ -1,46 +1,37 @@
 * {
 	box-sizing: border-box;
 }
-
 body {
 	position: fixed;  /* no overall page scrolling */
-	width: 100%; height: 100%;	
+	width: 100%; height: 100%;
 	padding: 0; margin: 0;
 	font-family: american typewriter regular, helvetica, sans-serif;
-	
 	background-color: black;
 }
-
 #root {
 	height: 100%;
 }
-
 .App {
 	margin: 3px;
 	height: 100%;
 }
-
 /* ******************************************************* big layout */
-
 /* pretty much same as the whole window.  Holds only the graph element and the blurb. */
 .outer-wrapper {
 	display: flex;
-	flex-direction: row;  /* changes to column if it's tall; 
+	flex-direction: row;  /* changes to column if it's tall;
 			see graphicElements.decideGraphDimensions() */
 }
-
 /* the graph itself stays in upper left corner */
 .graph-wrapper {
 	flex: 1 1;
 }
-
-/* the box with the buttons and text is either on the right or below, 
+/* the box with the buttons and text is either on the right or below,
 	dep on aspect ratio of window.  See graphicEvents.decideGraphDimensions() */
 #blurb-box {
 	flex: 0 0;
 	z-index: 20;  /* or floating above */
 }
-
 /* upper left corner */
 #attitude-readout {
 	position: absolute;
@@ -48,7 +39,6 @@ body {
 	padding: .2em;
 	z-index: 10;
 }
-
 /* user clicks to show blurb as a menu */
 #hamburger-button {
 	position: absolute;
@@ -62,7 +52,6 @@ body {
 	display: none;
 	background-color: #fff;
 }
-
 #hamburger-button div {
 	width: 14px;
 	height: 0;
@@ -70,9 +59,7 @@ body {
 	margin: 4px;
 	cursor: default;
 }
-
 /* ******************************************************* responsive */
-
 /* *** KEEP THIS IN SYNC WITH SIMILAR EXPRESSIONS IN BlurbBox.css and graphicEvents.js *** */
 @media (max-width: 699px), (max-height: 499px) {
 	/* small screen - shrink padding/margins, take out stuff,
@@ -81,14 +68,10 @@ body {
 		/* 100 vmin = width or height of screen, whichever is smaller */
 		font-size: 3vmin;
 	}
-	
 	.outer-wrapper {
 		display: block;  /* no flex! */
 	}
-
 	#hamburger-button {
 		display: block;
 	}
-	
 }
-

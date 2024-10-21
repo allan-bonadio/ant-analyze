@@ -1,8 +1,5 @@
 #!/bin/bash
-
-
 cd `dirname $0`/frames
-
 # the frames' camera take an ellipse path
 magick \
 	'download (0).png' -delay 10 \
@@ -40,8 +37,6 @@ magick \
 	-chop 81x71 -gravity SouthEast -chop 21x31 \
 	-bordercolor '#666' -border 1 \
 	ani.gif
-
-
 # first try, sucks: 	-crop '50%x50%+30%+40%' \
 # 80 percent	-crop '80%x80%+10%+10%' \
 # remove line for 100%, replace as so:
@@ -50,7 +45,6 @@ magick \
 #	-bordercolor '#aaa' -border 1 \
 #	-shave '51x51' \
 # 	-extract '198x198+51+51' \
-
 if [ $? ]
 then
 	echo "frames/ani.gif created"
@@ -59,5 +53,3 @@ then
 else
 	echo "Error, see above"
 fi
-
-

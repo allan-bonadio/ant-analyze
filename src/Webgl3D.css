@@ -5,16 +5,13 @@ canvas {
 	border: none;
 	background-color: #088;
 }
-
 .webgl-chart {
 	cursor: grab;
 	float: left;
 }
-
 .webgl-chart:active {
 	cursor: grabbing;
 }
-
 /* container for all tic labels */
 aside {
 	display: block;
@@ -26,8 +23,6 @@ aside {
 	height: 100%;
 	overflow: hidden;
 }
-
-
 /* tic label */
 tic-lab {
 	position: absolute;
@@ -35,12 +30,9 @@ tic-lab {
 	border-radius: 1em / .5em;
 	background-color: #0004;
 	padding: 0 0;
-	
 	box-shadow: #0004 0 0 .43em .43em;
 }
-
 tic-lab i {
 	font-family: palatino, times, serif;
 	font-style: italic;
 }
-

@@ -1,14 +1,10 @@
 /* eslint-disable eqeqeq, no-throw-literal  */
 import React from 'react';
-
 import config from './config';
 import NavBar from './NavBar';
-
 import './BlurbBox.css';
-
 function BlurbBox(props) {
 	let scene = config.scenes[props.requestedIndex];
-	
 	// decide which instructions to display
 	let touchDisplay = 'none', mouseDisplay = 'none', threeDDisplay = 'none';
 	if (scene.graphics == '2D') {
@@ -19,13 +15,11 @@ function BlurbBox(props) {
 	}
 	else
 		threeDDisplay = 'block';
-	
-	
 	return (
 		<div id='blurb-box' style={props.style} >
-			<NavBar nSteps={config.scenes.length} 
+			<NavBar nSteps={config.scenes.length}
 					requestedIndex={props.requestedIndex} />
-			<h2 className='blurb-title' 
+			<h2 className='blurb-title'
 					dangerouslySetInnerHTML={{__html: scene.title}}>
 			</h2>
 			<p className='blurb-text'>
@@ -45,7 +39,5 @@ function BlurbBox(props) {
 			</p>
 		</div>
 	);
-
 }
-
 export default BlurbBox;
