@@ -7,15 +7,23 @@ import {extent} from 'd3-array';
 import {scaleLinear} from 'd3-scale';
 import {hsl} from 'd3-color';
 import {mat4, vec4} from 'gl-matrix';
-import config from '../config';
-import {vertexBuffer} from './genComplex';
-import blanketTriangles from './blanketTriangles';
-import {axisBars, weatherVane} from './axisBars';
-import {AxisTics, axisTicsPainter} from './AxisTics';
-import Webgl3D from '../Webgl3D';
+import {config} from '../config.js';
+import {vertexBuffer} from './genComplex.js';
+import blanketTriangles from './blanketTriangles.js';
+import {axisBars, weatherVane} from './axisBars.js';
+import {AxisTics, axisTicsPainter} from './AxisTics.js';
+import Webgl3D from '../Webgl3D.js';
+
 // don't try to type these names, just copy paste
 // eslint-disable-next-line no-unused-vars
 const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π didn't work
+
+// the weather  vane is just a 3d triangular pyramid, for testing
+let includeWeatherVane = false;
+//let includeWeatherVane = !config.production;
+
+// this is NOT a react component; does GL
+
 // note: gl-matrix.js always has the first argument
 // as the destination to receive the result.
 /*   Guide to Coordinate Systems: see README file */
@@ -52,7 +60,7 @@ class blanketPlot {
 			this.axisTics,
 		];
 		// weatherVane diagnostic shows which way is +x, +y and +z (r g b)
-		if (! config.production)
+		if (includeWeatherVane)
 			this.painters.push(new weatherVane(this));
 		// total worst-case number of vertices we'll use (each is a pos and a col vertex)
 		this.maxVertices = this.painters.reduce((sum, painter) => sum + painter.maxVertices, 0);
@@ -130,13 +138,9 @@ class blanketPlot {
 						vertexPosition.x += uClosestCorner.x;
 					;
 				}
-<<<<<<< Updated upstream
-				gl_Position = uCompositeMatrix * vertexPosition;
-=======
 
 				gl_Position = uCompositeMatrix * vertexPosition;
 
->>>>>>> Stashed changes
 				vColor = aVertexColor;
 				gl_PointSize = 10.;  // dot size, actually a crude square
 				// default is zero so set it if you want to see anything
@@ -197,27 +201,16 @@ class blanketPlot {
 			},
 		};
 	}
-<<<<<<< Updated upstream
+
 	//********************************************************* Data Layout
 	// list out ALL the vertices and their colors
 	dumpBuffer() {
-=======
 
-	//********************************************************* Data Layout
-
-	// list out ALL the vertices and their colors
-	dumpBuffer() {
-
->>>>>>> Stashed changes
 		console.info("actual data put into vertex buffer")
 		this.painters.forEach(painter =>
 			this.buffer.dump(painter.name, painter.startVertex, painter.nVertices));
 	}
-<<<<<<< Updated upstream
-=======
 
-
->>>>>>> Stashed changes
 	// derive Z scaler from points calculated in calcPoints()
 	// also lightness for complex
 	// again, convert from dataspace coords to cell coords, use scale.invert for opposite
@@ -270,12 +263,6 @@ class blanketPlot {
 	// and fill in other components (color, height) to make the 3d complex graph
 	// we always keep saturation at 100% for the complex plane
 	complexScaleAndColor(vert, lightnessScale) {
-<<<<<<< Updated upstream
-		let zre = vert.z_data.re, zim = vert.z_data.im;
-		let hue = 180 * Math.atan2(zim, zre) / Math.PI + 180;  // make it positive
-		let lightness = Math.atan(lightnessScale(vert.abs)) * 2 / Math.PI;  // make it 0...1
-		let rgb = hsl(hue, 1, lightness).rgb();
-=======
 		let zre, zim, rgb;
 		if (!isFinite(vert.abs)) {
 			// special case: |z| = ±∞   eg log(z) at z=0  white
@@ -294,18 +281,12 @@ class blanketPlot {
 			if (isNaN(rgb.r + rgb.g + rgb.b)) debugger;
 		}
 
->>>>>>> Stashed changes
 		vert.red = rgb.r / 255;
 		vert.green = rgb.g / 255;
 		vert.blue = rgb.b / 255;
 		vert.z_science = zre;
-		//console.log(`(${zre},${zim}) ---> `, vert);
-<<<<<<< Updated upstream
-		// check to see if ANY of these are NaN
-		if (isNaN(zre + zim + hue + lightness + rgb.r + rgb.g + rgb.b)) debugger;
-=======
->>>>>>> Stashed changes
 	}
+
 	// call this after you've figured out the Z scaling from science coords to cell coords
 	// zScale is a function that converts from z_data values to z cell coords
 	colorComplexValues() {
@@ -336,20 +317,12 @@ class blanketPlot {
 	attachData(blanket) {
 		this.buffer = new vertexBuffer(this.maxVertices);
 		this.blanket = blanket;
-<<<<<<< Updated upstream
-		this.deriveZScale();
-		this.colorComplexValues();
-		// decide on the tics.  Must be after deriveZScale() but before layDownVertices()
-		this.axisTics.generateAllTics();
-=======
-
 		this.deriveZScale();
 		this.colorComplexValues();
 
 		// decide on the tics.  Must be after deriveZScale() but before layDownVertices()
 		this.axisTics.generateAllTics();
 
->>>>>>> Stashed changes
 		// each of these routines fills the arrays with data for different things being drawn
 		this.painters.forEach(painter => painter.layDownVertices());
 		//this.dumpBuffer();
@@ -379,17 +352,11 @@ class blanketPlot {
 		this.buffer.attachToGL(this.gl, this.programInfo.attribLocations);
 	}
 	// ********************************************************* Draw One Frame
-<<<<<<< Updated upstream
-	// diagnostic: make sure these are ok
-	verifyMatrices(compositeMatrix) {
-		let graph = Webgl3D.me;
-=======
 
 	// diagnostic: make sure these are ok
 	verifyMatrices(compositeMatrix) {
 		let graph = Webgl3D.me;
 
->>>>>>> Stashed changes
 		console.info("verify all 8 corners of cell space");
 		let vec = vec4.create(), out = vec4.create();
 		vec[3] = 1;
@@ -442,15 +409,10 @@ class blanketPlot {
 		// Set the drawing position to the center of the scene.
 		// then transform it as needed.  This matrix accumultes all the misc transformations.
 		const modelViewMatrix = mat4.create();
-<<<<<<< Updated upstream
-		// We start with the viewer on this end, and ends with the science coords on the other end.
-		// If you want to mess with the way the usual image looks to the user, work on this end.
-=======
 
 		// We start with the viewer on this end, and ends with the science coords on the other end.
 		// If you want to mess with the way the usual image looks to the user, work on this end.
 
->>>>>>> Stashed changes
 		// how far to step back to, to see it best.  see also trnslate xLength, yLength
 		let xLength = this.xPerCell * this.nXCells;  // overall dimensions in science space
 		let yLength = this.yPerCell * this.nYCells;
@@ -458,13 +420,9 @@ class blanketPlot {
 		mat4.translate(modelViewMatrix,		 // destination matrix
 			modelViewMatrix,		 // matrix to translate
 			[0, 0, -0.9 * (xLength + yLength)]);
-<<<<<<< Updated upstream
-		// in cell units but user has rotated it these amounts.
-=======
 
 		// in cell units but user has rotated it these amounts.
 
->>>>>>> Stashed changes
 		// rotate by latitude
 		mat4.rotate(modelViewMatrix,  // destination matrix
 			modelViewMatrix,  // matrix to rotate
@@ -490,17 +448,8 @@ class blanketPlot {
 		let compositeMatrix = mat4.create();
 		mat4.multiply(compositeMatrix, projectionMatrix, modelViewMatrix);
 		Object.assign(this, {compositeMatrix, projectionMatrix, modelViewMatrix});
-<<<<<<< Updated upstream
-		// diagnostic
-		//this.verifyMatrices(compositeMatrix);
-	}
-=======
-
-		// diagnostic
-		//this.verifyMatrices(compositeMatrix);
 	}
 
->>>>>>> Stashed changes
 	// make the matrices that position and rotate it all into view.
 	// calls deriveMatrices() to actually calculate
 	createMatrices(longitude, latitude) {
@@ -516,15 +465,6 @@ class blanketPlot {
 		// to the user's eye.  In cell coords. We never actually do anything at this vertex,
 		// but each coordinate is used for the other dimensions.  see code.
 		this.closestCorner = this.findClosestCorner();
-		////console.log("..Setting closest corner in cell coords:", this.closestCorner);
-<<<<<<< Updated upstream
-		// tell the shader about the closest corner
-		gl.uniform4fv(uniformLocs.closestCorner, this.closestCorner);
-		this.checkOK();
-		// tell the axis tics machinery about both
-		AxisTics.userRotated(this.closestCorner, this.compositeMatrix);
-	}
-=======
 
 		// tell the shader about the closest corner
 		gl.uniform4fv(uniformLocs.closestCorner, this.closestCorner);
@@ -534,7 +474,6 @@ class blanketPlot {
 		AxisTics.userRotated(this.closestCorner, this.compositeMatrix);
 	}
 
->>>>>>> Stashed changes
 	// called by Webgl3D when the size of the canvas changes; we have to know!
 	adjustForResize(graphWidth, graphHeight) {
 		this.graphWidth = graphWidth;
@@ -550,15 +489,6 @@ class blanketPlot {
 		let gl = this.gl;
 		this.longitude = longitude;
 		this.latitude = latitude;
-<<<<<<< Updated upstream
-		// must MOVE the axis tic marks given a different long/lat
-		// no it's now done in the v shader.  axisTicsPainter.me.repeatVertices();
-		// set some gl variables
-		gl.clearColor(0.0, 0.0, 0.0, 1.0);	// Clear to black, fully opaque
-		gl.clearDepth(1.0);				 // Clear depth buffer (16 bits, distance from viewer)
-		gl.enable(gl.DEPTH_TEST);	 // Enable depth testing
-		gl.depthFunc(gl.LEQUAL);		// Near things obscure far things
-=======
 
 		// must MOVE the axis tic marks given a different long/lat
 		// no it's now done in the v shader.  axisTicsPainter.me.repeatVertices();
@@ -570,7 +500,6 @@ class blanketPlot {
 		gl.enable(gl.DEPTH_TEST);	 // Enable depth testing
 		gl.depthFunc(gl.LEQUAL);		// Near things obscure far things
 
->>>>>>> Stashed changes
 		gl.lineWidth(1.0);  // it's the only option anyway
 		this.checkOK();
 		// Clear the canvas before we start drawing on it.
@@ -578,12 +507,6 @@ class blanketPlot {
 		this.checkOK();
 		gl.useProgram(this.programInfo.program);
 		this.createMatrices(longitude, latitude);
-<<<<<<< Updated upstream
-		// actual drawing
-		this.painters.forEach(painter => painter.draw(gl));
-	}
-	// ******************************************************** misc
-=======
 
 		// actual drawing
 		this.painters.forEach(painter => painter.draw(gl));
@@ -591,7 +514,6 @@ class blanketPlot {
 
 	// ******************************************************** misc
 
->>>>>>> Stashed changes
 	// this is proprietary code to help create an ani gif.
 	// It will become a global.  Just set config.aniGifFrames and reload.
 	// remember to tweak the numbers in here ahead of time.

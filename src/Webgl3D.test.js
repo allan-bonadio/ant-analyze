@@ -1,29 +1,14 @@
 /*
-<<<<<<< Updated upstream
 				Not implemented yet
 */
-import 'raf/polyfill';  // says to
-import 'core-js/es6/map';
-import 'core-js/es6/set';
-=======
 
-
-				Not implemented yet
-
-*/
-
-//import 'raf/polyfill';  // says to
-//import 'core-js/es6/map';
-//import 'core-js/es6/set';
-
->>>>>>> Stashed changes
 import React from 'react';
 import ReactDOM from 'react-dom';
 import enzyme, {configure, shallow, mount, render} from 'enzyme';
 import Adapter from 'enzyme-adapter-react-16';
-import Svg2D, {axisMargin} from './Svg2D';
-import NavBar from './NavBar';
-import config from './config';
+import Svg2D, {axisMargin} from './Svg2D.js';
+import NavBar from './NavBar.js';
+import {config} from './config.js';
 configure({ adapter: new Adapter() });
 // make an Svg2D component, but pass back the wrapper for its iinner <svg>
 function makeASvg() {
@@ -39,11 +24,6 @@ function checkMargins(instance) {
 	expect(instance.marginBottom).toEqual(instance.state.svgHeight - axisMargin);
 }
 let preventDefault = () => {};
-<<<<<<< Updated upstream
-=======
-
-
->>>>>>> Stashed changes
 describe('Svg2D ', () => {
 	// mostly based on the initial render and method calls leading up to it
 	let w, instance;
@@ -79,17 +59,11 @@ describe('Svg2D ', () => {
 			testAxis(w.find('g.xAxis'));  // x axis
 			testAxis(w.find('g.yAxis'));  // y axis
 		});
-<<<<<<< Updated upstream
-		it('has series ', () => {
-			let paths = w.childAt(2).find('path');  // the g element
-			expect(paths.length).toEqual(2);
-=======
 
 		it('has series ', () => {
 			let paths = w.childAt(2).find('path');  // the g element
 			expect(paths.length).toEqual(2);
 
->>>>>>> Stashed changes
 			// the d attribute has all the coordinates of the line segments, it's long
 			expect(paths.at(0).prop('d').length).toBeGreaterThan(2000);
 			expect(paths.at(1).prop('d').length).toBeGreaterThan(2000);
@@ -109,17 +83,11 @@ describe('Svg2D ', () => {
 		});
 		it('getDerivedStateFromProps() should work right ', () => {
 			let dState;
-<<<<<<< Updated upstream
-			// when not changing scene
-			dState = Svg2D.getDerivedStateFromProps({requestedIndex: 0}, {requestedIndex: 0});
-			expect(dState).toBeNull();
-=======
 
 			// when not changing scene
 			dState = Svg2D.getDerivedStateFromProps({requestedIndex: 0}, {requestedIndex: 0});
 			expect(dState).toBeNull();
 
->>>>>>> Stashed changes
 			// when changing scene
 			dState = Svg2D.getDerivedStateFromProps({requestedIndex: 1}, {requestedIndex: 0});
 			expect(instance.funcs).toBe(config.scenes[1].funcs);
@@ -225,17 +193,11 @@ describe('Svg2D ', () => {
 		// pass down the done() then handler-event pairs for down, move and up
 		function tryDragging(done, downEvent, mDown, moveEvent, mMove, upEvent, mUp) {
 			//console.log("tryDragging args:", arguments);
-<<<<<<< Updated upstream
-			// click down.  these coords are in pixel units.
-			mDown(downEvent);
-			expect(instance.dragging).toBeTruthy();
-=======
 
 			// click down.  these coords are in pixel units.
 			mDown(downEvent);
 			expect(instance.dragging).toBeTruthy();
 
->>>>>>> Stashed changes
 			// these are all in science units
 ////			console.log(instance.downY, instance.downMinMax);////
 			expect(instance.downX).toBeCloseTo(0.12765957446808507, 2);
@@ -272,17 +234,11 @@ describe('Svg2D ', () => {
 				let expectX = -2.117299248794879;
 				if (Math.abs(instance.offsetX - expectX) > .01)
 					fail(`offsetX off, was ${instance.offsetX} expected ${expectX}`);
-<<<<<<< Updated upstream
-				let expectY = 0.1279655989517205;
-				if (Math.abs(instance.offsetY - expectY) > .01)
-					fail(`offsetY off, was ${instance.offsetY} expected ${expectY}`);
-=======
 
 				let expectY = 0.1279655989517205;
 				if (Math.abs(instance.offsetY - expectY) > .01)
 					fail(`offsetY off, was ${instance.offsetY} expected ${expectY}`);
 
->>>>>>> Stashed changes
 				// inexplicably these take a long time to do (>10min)
 				////expect(instance.offsetX).toBeCloseTo(-0.44910884556302577, 10);
 				////expect(instance.offsetY).toBeCloseTo(0.11227721139075647, 10);
@@ -350,14 +306,6 @@ describe('Svg2D ', () => {
 			case 'boolean': case 'number': case 'undefined':
 				textOut += tabs + name +' '+ (typeof val) +' '+ val +'\n';
 				break;
-<<<<<<< Updated upstream
-			case 'symbol':
-				textOut += tabs + name +' symbol '+ val.toString() +'\n';
-				break;
-			case 'string':
-				textOut += tabs + name + ' "'+ val.replace(/"/, '\\"') +'"\n';
-				break;
-=======
 
 			case 'symbol':
 				textOut += tabs + name +' symbol '+ val.toString() +'\n';
@@ -367,7 +315,6 @@ describe('Svg2D ', () => {
 				textOut += tabs + name + ' "'+ val.replace(/"/, '\\"') +'"\n';
 				break;
 
->>>>>>> Stashed changes
 			case 'object':
 				textOut += tabs + name + ' object '+ val +'\n';
 				analObj(val, indent+1);
@@ -413,11 +360,7 @@ describe('Svg2D ', () => {
 			////console.log("navw", navw, navw.debug());
 ////			let navs =  shallow(<NavBar requestedIndex='0' />);
 			////console.log("navs", navs, navs.debug());
-<<<<<<< Updated upstream
-=======
 
-
->>>>>>> Stashed changes
 				expect(true).toBeTruthy();
 ////			expect(typeof newEv.preventDefault).toEqual('function');
 ////			expect(newEv.foo).toEqual('foo');

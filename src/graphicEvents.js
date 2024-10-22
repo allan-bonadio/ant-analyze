@@ -4,8 +4,8 @@
 //
 /* eslint-disable eqeqeq, no-throw-literal  */
 import $ from 'jquery';
-import config from './config';
-import App from './App';
+import {config} from './config.js';
+import App from './App.js';
 // .20 is almost like none.  1.0 stops everything immediately
 const FRICTION = .90;
 // we average out the velocity of dragging from the last several mouseMove events.

@@ -1,28 +1,22 @@
 /* eslint-disable eqeqeq, no-throw-literal  */
-<<<<<<< Updated upstream
-import 'core-js/es6/map';
-import 'core-js/es6/set';
-import 'raf/polyfill';
-=======
-
-
-//import 'core-js/es6/map';
-//import 'core-js/es6/set';
-//import 'raf/polyfill';
->>>>>>> Stashed changes
 import React, { Component } from 'react';
-import config from './config';
-import BlurbBox from './BlurbBox';
-import Svg2D from './Svg2D';
-import Webgl3D from './Webgl3D';
-import graphicEvents from './graphicEvents';
+import {config} from './config.js';
+import BlurbBox from './BlurbBox.js';
+import Svg2D from './Svg2D.js';
+import Webgl3D from './Webgl3D.js';
+import graphicEvents from './graphicEvents.js';
 import './App.css';
+
+const con = config;
+console.log(config.scenes);
+
 // for startup, use 1 for 2d, 3 for 3d
 //const INITIAL_SCENE_INDEX = 1;  // 2d sin(x)/x
 const INITIAL_SCENE_INDEX = 3;  // 3d sin(x+iy)
 class App extends Component {
 	constructor(props) {
 		super(props);
+
 		App.me = this;  // singleton
 		// scene is remembered in localStorage
 		let chosenSceneIndex = localStorage.sceneIndex || INITIAL_SCENE_INDEX;

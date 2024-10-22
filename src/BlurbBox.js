@@ -1,7 +1,7 @@
 /* eslint-disable eqeqeq, no-throw-literal  */
 import React from 'react';
-import config from './config';
-import NavBar from './NavBar';
+import {config} from './config.js';
+import NavBar from './NavBar.js';
 import './BlurbBox.css';
 function BlurbBox(props) {
 	let scene = config.scenes[props.requestedIndex];

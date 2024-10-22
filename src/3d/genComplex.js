@@ -4,11 +4,7 @@
 //
 /* eslint-disable eqeqeq, no-throw-literal  */
 // ****************************************************************** data generation
-<<<<<<< Updated upstream
-=======
 
-
->>>>>>> Stashed changes
 // decide which formula/generator to use, and use it to generate a matrix of
 // vertex objects with keys x, y, z_data, red, green, blue, alpha
 // also hand in scalers for x, y from cell to science coords
@@ -23,15 +19,10 @@ export function generateBlanket(func, nXCells, nYCells, xCell2Science, yCell2Sci
 			// some sort of obj with whatever we might need for the rendering.
 			let vert = row[x] = {
 				x, y,   // cell coords
-<<<<<<< Updated upstream
-				// still in science coords cuz we don't know the extent yet
-				z_data: func(xCell2Science(x), yCell2Science(y)),
-=======
 
 				// still in science coords cuz we don't know the extent yet
 				z_data: func(xCell2Science(x), yCell2Science(y)),
 
->>>>>>> Stashed changes
 				// just a default color, set your own later if you care
 				// i don't think these numbers do anything; just placeholders
 				red: .6, green: .6, blue: .3, alpha: 1,
@@ -58,14 +49,10 @@ export function generateBlanket(func, nXCells, nYCells, xCell2Science, yCell2Sci
 	blanket.nYCells = nYCells;
 	return blanket;
 }
-<<<<<<< Updated upstream
-// ****************************************************************** vertex buffers
-=======
 
 
 // ******************************************************** vertex buffers
 
->>>>>>> Stashed changes
 // handy for filling these buffers.  Decide ahead how many vertices you need room for.
 // then create it and call addVertex with each vertex info.
 // get the division between groups by checking nVertices between addVertex() calls.
@@ -94,15 +81,10 @@ export class vertexBuffer {
 		c[this.colOffset++] = colArray4[1];
 		c[this.colOffset++] = colArray4[2];
 		c[this.colOffset++] = colArray4[3];
-<<<<<<< Updated upstream
-		this.nVertices++;
-	}
-=======
 
 		this.nVertices++;
 	}
 
->>>>>>> Stashed changes
 	// after filling in your vertices, come here to bless it and attach it to a gl
 	// context so it'll be used in drawing
 	attachToGL(gl, attribLocations) {
@@ -134,13 +116,9 @@ export class vertexBuffer {
 		function f(q) {
 			return Number(q).toFixed(2).padStart(6);
 		}
-<<<<<<< Updated upstream
-		console.log(` data put into ${title} vertex buffers`);
-=======
 
 		console.log(` data put into ${title} vertex buffers`);
 
->>>>>>> Stashed changes
 		let pos = this.positions;
 		let col = this.colors;
 		let p, c, v;

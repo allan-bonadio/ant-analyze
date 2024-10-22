@@ -1,7 +1,7 @@
 /* eslint-disable eqeqeq, no-throw-literal  */
 import React, { Component } from 'react';
-import config from './config';
-import App from './App';
+import {config} from './config.js';
+import App from './App.js';
 class NavBar extends Component {
 	constructor(props) {
 		super(props);

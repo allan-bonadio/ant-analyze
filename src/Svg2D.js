@@ -1,24 +1,14 @@
 /* eslint-disable eqeqeq, no-throw-literal  */
-<<<<<<< Updated upstream
-import 'raf/polyfill';
-=======
-
-//import 'raf/polyfill';
->>>>>>> Stashed changes
 import React, { Component } from 'react';
 import {extent} from 'd3-array';
 import {scaleLinear} from 'd3-scale';
 import {line} from 'd3-shape';
 import {axisTop, axisBottom, axisLeft, axisRight} from 'd3-axis';
 import {select} from 'd3-selection';
-<<<<<<< Updated upstream
-//import $ from 'jquery';
-=======
 
->>>>>>> Stashed changes
 import './Svg2D.css';
-import config from './config';
-import graphicEvents from './graphicEvents';
+import {config} from './config.js';
+import graphicEvents from './graphicEvents.js';
 // to make room for axes that may be cut off at the edges
 export const axisMargin = 4;
 // if mouse is too powerful, increase these.  Adjust to work so moving q pixels

@@ -1,9 +1,8 @@
 //
-// blanket axes - axis lines and tic marks for a blanket plot.
+// axis bars - axis lines and tic marks for a blanket plot.
 //
 /* eslint-disable eqeqeq, no-throw-literal  */
-////import config from '../config';
-import Webgl3D from '../Webgl3D';
+import Webgl3D from '../Webgl3D.js';
 /* ************************************************************** axis bars */
 // this ends up being a mixin for blanketPlot
 export class axisBars {

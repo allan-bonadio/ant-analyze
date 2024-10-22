@@ -1,36 +1,23 @@
 /* eslint-disable eqeqeq, no-throw-literal  */
-<<<<<<< Updated upstream
-import 'raf/polyfill';
-=======
-
-//import 'raf/polyfill';
->>>>>>> Stashed changes
 import React, { Component } from 'react';
 import {scaleLinear} from 'd3-scale';
-<<<<<<< Updated upstream
-//import $ from 'jquery';
-=======
 
->>>>>>> Stashed changes
 import './Webgl3D.css';
-import config from './config';
-import blanketPlot from './3d/blanketPlot';
-import graphicEvents from './graphicEvents';
-import {generateBlanket} from './3d/genComplex';
-import {AxisTics} from './3d/AxisTics';
+import {config} from './config.js';
+import blanketPlot from './3d/blanketPlot.js';
+import graphicEvents from './graphicEvents.js';
+import {generateBlanket} from './3d/genComplex.js';
+import {AxisTics} from './3d/AxisTics.js';
 // don't try to type these names, just copy paste
 // eslint-disable-next-line no-unused-vars
 const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
 // choose n cells in x and y direction to make total x*y cells, approx.
 // So, to make approx a 10x10 bed of cells, try 100.
 // this actually doesn't have to be perfect square; just a target. min: 4
-<<<<<<< Updated upstream
-const TARGET_CELLS = config.production ? 6000 : 100;
-=======
+
 const TARGET_CELLS = 6000;
 //const TARGET_CELLS = config.production ? 6000 : 100;
 
->>>>>>> Stashed changes
 // if mouse is too powerful, increase these.  Adjust to work so moving q pixels
 // to the right rotates the graph in a way that feels intuitive.
 // This is a judgement call.
