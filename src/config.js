@@ -63,12 +63,13 @@ export let config = {
 			xMin: -2,
 			xMax: 2,
 		},
-		// sin(x+iy) 3d over complex plane
+
 		{
 			title: "Sine over Complex Plane",
 			formula: "sin(<v>x</v>+<v>iy<v>)",
 			blurb: "In the imaginary directions, the trig functions become "+
-				"hyperbolic functions, which end up rising exponentially.",
+				"hyperbolic functions, which end up rising or falling exponentially."+
+				"You can see the familiar sine wave if you look along the real axis.",
 			graphics: '3D',
 			funcs: [{
 				// sin(x+iy) = sin(x) cosh(y) + i cos(x) sinh(y)
@@ -80,10 +81,10 @@ export let config = {
 			}],
 			xMin: -5.1,
 			xMax: 5.1,
-			yMin: -1.4,
-			yMax: 1.4,
+			yMin: -2,
+			yMax: 2,
 		},
-		// log(x+iy) complex plane
+
 		{
 			title: "Natural Logarithm over Complex Plane",
 			formula: "log(<v>x</v>+<v>iy<v>)",
@@ -102,6 +103,25 @@ export let config = {
 			yMin: -3.1,
 			yMax: 3.1,
 		},
+
+//		{
+//			title: "Cube root over Complex Plane",
+//			formula: "∛<v>x</v>",
+//			blurb: "Cube root is multi-valued, over complex numbers.  In this case, there's always 3 values",
+//			graphics: '3D',
+//			funcs: [{
+//				// sin(x+iy) = sin(x) cosh(y) + i cos(x) sinh(y)
+//				func: (x, y) => ({
+//					re: Math.log(x*x + y*y) * .5,  // log(sqrt(x^2 + y^2))
+//					im: Math.atan2(y, x),
+//				}),
+//				complex: true,
+//			}],
+//			xMin: -3.1,
+//			xMax: 3.1,
+//			yMin: -3.1,
+//			yMax: 3.1,
+//		},
 	],
 };
 export default config;
