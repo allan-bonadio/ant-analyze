@@ -1,8 +1,17 @@
 /* eslint-disable eqeqeq, no-throw-literal  */
+<<<<<<< Updated upstream
 import 'raf/polyfill';
+=======
+
+//import 'raf/polyfill';
+>>>>>>> Stashed changes
 import React, { Component } from 'react';
 import {scaleLinear} from 'd3-scale';
+<<<<<<< Updated upstream
 //import $ from 'jquery';
+=======
+
+>>>>>>> Stashed changes
 import './Webgl3D.css';
 import config from './config';
 import blanketPlot from './3d/blanketPlot';
@@ -15,7 +24,13 @@ const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
 // choose n cells in x and y direction to make total x*y cells, approx.
 // So, to make approx a 10x10 bed of cells, try 100.
 // this actually doesn't have to be perfect square; just a target. min: 4
+<<<<<<< Updated upstream
 const TARGET_CELLS = config.production ? 6000 : 100;
+=======
+const TARGET_CELLS = 6000;
+//const TARGET_CELLS = config.production ? 6000 : 100;
+
+>>>>>>> Stashed changes
 // if mouse is too powerful, increase these.  Adjust to work so moving q pixels
 // to the right rotates the graph in a way that feels intuitive.
 // This is a judgement call.
@@ -152,7 +167,6 @@ class Webgl3D extends Component {
 				...canvasStyle};
 		let plot = this.plot;
 		// react doesnt recognize touch events - needed for gestures
-		// so use jQuery in graphicEvents instead of react events
 		return (
 			<div className='webgl-chart' style={wrapperStyle}
 					ref={webglChart => this.sensitiveElement = webglChart}>

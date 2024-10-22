@@ -1,12 +1,21 @@
 /* eslint-disable eqeqeq, no-throw-literal  */
+<<<<<<< Updated upstream
 import 'raf/polyfill';
+=======
+
+//import 'raf/polyfill';
+>>>>>>> Stashed changes
 import React, { Component } from 'react';
 import {extent} from 'd3-array';
 import {scaleLinear} from 'd3-scale';
 import {line} from 'd3-shape';
 import {axisTop, axisBottom, axisLeft, axisRight} from 'd3-axis';
 import {select} from 'd3-selection';
+<<<<<<< Updated upstream
 //import $ from 'jquery';
+=======
+
+>>>>>>> Stashed changes
 import './Svg2D.css';
 import config from './config';
 import graphicEvents from './graphicEvents';
@@ -213,7 +222,6 @@ class Svg2D extends Component {
 		}
 		let viewBox = `0 0 ${props.graphWidth} ${props.graphHeight}`;
 		// react doesnt recognize touch events (doesn't list) - needed for gestures
-		// so use jQuery in DidMount
 		// I think we have to set width and height directly here; css doesn't do it
 		return (
 			<svg className='svg-chart'

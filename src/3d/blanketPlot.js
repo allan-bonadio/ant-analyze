@@ -39,11 +39,13 @@ class blanketPlot {
 	constructor(graph, options) {
 		this.graph = graph;  // Webgl3D
 		Object.assign(this, options);
+
 		// these painters set up for the geometry, and in the constructor,
 		// calculate max number of vertices they need for each set of graphical things they draw
 		this.triangles = new blanketTriangles(this);
 		this.axes = new axisBars(this);
 		this.axisTics = new axisTicsPainter(this, Webgl3D.me);
+
 		this.painters = [
 			this.triangles,
 			this.axes,
@@ -55,15 +57,18 @@ class blanketPlot {
 		// total worst-case number of vertices we'll use (each is a pos and a col vertex)
 		this.maxVertices = this.painters.reduce((sum, painter) => sum + painter.maxVertices, 0);
 		this.then = 0;
+
 		// only for generating frames for an ani gif
 		if (config.aniGifFrames)
 			setTimeout(this.createVideoFrames.bind(this), 5000);
 	}
+
 	// check for a WebGL error.  This is taken out of some documentation.
 	checkOK() {
 		let gl = this.gl;
 		if (! gl)
 			return;  // doesn't exist yet
+
 		let err = gl.getError();
 		if (err) {
 			let msg = '';
@@ -106,6 +111,7 @@ class blanketPlot {
 			void main() {
 				vec4 vertexPosition = aVertexPosition;
 				vertexPosition.w = 1.0;  // or zero?  doesn't seem to matter
+
 				// for axis tics and labels, always put them in front.
 				// the key is the fourth pos component, a bit field stored as a float.
 				// notice if 4th component is zero, coordinates stay unmolested
@@ -124,7 +130,13 @@ class blanketPlot {
 						vertexPosition.x += uClosestCorner.x;
 					;
 				}
+<<<<<<< Updated upstream
 				gl_Position = uCompositeMatrix * vertexPosition;
+=======
+
+				gl_Position = uCompositeMatrix * vertexPosition;
+
+>>>>>>> Stashed changes
 				vColor = aVertexColor;
 				gl_PointSize = 10.;  // dot size, actually a crude square
 				// default is zero so set it if you want to see anything
@@ -172,6 +184,7 @@ class blanketPlot {
 	// look up uniform locations.
 	createProgramInfo() {
 		let gl = this.gl, sp = this.shaderProgram;
+
 		this.programInfo = {
 			program: this.shaderProgram,
 			attribLocations: {
@@ -184,13 +197,27 @@ class blanketPlot {
 			},
 		};
 	}
+<<<<<<< Updated upstream
 	//********************************************************* Data Layout
 	// list out ALL the vertices and their colors
 	dumpBuffer() {
+=======
+
+	//********************************************************* Data Layout
+
+	// list out ALL the vertices and their colors
+	dumpBuffer() {
+
+>>>>>>> Stashed changes
 		console.info("actual data put into vertex buffer")
 		this.painters.forEach(painter =>
 			this.buffer.dump(painter.name, painter.startVertex, painter.nVertices));
 	}
+<<<<<<< Updated upstream
+=======
+
+
+>>>>>>> Stashed changes
 	// derive Z scaler from points calculated in calcPoints()
 	// also lightness for complex
 	// again, convert from dataspace coords to cell coords, use scale.invert for opposite
@@ -226,6 +253,7 @@ class blanketPlot {
 		this.zMin = mini;
 		this.zMax = maxi;
 		this.zPerCell = (maxi - mini) / this.nZCells;
+
 		// must also be on the graph component
 		// this way you can index the dimensions if you have to eg this[dimension +'Scale']
 		let gr = Webgl3D.me;
@@ -237,21 +265,46 @@ class blanketPlot {
 			.domain([0, biggest]);
 		if (isNaN(this.zScale(1))) debugger;
 	}
+
 	// take a complex value for vert.z (like {re: 1, im: -1})
 	// and fill in other components (color, height) to make the 3d complex graph
 	// we always keep saturation at 100% for the complex plane
 	complexScaleAndColor(vert, lightnessScale) {
+<<<<<<< Updated upstream
 		let zre = vert.z_data.re, zim = vert.z_data.im;
 		let hue = 180 * Math.atan2(zim, zre) / Math.PI + 180;  // make it positive
 		let lightness = Math.atan(lightnessScale(vert.abs)) * 2 / Math.PI;  // make it 0...1
 		let rgb = hsl(hue, 1, lightness).rgb();
+=======
+		let zre, zim, rgb;
+		if (!isFinite(vert.abs)) {
+			// special case: |z| = ±∞   eg log(z) at z=0  white
+			rgb = {r: 255, g: 255, b: 255};
+			zre = Math.min(Math.max(vert.z_data.re, -1e10), +1e10);  // limit it to finite numbers
+		}
+		else {
+			zre = vert.z_data.re;
+			zim = vert.z_data.im;
+
+			let hue = 180 * Math.atan2(zim, zre) / Math.PI + 180;  // make it positive
+			let lightness = Math.atan(lightnessScale(vert.abs)) * 2 / Math.PI;  // make it 0...1
+
+			rgb = hsl(hue, 1, lightness).rgb();
+			// check to see if ANY of these are NaN
+			if (isNaN(rgb.r + rgb.g + rgb.b)) debugger;
+		}
+
+>>>>>>> Stashed changes
 		vert.red = rgb.r / 255;
 		vert.green = rgb.g / 255;
 		vert.blue = rgb.b / 255;
 		vert.z_science = zre;
 		//console.log(`(${zre},${zim}) ---> `, vert);
+<<<<<<< Updated upstream
 		// check to see if ANY of these are NaN
 		if (isNaN(zre + zim + hue + lightness + rgb.r + rgb.g + rgb.b)) debugger;
+=======
+>>>>>>> Stashed changes
 	}
 	// call this after you've figured out the Z scaling from science coords to cell coords
 	// zScale is a function that converts from z_data values to z cell coords
@@ -262,6 +315,7 @@ class blanketPlot {
 			let row = blanket[y];
 			for (let x = 0; x <= blanket.nXCells; x++) {
 				let vert = row[x];
+
 				if (typeof vert.z_data == 'object') {
 					// a complex number - convert to z scalar, and color
 					this.complexScaleAndColor(vert, this.lightnessScale);
@@ -282,10 +336,20 @@ class blanketPlot {
 	attachData(blanket) {
 		this.buffer = new vertexBuffer(this.maxVertices);
 		this.blanket = blanket;
+<<<<<<< Updated upstream
 		this.deriveZScale();
 		this.colorComplexValues();
 		// decide on the tics.  Must be after deriveZScale() but before layDownVertices()
 		this.axisTics.generateAllTics();
+=======
+
+		this.deriveZScale();
+		this.colorComplexValues();
+
+		// decide on the tics.  Must be after deriveZScale() but before layDownVertices()
+		this.axisTics.generateAllTics();
+
+>>>>>>> Stashed changes
 		// each of these routines fills the arrays with data for different things being drawn
 		this.painters.forEach(painter => painter.layDownVertices());
 		//this.dumpBuffer();
@@ -296,6 +360,7 @@ class blanketPlot {
 	attachCanvas(graphElement) {
 		if (this.graphElement === graphElement)
 			return;
+
 		// all the rest of this is done, pretty much, once during graph startup
 		this.graphElement = this.graph.graphElement = graphElement;
 		this.graphWidth = graphElement.width;
@@ -314,9 +379,17 @@ class blanketPlot {
 		this.buffer.attachToGL(this.gl, this.programInfo.attribLocations);
 	}
 	// ********************************************************* Draw One Frame
+<<<<<<< Updated upstream
 	// diagnostic: make sure these are ok
 	verifyMatrices(compositeMatrix) {
 		let graph = Webgl3D.me;
+=======
+
+	// diagnostic: make sure these are ok
+	verifyMatrices(compositeMatrix) {
+		let graph = Webgl3D.me;
+
+>>>>>>> Stashed changes
 		console.info("verify all 8 corners of cell space");
 		let vec = vec4.create(), out = vec4.create();
 		vec[3] = 1;
@@ -335,6 +408,7 @@ class blanketPlot {
 			});
 		});
 	}
+
 	// find the corner of our space closest to the user.  In Cell coords.
 	// changes every time it rotates
 	// returns a 3 vector, useful for tic positioning
@@ -342,6 +416,7 @@ class blanketPlot {
 		let graph = this.graph;
 		if (! ('longitude' in this && 'latitude' in this))
 			return [graph.xMin, graph.yMin, graph.zMin];  // too early
+
 		// convert to cell coords on the way out
 		return graph.scaleXYZ1([
 			Math.floor(this.longitude / π) & 1 ? graph.xMin : graph.xMax,
@@ -367,8 +442,15 @@ class blanketPlot {
 		// Set the drawing position to the center of the scene.
 		// then transform it as needed.  This matrix accumultes all the misc transformations.
 		const modelViewMatrix = mat4.create();
+<<<<<<< Updated upstream
 		// We start with the viewer on this end, and ends with the science coords on the other end.
 		// If you want to mess with the way the usual image looks to the user, work on this end.
+=======
+
+		// We start with the viewer on this end, and ends with the science coords on the other end.
+		// If you want to mess with the way the usual image looks to the user, work on this end.
+
+>>>>>>> Stashed changes
 		// how far to step back to, to see it best.  see also trnslate xLength, yLength
 		let xLength = this.xPerCell * this.nXCells;  // overall dimensions in science space
 		let yLength = this.yPerCell * this.nYCells;
@@ -376,7 +458,13 @@ class blanketPlot {
 		mat4.translate(modelViewMatrix,		 // destination matrix
 			modelViewMatrix,		 // matrix to translate
 			[0, 0, -0.9 * (xLength + yLength)]);
+<<<<<<< Updated upstream
 		// in cell units but user has rotated it these amounts.
+=======
+
+		// in cell units but user has rotated it these amounts.
+
+>>>>>>> Stashed changes
 		// rotate by latitude
 		mat4.rotate(modelViewMatrix,  // destination matrix
 			modelViewMatrix,  // matrix to rotate
@@ -396,14 +484,23 @@ class blanketPlot {
 		// apply the xPerCell and yPerCell scaling
 		mat4.scale(modelViewMatrix, modelViewMatrix,
 			[this.xPerCell, this.yPerCell, this.zPerCell]);
+
 		// ok on this end, we're talking science units.
 		// put these together on the client so the gpu doesn't have to multiply every time
 		let compositeMatrix = mat4.create();
 		mat4.multiply(compositeMatrix, projectionMatrix, modelViewMatrix);
 		Object.assign(this, {compositeMatrix, projectionMatrix, modelViewMatrix});
+<<<<<<< Updated upstream
 		// diagnostic
 		//this.verifyMatrices(compositeMatrix);
 	}
+=======
+
+		// diagnostic
+		//this.verifyMatrices(compositeMatrix);
+	}
+
+>>>>>>> Stashed changes
 	// make the matrices that position and rotate it all into view.
 	// calls deriveMatrices() to actually calculate
 	createMatrices(longitude, latitude) {
@@ -414,21 +511,35 @@ class blanketPlot {
 		// one matrix that does it all
 		gl.uniformMatrix4fv(uniformLocs.compositeMatrix, false, this.compositeMatrix);
 		this.checkOK();
+
 		// for axes' tic marks, find the corner of the graph bounds that's closest
 		// to the user's eye.  In cell coords. We never actually do anything at this vertex,
 		// but each coordinate is used for the other dimensions.  see code.
 		this.closestCorner = this.findClosestCorner();
 		////console.log("..Setting closest corner in cell coords:", this.closestCorner);
+<<<<<<< Updated upstream
 		// tell the shader about the closest corner
 		gl.uniform4fv(uniformLocs.closestCorner, this.closestCorner);
 		this.checkOK();
 		// tell the axis tics machinery about both
 		AxisTics.userRotated(this.closestCorner, this.compositeMatrix);
 	}
+=======
+
+		// tell the shader about the closest corner
+		gl.uniform4fv(uniformLocs.closestCorner, this.closestCorner);
+		this.checkOK();
+
+		// tell the axis tics machinery about both
+		AxisTics.userRotated(this.closestCorner, this.compositeMatrix);
+	}
+
+>>>>>>> Stashed changes
 	// called by Webgl3D when the size of the canvas changes; we have to know!
 	adjustForResize(graphWidth, graphHeight) {
 		this.graphWidth = graphWidth;
 		this.graphHeight = graphHeight;
+
 		// this is what we need (otherwise it's all distorted)
 		this.gl.viewport(0, 0, graphWidth, graphHeight);
 	}
@@ -439,6 +550,7 @@ class blanketPlot {
 		let gl = this.gl;
 		this.longitude = longitude;
 		this.latitude = latitude;
+<<<<<<< Updated upstream
 		// must MOVE the axis tic marks given a different long/lat
 		// no it's now done in the v shader.  axisTicsPainter.me.repeatVertices();
 		// set some gl variables
@@ -446,6 +558,19 @@ class blanketPlot {
 		gl.clearDepth(1.0);				 // Clear depth buffer (16 bits, distance from viewer)
 		gl.enable(gl.DEPTH_TEST);	 // Enable depth testing
 		gl.depthFunc(gl.LEQUAL);		// Near things obscure far things
+=======
+
+		// must MOVE the axis tic marks given a different long/lat
+		// no it's now done in the v shader.  axisTicsPainter.me.repeatVertices();
+
+		// set some gl variables
+		gl.clearColor(0.0, 0.0, 0.0, 1.0);	// Clear to black, fully opaque
+
+		gl.clearDepth(1.0);				 // Clear depth buffer (16 bits, distance from viewer)
+		gl.enable(gl.DEPTH_TEST);	 // Enable depth testing
+		gl.depthFunc(gl.LEQUAL);		// Near things obscure far things
+
+>>>>>>> Stashed changes
 		gl.lineWidth(1.0);  // it's the only option anyway
 		this.checkOK();
 		// Clear the canvas before we start drawing on it.
@@ -453,30 +578,44 @@ class blanketPlot {
 		this.checkOK();
 		gl.useProgram(this.programInfo.program);
 		this.createMatrices(longitude, latitude);
+<<<<<<< Updated upstream
 		// actual drawing
 		this.painters.forEach(painter => painter.draw(gl));
 	}
 	// ******************************************************** misc
+=======
+
+		// actual drawing
+		this.painters.forEach(painter => painter.draw(gl));
+	}
+
+	// ******************************************************** misc
+
+>>>>>>> Stashed changes
 	// this is proprietary code to help create an ani gif.
 	// It will become a global.  Just set config.aniGifFrames and reload.
 	// remember to tweak the numbers in here ahead of time.
 	// use makeAniGif.sh to merge the frames into an ani gif
 	createVideoFrames() {
 		debugger;
+
 		// set the canvas to the size we need
 		let wh = [300, 300];
 		this.graphElement.setAttribute('width', wh[0]);
 		this.graphElement.setAttribute('height', wh[1]);
 		this.adjustForResize(wh[0], wh[1]);
+
 		const N_FRAMES = 32;
 		let angle = 0;
 		let frameNum = 0;
 		let delta = 2 * Math.PI / N_FRAMES;
 		let interval = setInterval(() => {
+
 			// cook up a sequence of positions (h, v) that look cool, in a circle sortof
 			let long = 4.45 + .09 * Math.sin(angle);
 			let lat = .35 + .09 * Math.cos(angle);
 			this.drawOneFrame(long, lat);
+
 			let h2 = document.createElement('h2');
 			h2.appendChild(document.createTextNode(`frame ` + frameNum));
 			h2.style.color = 'white';
@@ -485,6 +624,7 @@ class blanketPlot {
 			let img = document.createElement('IMG');
 			img.src = frameDataUrl;
 			document.body.appendChild(img);
+
 			// kindof like a for() loop
 			frameNum++;
 			angle += delta;
@@ -492,6 +632,7 @@ class blanketPlot {
 			if (angle > 6.28) {
 				clearInterval(interval);
 				interval = null;
+
 				// do this so I can get at them in the browser
 				//document.getElementById('root').style.display = 'none';
 				document.body.style.position = 'static';
@@ -503,11 +644,13 @@ class blanketPlot {
 	dispose() {
 		this.painters.forEach(painter => painter.dispose());
 		this.painters = this.triangles = this.axes = this.axisTics = null;
+
 		this.buffer.dispose(this.gl);
 		this.gl.deleteProgram(this.shaderProgram);
 		this.blanket = this.buffer = this.axisTics = this.graph = null;
 		this.gl.getExtension('WEBGL_lose_context').loseContext();
 		this.gl = null;
+
 		this.graphElement.width = this.graphElement.height = 1;
 		this.shaderProgram = this.programInfo = this.graphElement = null;
 		blanketPlot.me = null;

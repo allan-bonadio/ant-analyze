@@ -1,7 +1,15 @@
 /* eslint-disable eqeqeq, no-throw-literal  */
+<<<<<<< Updated upstream
 import 'core-js/es6/map';
 import 'core-js/es6/set';
 import 'raf/polyfill';
+=======
+
+
+//import 'core-js/es6/map';
+//import 'core-js/es6/set';
+//import 'raf/polyfill';
+>>>>>>> Stashed changes
 import React, { Component } from 'react';
 import config from './config';
 import BlurbBox from './BlurbBox';

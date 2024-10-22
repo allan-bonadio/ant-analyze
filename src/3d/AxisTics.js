@@ -3,7 +3,7 @@
 // Axis Tics - small tic marks in a blanket plot, and an overlay component in HTML.
 //
 /* eslint-disable eqeqeq, no-throw-literal  */
-import 'raf/polyfill';
+
 import React from 'react';
 import {vec4} from 'gl-matrix';
 import Webgl3D from '../Webgl3D';
@@ -23,11 +23,7 @@ export class AxisTics extends React.Component {
 	constructor(props) {
 		super(props);
 		AxisTics.me = this;
-		// NOOO!!!  original state: zero labels for all three dimensions
-//		this.state = {axisLabels:[[], [], []]};
-		// these don't move, therefore not part of the state.
-		// its' reset to good stuff when the axis tics are calculated.
-		// no it's AxisTics.axisLabels       this.axisLabels = [[], [], []];
+
 		// this state changes as user rotates.
 		// Each time, we have to re-render (reposition) all the tic labels.
 		this.state = {
@@ -36,16 +32,19 @@ export class AxisTics extends React.Component {
 			// closest to the user's eye.  EG the x axis has different values for x,
 			// but the y and z come from the closestCorner.
 			closestCorner: [0,0,0],
+
 			// changes continuously as user rotates.  By being replaced.
 			// Same matrix the v shader uses to map cell coords to clip coordinates
 			compositeMatrix: new Array(16),
 		};
 	}
+
 	// called on each twitch, to trigger rerender
 	static userRotated(closestCorner, compositeMatrix) {
 		this.me.setState({closestCorner, compositeMatrix});
 		////console.log(`AxisTics.userRotated(${closestCorner}, ${compositeMatrix})`)
 	}
+
 	// calculate the location and stuff for this tic, and return React tree for it.
 	// Just the text, the line is in webgl.
 	makeTicLab(tic, cMatrix, closestCorner, canvas) {
@@ -53,6 +52,7 @@ export class AxisTics extends React.Component {
 		// convert sci coords to cell coords
 		let cellBase = graph.scaleXYZ1(tic.xyz);
 		let cellTip = graph.scaleXYZ1(tic.tip);
+
 		// alter per closestCorner, which is also in cell coords
 		// and for which the minimum is always zero
 		////console.log(`makeTicLab(closestCorner = [${closestCorner.join(' , ')}]) `+
@@ -75,8 +75,15 @@ export class AxisTics extends React.Component {
 		let clipBase = [], clipTip = [];
 		vec4.transformMat4(clipBase, cellBase, cMatrix);
 		vec4.transformMat4(clipTip, cellTip, cMatrix);
+<<<<<<< Updated upstream
 		// now we can tell if we need left or right justification
 		//let justification = (clipBase[0] < clipTip[0]) ? 'left' : 'right';
+=======
+
+		// now we can tell if we need left or right justification
+		//let justification = (clipBase[0] < clipTip[0]) ? 'left' : 'right';
+
+>>>>>>> Stashed changes
 		// form the style obj for this one.  Note the label goes on left or
 		// right depending on whether tic line goes left or right.
 		// And if we use right alignment instead of left,
@@ -103,23 +110,39 @@ export class AxisTics extends React.Component {
 			{tic.text}
 		</tic-lab>;
 	}
+<<<<<<< Updated upstream
 	render() {
 		if (! axisTicsPainter.me || ! AxisTics.axisLabels)
 			return '';  // too early
+=======
+
+	render() {
+		if (! axisTicsPainter.me || ! AxisTics.axisLabels)
+			return '';  // too early
+
+>>>>>>> Stashed changes
 		let plot = axisTicsPainter.me.plot
 		let canvas = Webgl3D.me.graphElement;
 		let cMatrix = plot.compositeMatrix;
 		let closestCorner = this.state.closestCorner;
 		if (! cMatrix)
 			return '';
+<<<<<<< Updated upstream
 		////console.log("About to render tic labs; closestCorner=", closestCorner);
 		// https://webglfundamentals.org/webgl/lessons/webgl-text-html.html
+=======
+
+		////console.log("About to render tic labs; closestCorner=", closestCorner);
+		// https://webglfundamentals.org/webgl/lessons/webgl-text-html.html
+
+>>>>>>> Stashed changes
 		let textLabels = AxisTics.axisLabels.map((axis, dim) => {
 			////console.log('Axis', dim);////
 			return axis.map(tic => this.makeTicLab(tic, cMatrix, closestCorner, canvas));
 		});
 		return <aside style={this.props.style}> {textLabels} </aside>;
 	}
+
 	// when axis labels are all alculated, they get passed here.
 	// Note we're resposible for the closestCorner stuff.
 //	static setAxisLabels(axisLabels) {
@@ -129,6 +152,11 @@ export class AxisTics extends React.Component {
 //	}
 }
 /* ************************************************************** the painter */
+<<<<<<< Updated upstream
+=======
+
+
+>>>>>>> Stashed changes
 // Painter for the actual tic marks along the correct axis bars,
 // meanwhile generating their text labels which display in html
 export class axisTicsPainter {
@@ -141,19 +169,36 @@ export class axisTicsPainter {
 		// but only use the ones up to nVertices  (two vertices per tic)
 		this.maxVertices = 50;  // not entirely sure about this
 	}
+<<<<<<< Updated upstream
+=======
+
+
+>>>>>>> Stashed changes
 	/* ****************************** fill the axisLabels lists */
 	// we use a cache of tic info called the axisLabels.
 	// It's an array x y z of lists of tics, each with coords in science space
 	// we can't do cell coords yet cuz we haven't done scaling at this point.
+<<<<<<< Updated upstream
 	// this has to be regenerated upon every rotation; all the axis labels moved around.
 	// as such, it can choose to attach labels and tics to different corner axis lines.
 	// We choose so, to keep the tics in front (cuz we can't clip html)
+=======
+
+	// this has to be regenerated upon every rotation; all the axis labels moved around.
+	// as such, it can choose to attach labels and tics to different corner axis lines.
+	// We choose so, to keep the tics in front (cuz we can't clip html)
+
+
+
+
+>>>>>>> Stashed changes
 	// generate one tic at xyz for the dimension axis (0 1 or 2) with utf8 text
 	// this will be used by the component to generate each <tic-lab> element for HTML
 	// and to generate the vertices for WebGL
 	// the xyz & tip are in Science coordinates
 	generateOneTic(xyz, text, dimension) {
 		xyz = [...xyz];
+
 		// the React key is a sanitized version of the text.  If it's text.
 		let key = text;  //.replace(/\W*(.*)\W*/, '\1');  // trim off the ends
 		if (typeof key == 'string') {
@@ -166,6 +211,7 @@ export class axisTicsPainter {
 			// must be the axis label.  The object is a react node.
 			key = 'xyz'[dimension]  +'_Label';
 		}
+
 		// the end of the tic line, away from the axis.  Also needed for labels.
 		let tip = [...xyz];
 		tip[(dimension + 1) % 3] += .1
@@ -181,9 +227,17 @@ export class axisTicsPainter {
 	generateOneAxis(g, dimension, mini, maxi) {
 		let dim = 'xyz'[dimension];
 		let axisScale = this.graph[dim +'Scale'];
+<<<<<<< Updated upstream
 		// gimme several science values for axis dimension that are good for tics
 		let labelValues = axisScale.ticks(5);
 		//console.log("||| axisScale.ticks:", labelValues);
+=======
+
+		// gimme several science values for axis dimension that are good for tics
+		let labelValues = axisScale.ticks(5);
+		//console.log("||| axisScale.ticks:", labelValues);
+
+>>>>>>> Stashed changes
 		// what kind of increment?  see distance between the first two
 		// so we can decide number of decimal places
 		let delta = labelValues[1] - labelValues[0], decimalPlaces = 0;
@@ -191,18 +245,37 @@ export class axisTicsPainter {
 		if (delta < 0)
 			decimalPlaces = -delta;
 		// future: expand this to multiple-of-three powers and add SI prefixes
+<<<<<<< Updated upstream
 		// different values get plugged in to this below.  Keep this in science
 		// coords so everybody else can use it
 		let loc = [...this.minimalCorner];
+=======
+
+		// different values get plugged in to this below.  Keep this in science
+		// coords so everybody else can use it
+		let loc = [...this.minimalCorner];
+
+>>>>>>> Stashed changes
 		// we plug in the ticValue in the right dimension and that's a tic
 		let firstLoc, secondLoc;
 		let ticsThisAxis = labelValues.map(ticValue => {
 			loc[dimension] = ticValue;
+<<<<<<< Updated upstream
 			// grab these for the label for the whole axis
 			if (! firstLoc) firstLoc = [...loc];
 			else if (! secondLoc) secondLoc = [...loc];
 			return this.generateOneTic(loc, ticValue.toFixed(decimalPlaces), dimension);
 		});
+=======
+
+			// grab these for the label for the whole axis
+			if (! firstLoc) firstLoc = [...loc];
+			else if (! secondLoc) secondLoc = [...loc];
+
+			return this.generateOneTic(loc, ticValue.toFixed(decimalPlaces), dimension);
+		});
+
+>>>>>>> Stashed changes
 		// add one more for labeling each axis, between the first two tics
 		let labText = ['re', 'im', 'z'][dimension];
 		let labLoc = [
@@ -222,6 +295,7 @@ export class axisTicsPainter {
 	generateAllTics() {
 		//console.log("||| axisScale.ticks x, y and z");
 		let g = this.graph;
+
 		// each dimension xyz has to choose among 4 different edge/corners where the
 		// axis bar could have tics.  But that's handled elsewhere.
 		// That code in the shader depends on this being all mins.
@@ -237,11 +311,13 @@ export class axisTicsPainter {
 		AxisTics.axisLabels = this.axisLabels;
 		////this.dumpAllTics();
 	}
+
 	dumpAllTics() {
 		for (let dimension = 0; dimension < 3; dimension++) {
 			console.info("ticks along axis %d:", dimension, this.axisLabels[dimension]);
 		}
 	}
+
 	// the tics are the only things that actually change in 3d from one angle to
 	// another - everything else freezes and keeps its science & cell coordinates
 //	static rotateAllTics() {
@@ -254,6 +330,7 @@ export class axisTicsPainter {
 	// note how it's called in two different ways: first time and afterwards, per-frame
 	depositVertices(startVertex) {
 		let buffer = this.buffer;
+
 		// each one starts on the axis line but then goes off perpendicular
 		// x axis has tics that point in +y direction; y axis in +z direction,
 		// and z axis in +x direction
@@ -263,9 +340,17 @@ export class axisTicsPainter {
 			// Each is 7 minus bitvalue of that color  x=1, y=2, z=4
 			let mask4axis = [0b110, 0b101, 0b011][dimension];
 			////console.log(`Axis ${dimension} mask ${mask4axis}`, axis);////
+<<<<<<< Updated upstream
 			return axis.forEach(tic => {
 				if (tic.noLine)
 					return;  // axis label like x y z has no tic line
+=======
+
+			return axis.forEach(tic => {
+				if (tic.noLine)
+					return;  // axis label like x y z has no tic line
+
+>>>>>>> Stashed changes
 				// append two vertices: start from axis tic location,
 				// converting to cell coords
 				let pos = g.scaleXYZ1(tic.xyz);
@@ -281,6 +366,7 @@ export class axisTicsPainter {
 				buffer.addVertex(tpos, AXIS_TIC_COLOR);  // same color as axis lines
 			});
 		});
+
 		// console.log("&&& finished tics, used %d of %d vertices",
 		// 		this.nVertices, this.maxVertices);
 		return this.buffer.nVertices - startVertex
@@ -303,6 +389,7 @@ export class axisTicsPainter {
 //		gl.drawArrays(gl.LINES, this.startVertex, this.nVertices);
 //		this.plot.checkOK();
 	}
+
 	// break up big and potentially circularly-pointing data structures
 	dispose() {
 		this.plot = this.buffer = this.axisLabels = AxisTics.axisLabels = this.graph = null;

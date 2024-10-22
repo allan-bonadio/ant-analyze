@@ -4,6 +4,11 @@
 //
 /* eslint-disable eqeqeq, no-throw-literal  */
 // ****************************************************************** data generation
+<<<<<<< Updated upstream
+=======
+
+
+>>>>>>> Stashed changes
 // decide which formula/generator to use, and use it to generate a matrix of
 // vertex objects with keys x, y, z_data, red, green, blue, alpha
 // also hand in scalers for x, y from cell to science coords
@@ -18,12 +23,20 @@ export function generateBlanket(func, nXCells, nYCells, xCell2Science, yCell2Sci
 			// some sort of obj with whatever we might need for the rendering.
 			let vert = row[x] = {
 				x, y,   // cell coords
+<<<<<<< Updated upstream
 				// still in science coords cuz we don't know the extent yet
 				z_data: func(xCell2Science(x), yCell2Science(y)),
+=======
+
+				// still in science coords cuz we don't know the extent yet
+				z_data: func(xCell2Science(x), yCell2Science(y)),
+
+>>>>>>> Stashed changes
 				// just a default color, set your own later if you care
 				// i don't think these numbers do anything; just placeholders
 				red: .6, green: .6, blue: .3, alpha: 1,
 			};
+
 			// z_science is the ultimate height on the 3d surface, science units,
 			// whether complex or not
 			if (typeof vert.z_data == 'object') {
@@ -39,12 +52,20 @@ export function generateBlanket(func, nXCells, nYCells, xCell2Science, yCell2Sci
 			}
 		}
 	}
+
 	// a few more things to remember
 	blanket.nXCells = nXCells;
 	blanket.nYCells = nYCells;
 	return blanket;
 }
+<<<<<<< Updated upstream
 // ****************************************************************** vertex buffers
+=======
+
+
+// ******************************************************** vertex buffers
+
+>>>>>>> Stashed changes
 // handy for filling these buffers.  Decide ahead how many vertices you need room for.
 // then create it and call addVertex with each vertex info.
 // get the division between groups by checking nVertices between addVertex() calls.
@@ -54,6 +75,7 @@ export class vertexBuffer {
 		this.allocatedVertices = nVertices
 		this.positions = new Float32Array(nVertices * 4);
 		this.colors = new Float32Array(nVertices * 4);
+
 		// these start at zero and grow as vertices are added; final count when done
 		this.posOffset = 0;
 		this.colOffset = 0;
@@ -66,13 +88,21 @@ export class vertexBuffer {
 		p[this.posOffset++] = posArray4[1];
 		p[this.posOffset++] = posArray4[2];
 		p[this.posOffset++] = posArray4[3];
+
 		let c = this.colors;
 		c[this.colOffset++] = colArray4[0];
 		c[this.colOffset++] = colArray4[1];
 		c[this.colOffset++] = colArray4[2];
 		c[this.colOffset++] = colArray4[3];
+<<<<<<< Updated upstream
 		this.nVertices++;
 	}
+=======
+
+		this.nVertices++;
+	}
+
+>>>>>>> Stashed changes
 	// after filling in your vertices, come here to bless it and attach it to a gl
 	// context so it'll be used in drawing
 	attachToGL(gl, attribLocations) {
@@ -97,13 +127,20 @@ export class vertexBuffer {
 			false, 0, 0);  // normalize, stride, offset
 		gl.enableVertexAttribArray(attribLocations.vertexColor);
 	}
+
 	// list out ALL the vertices and their colors
 	// between startVertex and endVertexP1-1
 	dump(title, startVertex, nVertices) {
 		function f(q) {
 			return Number(q).toFixed(2).padStart(6);
 		}
+<<<<<<< Updated upstream
 		console.log(` data put into ${title} vertex buffers`);
+=======
+
+		console.log(` data put into ${title} vertex buffers`);
+
+>>>>>>> Stashed changes
 		let pos = this.positions;
 		let col = this.colors;
 		let p, c, v;
@@ -117,6 +154,7 @@ export class vertexBuffer {
 		}
 		console.log(' ');
 	}
+
 	// free up big stuff
 	dispose(gl) {
 		gl.deleteBuffer(this.colorsBuffer);
