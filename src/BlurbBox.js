@@ -18,7 +18,7 @@ function BlurbBox(props) {
 	return (
 		<div id='blurb-box' style={props.style} >
 			<NavBar nSteps={config.scenes.length}
-					requestedIndex={props.requestedIndex} />
+					requestedIndex={props.requestedIndex} goToScene={props.goToScene}/>
 			<h2 className='blurb-title'
 					dangerouslySetInnerHTML={{__html: scene.title}}>
 			</h2>

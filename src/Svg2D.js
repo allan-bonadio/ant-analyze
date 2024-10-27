@@ -50,12 +50,15 @@ class Svg2D extends Component {
 		this.shoveFunc = this.shoveFunc.bind(this);
 		this.drawFunc = this.drawFunc.bind(this);
 	}
+
 	componentDidMount() {
 		// these are needed for graph sliding & other touch events - touches outside the SVG
 		// we don't need a draw function because shoveFunc changes the state
 		// which will end up redrawing
-		this.events = new graphicEvents(this, this.graphElement, this.drawFunc, this.shoveFunc);
+		this.events = new graphicEvents(this, this.graphElement,
+			this.drawFunc, this.shoveFunc, this.props.goToScene);
 	}
+
 	// graphicEvents calls us after the drag position changed to set the readout
 	// extra is for debugging mostly
 	setReadout(horizPosition, vertPosition, extra) {
@@ -63,6 +66,7 @@ class Svg2D extends Component {
 		this.props.setReadout(this.state.xMin.toFixed(2) +' ➜ '+
 				this.state.xMax.toFixed(2) +' '+ (extra || ''));
 	}
+
 	// look up this scene and set us up for it.
 	// DOESN'T set the state, instead returns the changes needed to the state,
 	// including xMin/Max.  The scene and funcs are attached immediately.
@@ -71,6 +75,7 @@ class Svg2D extends Component {
 		this.funcs = this.scene.funcs;
 		return {xMin: this.scene.xMin, xMax: this.scene.xMax};
 	}
+
 	// change to given scene.  If it's 3d, then not much to do as we'll be hidden.
 	// calculate all that stuff.
 	newScene(sceneIndex) {
@@ -90,6 +95,7 @@ class Svg2D extends Component {
 			graphicEvents.use(this.events);
 		}
 	}
+
 	// get ready, 'soon' we'll be rendering this new scene.
 	// NOT the first time this component has rendered a scene.
 	static prepForNewScene(sceneIndex) {
@@ -97,6 +103,7 @@ class Svg2D extends Component {
 		// um... stop scrolling pleeze
 		Svg2D.me.events.stopAnimating();
 	}
+
 	// create the pixel data based on the function.  (always)
 	// state passed in is the state you should use instead of this.state
 	calcPoints(state) {
@@ -119,6 +126,7 @@ class Svg2D extends Component {
 		}
 		this.vertexSeries = vertexSeries;
 	}
+
 	// it'll maybe call this.calcPoints()
 	// if it needs to, and remembers stuff for next time
 	ensureCalcPoints(stateAdditions = {}) {
@@ -129,18 +137,21 @@ class Svg2D extends Component {
 		this.lastCalcXMin = s.xMin;
 		this.lastCalcXMax = s.xMax;
 	}
+
 	// set the range of the scales, pixel coordinates.  Do this after resetMargins()
 	// domains still need to be set!
 	setScaleRanges() {
 		this.xScale.range([this.marginLeft, this.marginRight]);
 		this.yScale.range([this.marginBottom, this.marginTop]);
 	}
+
 	// make the X and Y scalers, but their domains (science units) aren't set.
 	createScales() {
 		this.xScale = scaleLinear();
 		this.yScale = scaleLinear();
 		this.setScaleRanges();
 	}
+
 	// Sample the calculated function, and choose y min & max, and set the state so
 	// that'll be how it's drawn.  Only when you need to set the default range.
 	// Don't call it on every render or else user won't be able to drag up or down!
@@ -160,6 +171,7 @@ class Svg2D extends Component {
 		if (isNaN(this.yScale.domain()[0])) debugger;
 		return {yMin: mini, yMax: maxi};
 	}
+
 	// render the axes, return an array [xAxis, yAxis] of React elements.
 	// Need xScale and yScale.
 	renderAxes() {
@@ -189,6 +201,7 @@ class Svg2D extends Component {
 					style={{transform: 'translateX('+ this.xScale(yAxisX) +'px)'}} />
 		];
 	}
+
 	// draw it.  the state must be set up (see constructor).  These might have changed:
 	// x/y max/min  graphWidth/Height so everything recalculated here.
 	render() {
@@ -229,6 +242,7 @@ class Svg2D extends Component {
 			</svg>
 		);
 	}
+
 	// called by ge when window gets resized, hence graph area is resized
 	resetMargins(graphWidth, graphHeight) {
 		// where data drawn; slightly inside the full graph
@@ -236,6 +250,7 @@ class Svg2D extends Component {
 		this.marginRight = graphWidth - axisMargin;
 		this.marginBottom = graphHeight - axisMargin;
 	}
+
 	// called by ge when window gets resized, hence graph area is resized
 	adjustForResize(graphWidth, graphHeight) {
 		this.resetMargins(graphWidth, graphHeight);
@@ -244,6 +259,7 @@ class Svg2D extends Component {
 			this.setState(this.reRangeYAxis());
 		}
 	}
+
 	/* ******************************************************* drag move around */
 	// call this every time you want to slide the graph over (translate),
 	// as a result of some kind of mouse/touch move
@@ -263,11 +279,13 @@ class Svg2D extends Component {
 		this.xScale.domain([newRanges.xMin, newRanges.xMax]);
 		this.yScale.domain([newRanges.yMin, newRanges.yMax]);
 	}
+
 	// called by graphicEvents when we've scrolled, but not yet redrawn.
 	// called after shoveFunc called.
 	drawFunc(horizPosition, vertPosition) {
 		this.ensureCalcPoints();
 	}
+
 	// gets called from ge if user does a spreading gesture left & right
 	spreadHoriz(delta, lastDelta, touchMidPoint) {
 		let midi = this.xScale.invert(touchMidPoint[0]);
@@ -279,6 +297,7 @@ class Svg2D extends Component {
 		////console.log("xmin/max:", xMin, xMax);
 		this.xScale.domain([xMin, xMax]);
 	}
+
 	// gets called from ge if user does a spreading gesture up & down
 	spreadVert(delta, lastDelta, touchMidPoint) {
 		let midi = this.yScale.invert(touchMidPoint[1]);
@@ -291,12 +310,15 @@ class Svg2D extends Component {
 		////console.log("ymin/max:", this.yMin, this.yMax);
 		this.yScale.domain([yMin, yMax]);
 	}
+
 	mouseWheelEvt(ev) {
 		console.log("mouseWheelEvt x y z", ev);
 		////console.log( ev.deltaX, ev.deltaY, ev.deltaZ);
 		//this.mouseUpEvt(ev);
 		// ??? this gives error message
-		// react-dom.development.js:4944 [Intervention] Unable to preventDefault inside passive event listener due to target being treated as passive. See https://www.chromestatus.com/features/6662647093133312
+		// react-dom.development.js:4944 [Intervention] Unable to preventDefault
+		// inside passive event listener due to target being treated as passive.
+		// See https://www.chromestatus.com/features/6662647093133312
 		//ev.preventDefault();
 	}
 	// break up big and potentially circularly-pointing data structures
@@ -308,4 +330,5 @@ class Svg2D extends Component {
 		Svg2D.me = null;
 	}
 }
+
 export default Svg2D;

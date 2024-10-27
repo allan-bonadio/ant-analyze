@@ -1,7 +1,7 @@
 /* eslint-disable eqeqeq, no-throw-literal  */
 import React, { Component } from 'react';
 import {config} from './config.js';
-import App from './App.js';
+//import App from './App.js';
 class NavBar extends Component {
 	constructor(props) {
 		super(props);
@@ -9,6 +9,7 @@ class NavBar extends Component {
 		this.clickNumber = this.clickNumber.bind(this);
 		this.clickNext = this.clickNext.bind(this);
 	}
+
 	render() {
 		// all the buttons
 		let buttons = config.scenes.map((scene, ix) => {
@@ -28,17 +29,20 @@ class NavBar extends Component {
 			</div>
 		);
 	}
+
 	// human clicks on one of the number buttons
 	clickNumber(ev) {
 		ev.stopPropagation();
-		App.goToScene(+ev.currentTarget.getAttribute('index'));
+		this.props.goToScene(+ev.currentTarget.getAttribute('index'));
 	}
+
 	// click on the NEXT> button
 	clickNext(ev) {
 		ev.stopPropagation();
 		let sceneIndex = (this.props.requestedIndex + 1) % config.scenes.length;
-		App.goToScene(sceneIndex);
+		this.props.goToScene(sceneIndex);
 	}
+
 	killTextSelection(ev) {
 		ev.preventDefault();
 	}
