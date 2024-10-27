@@ -5,12 +5,15 @@
 /* eslint-disable eqeqeq, no-throw-literal  */
 import $ from 'jquery';
 import {config} from './config.js';
-import App from './App.js';
+//import App from './App.js';
+
+// coasting rate of slowing down.  Adjust to taste.
 // .20 is almost like none.  1.0 stops everything immediately
 const FRICTION = .90;
+
 // we average out the velocity of dragging from the last several mouseMove events.
 // each time the new velocity is mixed, weighted this much, with previous velocities
-// Should be between 0.01 and 0.99, probably lower than .4
+// Should be between 0.01 and 0.99, probably lower than .4 .  Adjust to taste.
 // 0.1 is like, the average is 10% this time's velocity and 90% last time's average.
 //              So there's a lot of momentum.
 // 0.5 is like, the average is 50% this time's velocity and 50% last time's average.
@@ -20,12 +23,13 @@ const FRICTION = .90;
 // by the way, unless we're taking time into acct, we're not doing it right.
 // the mixing should be gradual over time, and proportional to the time...
 const MIX_FRACTION = .25;
+
 // coasting is true when there's some velocity on the sliding/rotation
 // and it hasn't stopped yet.
 //let this.coasting = false;
 // should be one of these for every instance of Svg2D or Webgl3D
 // construct one in your graph constructor like this:
-// 	  this.events = new graphicEvents(this, canvas, ()=>{}, ()=>{});
+// 	  this.events = new graphicEvents(this, canvas, ()=>{}, ()=>{}, ...);
 // In your render method, do this (or similar)
 //    <canvas ... ref={canvas => this.graphElement = canvas}></canvas>
 class graphicEvents {
@@ -34,14 +38,17 @@ class graphicEvents {
 	// graphElement = dom node for canvas or svg
 	// we'll call shoveFn as long as user is doing stuff
 	// and drawFn until things stop moving.
-	constructor(graph, sensitiveElement, drawFn, shoveFn) {
+	constructor(graph, sensitiveElement, drawFn, shoveFn, goToScene) {
 		// keep in touch
 		this.graph = graph;
-		this.graphElement = graph.graphElement;
+		// not there yet   this.graphElement = graph.graphElement;
 		this.sensitiveElement = sensitiveElement;
 		this.drawFunc = drawFn;
 		this.shoveFunc = shoveFn;
+		this.goToScene = goToScene;
+
 		graphicEvents.allGraphs.push(graph);
+
 		// these are the variables that represent translation motion from click/drag
 		this.horizPosition = 0;  // left - right
 		this.vertPosition = 0;  // top - bottom
@@ -57,6 +64,7 @@ class graphicEvents {
 		].forEach(funcName => this[funcName] = this[funcName].bind(this));
 		// attach event handlers only AFTER they're bound
 		this.attachEventHandlers();
+
 		// when it starts up, give it a tiny kick to show people they can rotate it
 		if (config.production) {  // also in 2d.   && this.graph.scene.graphics == '3D'
 			this.horizPosition = .7;  // about 45°
@@ -65,6 +73,17 @@ class graphicEvents {
 			setTimeout(() => this.startAnimating(0), 1);
 		}
 	}
+
+	goToScene(sceneIndex) {
+		this.goToScene(sceneIndex);
+		//App.me.setState({requestedIndex: sceneIndex,
+		//		error: null, secondError: null});
+		//App.me.scene = config.scenes[sceneIndex];
+		//Svg2D.prepForNewScene(sceneIndex);
+		//Webgl3D.prepForNewScene(sceneIndex);
+		//localStorage.sceneIndex = sceneIndex;  // remember as user pref
+	}
+
 	// which instance of graphicEvents do you want to start using now?
 	// pass it in here and all of this's settings are saved till next time
 	// (Typically, one for 2d and one for 3d)
@@ -87,11 +106,9 @@ class graphicEvents {
 		// but that doesn't apply to touch events ... ??
 		// touch events outside put a clamp on it
 		$('div.outer-wrapper')
-				.on('touchmove', ev => ev.stopPropagation())
-				.on('touchend', ev => ev.stopPropagation())
-				.on('touchcancel', ev => ev.stopPropagation());
-		// note the handler is static
-		window.addEventListener('resize', graphicEvents.resizeEvt);
+			.on('touchmove', ev => ev.stopPropagation())
+			.on('touchend', ev => ev.stopPropagation())
+			.on('touchcancel', ev => ev.stopPropagation());
 	}
 	static oMouseMoveEvt(ev) {
 		if (! graphicEvents.using)
@@ -123,17 +140,17 @@ class graphicEvents {
 	attachEventHandlers() {
 		// touch events on the graphicElement are effective
 		$(this.sensitiveElement)
-				.on('mousedown', this.mouseDownEvt)
-				// these will catch them actually on the drawing surface
-				.on('mousemove', this.mouseMoveEvt)
-				.on('mouseup', this.mouseUpEvt)
-				.on('mouseleave', this.mouseLeaveEvt)
-				.on('touchstart', this.touchStartEvt)
-				// don't these need to be on the window, too, like the other handlers?
-				// no, touch events get funneled into the original element
-				.on('touchmove', this.touchMoveEvt)
-				.on('touchend', this.touchEndEvt)
-				.on('touchcancel', this.touchCancelEvt)
+			.on('mousedown', this.mouseDownEvt)
+			// these will catch them actually on the drawing surface
+			.on('mousemove', this.mouseMoveEvt)
+			.on('mouseup', this.mouseUpEvt)
+			.on('mouseleave', this.mouseLeaveEvt)
+			.on('touchstart', this.touchStartEvt)
+			// don't these need to be on the window, too, like the other handlers?
+			// no, touch events get funneled into the original element
+			.on('touchmove', this.touchMoveEvt)
+			.on('touchend', this.touchEndEvt)
+			.on('touchcancel', this.touchCancelEvt)
 	}
 	// this handles incremental moves from mouse/touch/gesture events.
 	// Eventually calls some shove functions on the graph
@@ -146,8 +163,9 @@ class graphicEvents {
 			// prob measured from page reload.  or maybe this: performance.now()
 			let dt = ev.timeStamp - this.prevTimeStamp;
 			// our dragging coords are fractions of the drawing surface element width/height
-			let dx = (ev.pageX - this.prevX) / this.graphElement.clientWidth;
-			let dy = (ev.pageY - this.prevY) / this.graphElement.clientHeight;
+			const graphElement = this.graph.graphElement;
+			let dx = (ev.pageX - this.prevX) / graphElement.clientWidth;
+			let dy = (ev.pageY - this.prevY) / graphElement.clientHeight;
 			// if dt is zero or very small, the velocity skyrockets.  prevent.
 			// This is milliseconds, remember.
 			if (dt > .1 && Math.abs(dx) + Math.abs(dy) > 0) {
@@ -183,6 +201,7 @@ class graphicEvents {
 		this.graph.setReadout(this.horizPosition, this.vertPosition);
 		this.drawFunc();
 	}
+
 	// handler for mouse down on graph surface
 	mouseDownEvt(ev) {
 // 		console.log("ge mouseDownEvt", ev.pageX, ev.pageY, ev.timeStamp, this.dragging);////
@@ -199,6 +218,7 @@ class graphicEvents {
 		//let s = this.graph.state;
 		//this.downMinMax = {xMin: s.xMin, xMax: s.xMax, yMin: this.yMin, yMax: this.yMax};
 	}
+
 	mouseMoveEvt(ev) {
  		//console.log("ge mouseMoveEvt", ev.pageX, ev.pageY, ev.timeStamp, this.dragging);////
 		if (! this.dragging)
@@ -221,6 +241,7 @@ class graphicEvents {
 		}
 		this.mouseShove(ev);
 	}
+
 	mouseUpEvt(ev) {
 		//console.log("ge mouseUpEvt", ev.pageX, ev.pageY, ev.timeStamp, this.dragging);////
 		if (! this.dragging)
@@ -232,6 +253,7 @@ class graphicEvents {
 		ev.preventDefault();
 		ev.stopPropagation();
 	}
+
 	mouseLeaveEvt(ev) {
 		this.mouseUpEvt(ev);
 	}
@@ -252,6 +274,7 @@ class graphicEvents {
 		t.timeStamp = t.timeStamp || performance.now();
 		return t;
 	}
+
 	// one fingertip touches
 	touchStartEvt(ev) {
 		console.log("touch StartEvt", ev.touches[0].pageX, ev.touches[0].pageY, ev.touches);
@@ -262,6 +285,7 @@ class graphicEvents {
 		else
 			this.touchStartHandler(ev)
 	}
+
 	// one (or more?) touches has moved
 	touchMoveEvt(ev) {
 		//console.log("touchMoveEvt", ev.touches[0].pageX, ev.touches[0].pageY, ev.touches);
@@ -270,6 +294,7 @@ class graphicEvents {
 		else
 			this.touchMoveHandler(ev)
 	}
+
 	// one fingertip releases
 	touchEndEvt(ev) {
 		console.log("touchEndEvt", ev.touches);
@@ -278,6 +303,7 @@ class graphicEvents {
 		else
 			this.touchEndHandler(ev)
 	}
+
 	// this is rare stuff like the program quits out from under your fingers
 	touchCancelEvt(ev) {
 		console.log("touchCancelEvt", ev.touches);
@@ -286,6 +312,7 @@ class graphicEvents {
 		else
 			this.touchCancelHandler(ev)
 	}
+
 	/* **************************************** 2+ finger gestures */
 	// this section is concerned with 2 (or more?) touches.  In the case of one touch,
 	// the touch*Evt() handlers decides between mouse-like or one of these.
@@ -318,6 +345,7 @@ class graphicEvents {
 			];
 		}
 	}
+
 	// called upon the second touch of a fingertip (at same time)
 	touchStartHandler(ev) {
 		// pull the plug on normal drag, which has been started
@@ -330,6 +358,7 @@ class graphicEvents {
 				? 'horiz' : 'vert';
 		ev.preventDefault();
 	}
+
 	touchMoveHandler(ev) {
 		// eslint-disable-next-line
 		let delta, mid, factor, xMin, xMax, yMin, yMax;
@@ -348,86 +377,31 @@ class graphicEvents {
 		}
 		ev.preventDefault();
 	}
+
 	// but this just means ANY touch ended; other one stays and does a mouseup
 	touchEndHandler(ev) {
 		this.spread = false;
 		ev.preventDefault();
 	}
+
 	touchCancelHandler(ev) {
 		this.spread = false;
 		ev.preventDefault();
 	}
+
 	/* ************************************************************ gesture events */
 	gestureStartHandler(ev) {
 		console.log("gestureStartHandler");
 	}
+
 	gestureChangeHandler(ev) {
 		console.log("gestureChangeHandler");
 	}
+
 	gestureEndHandler(ev) {
 		console.log("gestureEndHandler");
 	}
-	/* ***************************************************** resize / orientation events */
-	static defaultStyle = window.getComputedStyle
-		? window.getComputedStyle(document.body)
-		: {fontSize: '12px'};
-	// given the window obj (that prob just resized), figure out margins and graphWidth/Height,
-	// return object to merge into state.  This is called by the App component.
-	static decideGraphDimensions(win) {
-		let flexDirection = 'row', hamburgerButtonShowing = false;
-		// size of the screen (or phony size passed in by testing -
-		// just prepare a phony event and call resizeEvt())
-		let graphWidth = +win.innerWidth;
-		let graphHeight = +win.innerHeight;
-		// the body's fontsize, this is now 'one em' kinda sortof everywhere
-		const fontSize = +graphicEvents.defaultStyle.fontSize.replace(/px$/, '');
-		// we'll deduct the size of the blurb box, depending
-		let blurbWidth = 23 * fontSize;
-		let blurbHeight = 14 * fontSize;
-		// *** KEEP THIS IN SYNC WITH SIMILAR EXPRESSIONS IN App.css and BlurbBox.css ***
-		if (graphWidth < 700 || graphHeight < 500) {
-			// small screen - hide blurb until a click on the hamburger menu
-			hamburgerButtonShowing = true;
-			// and the whole screen is devoted to the graph
-		}
-		else {
-			hamburgerButtonShowing = false;
-			if (graphWidth > graphHeight) {
-				// landscape orientation - place blurb to right side
-				// if (blurbBox$.length)
-				// 	blurbWidth = blurbBox$[0].offsetWidth;
-				graphWidth -= blurbWidth + 4;
-				flexDirection = 'row';
-			}
-			else {
-				// portrait orientation - place blurb below
-				// if (blurbBox$.length)
-				// 	blurbHeight = blurbBox$[0].offsetHeight;
-				graphHeight -= blurbHeight + 4;
-				flexDirection = 'column';
-			}
-		}
-		// do not confuse!
-		// hamburgerButtonShowing = screen is small, so show hamburger button in
-		//          northeast corner so user can see blurb
-		// hamburgerMenuShowing = user has clicked button so blurb/menu showing.
-		return {graphWidth, graphHeight, flexDirection, fontSize,
-			hamburgerButtonShowing, hamburgerMenuShowing: false};
-	}
-	// this is set on the window as a resize handler.  Once and only once.
-	// Before any instances are created.
-	static resizeEvt(ev) {
-		let graphSize = graphicEvents.decideGraphDimensions(ev.target);
-		// now kick App and all the graphs cuz they all have to deal with it
-		// setState will cause render to give the graphElement the new h/w
-		App.adjustForResize(graphSize);
-		graphicEvents.allGraphs.forEach(graph => {
-			graph.adjustForResize(graphSize.graphWidth, graphSize.graphHeight);
-			graph.setState(graphSize);
-		});
-		console.log("resize ev", ev.target.innerWidth, ev.target.innerHeight,
-			graphSize);
-	}
+
 	/* ************************************************************ animation */
 	// coasting after user has released the mouse/touch
 	// constrain the vertPos and horPos if desired (really just the 3d)
@@ -518,12 +492,11 @@ class graphicEvents {
 	// break up big and potentially circularly-pointing data structures
 	dispose() {
 		this.stopAnimating();
-		this.graph = this.graphElement = this.sensitiveElement = this.vertexSeries = null;
+		this.graph = this.sensitiveElement = this.vertexSeries = null;
 		graphicEvents.allGraphs = null;
 		graphicEvents.using = null;
 		$(document.body).off();
 		$('div.outer-wrapper').off();
-		window.removeEventListener('resize', graphicEvents.resizeEvt);
 		$(this.sensitiveElement).off();
 		this.shoveFunc = this.drawFunc = null;
 	}

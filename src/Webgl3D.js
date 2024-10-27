@@ -1,22 +1,20 @@
 /* eslint-disable eqeqeq, no-throw-literal  */
 import React, { Component } from 'react';
-import {scaleLinear} from 'd3-scale';
 
 import './Webgl3D.css';
 import {config} from './config.js';
 import blanketPlot from './3d/blanketPlot.js';
 import graphicEvents from './graphicEvents.js';
-import {generateBlanket} from './3d/genComplex.js';
+import backdrop from './3d/backdrop.js';
+import generateBlanket from './3d/generateBlanket.js';
 import {AxisTics} from './3d/AxisTics.js';
+
 // don't try to type these names, just copy paste
 // eslint-disable-next-line no-unused-vars
 const π = Math.PI, π_2 = Math.PI/2, twoπ = Math.PI * 2;  // ②π
 // choose n cells in x and y direction to make total x*y cells, approx.
 // So, to make approx a 10x10 bed of cells, try 100.
 // this actually doesn't have to be perfect square; just a target. min: 4
-
-const TARGET_CELLS = 6000;
-//const TARGET_CELLS = config.production ? 6000 : 100;
 
 // if mouse is too powerful, increase these.  Adjust to work so moving q pixels
 // to the right rotates the graph in a way that feels intuitive.
@@ -35,78 +33,96 @@ class Webgl3D extends Component {
 		// constrain lat to -90°...90°, stop it if it hits end.  (Make sure [0] < [1]!)
 		let vc = this.vertClamp = [-π_2 * VERT_EVENTS_FACTOR, π_2 * VERT_EVENTS_FACTOR];
 		if (vc[0] > vc[1]) [vc[0], vc[1]] = [vc[1], vc[0]];
+
 		// no state!  all particulars are handed in via props.
 		// the state only applies to the canvas, not what's drawn in it
 		// (which doesn't happen at render time).  It's an uncontrolled component.
 		// typically graphWidth, graphHeight, requestedIndex, .show - in props
-		this.state = {};
+		this.state = {
+			scene: null,
+		};
+
 		this.shoveFunc = this.shoveFunc.bind(this);
 		// these are on 'this', just added later
 		// events - points to graphicEvents object
 		// plot - points to blanketPlot object
-		// blanket - raw science coords in n x m array
+		// blanketAr - raw science coords in n x m array
 		// for each x y z:
 		// xMin, xMax, nXCells
 		// xScale -  convert science coords to cell coords
 		// xPerCell - slope of scale
-		this.newScene(props.requestedIndex);
+
 		// ok to call this in constructor cuz it just triggers WebGL
 		this.drawOneFrame = this.drawOneFrame.bind(this);
 	}
+
 	componentDidMount() {
 		// with the dom stuff in place, we can set up click and drag stuff
+		this.newScene(this.props.requestedIndex);
 		this.events = new graphicEvents(this, this.sensitiveElement,
-				this.drawOneFrame, this.shoveFunc);
+				this.drawOneFrame, this.shoveFunc, this.props.goToScene);
 		if (this.props.show) {
 			// now that the canvas is created, we can grab it for 3d
-			// do the other part of blanket initialization
+			// do the other part of blanketAr initialization
 			//done in render by ref this.plot.attachCanvas(this.graphElement);
 			// webgl needs the canvas to exist in order to draw into it
 			// we know it does now
-			this.drawOneFrame();
+			// ok so this is too erly no gl yet
+			//this.drawOneFrame();
 		}
 	}
+
 	// re-calibrate this to the scene passed in.
 	// must have 'show' be true; ie scene.graphics == '3D'
 	// calculates everything down to cell coordinates.
 	newScene(sceneIndex) {
 		// set this.scene, even if it's not for us
 		let scene = this.scene = config.scenes[sceneIndex];
+
 		if (this.scene.graphics != '3D')
 			return;
-		this.funcs = scene.funcs;
-		this.xMin = scene.xMin;
-		this.xMax = scene.xMax;
-		this.yMin = scene.yMin;
-		this.yMax = scene.yMax;
-		// shape the cell block according to the mins/maxes,
-		// so the product (len*wid) ends up being approx TARGET_CELLS,
-		// but still in approximate proportion of x vs y
-		// note the number of vertices in both directions is +1 more than cells
-		this.nYCells = Math.sqrt(TARGET_CELLS *
-			(scene.yMax - scene.yMin) / (scene.xMax - scene.xMin));
-		this.nYCells = Math.round(this.nYCells);
-		this.nXCells = Math.round(TARGET_CELLS / this.nYCells);
-		this.nZCells = 1;
-		this.createXYScales();
+		this.setState({scene});  // make sure some buffers are recreated
+		let bkdrop = this.bkdrop = new backdrop(scene);
+
+//		this.funcs = scene.funcs;
+//		this.xMin = scene.xMin;
+//		this.xMax = scene.xMax;
+//		this.yMin = scene.yMin;
+//		this.yMax = scene.yMax;
+//		// shape the cell block according to the mins/maxes,
+//		// so the product (len*wid) ends up being approx TARGET_CELLS,
+//		// but still in approximate proportion of x vs y
+//		// note the number of vertices in both directions is +1 more than cells
+//		this.nYCells = Math.sqrt(TARGET_CELLS *
+//			(scene.yMax - scene.yMin) / (scene.xMax - scene.xMin));
+//		this.nYCells = Math.round(this.nYCells);
+//		this.nXCells = Math.round(TARGET_CELLS / this.nYCells);
+//		this.nZCells = 1;
+//		this.createXYScales();
+
 		// gotta calculate this whole thing over
 		this.plot = new blanketPlot(this,
-			{
-				nXCells: this.nXCells,
-				nYCells: this.nYCells,
-				nZCells: 1,
-				xPerCell: (scene.xMax - scene.xMin) / this.nXCells,
-				yPerCell: (scene.yMax - scene.yMin) / this.nYCells,
-			}
+//			{
+//				nXCells: bkdrop.nXCells,
+//				nYCells: bkdrop.nYCells,
+//				nZCells: 1,  // temp
+//				xPerCell: (scene.xMax - scene.xMin) / bkdrop.nXCells,
+//				yPerCell: (scene.yMax - scene.yMin) / bkdrop.nYCells,
+//			},
+			this.bkdrop,
 		);
-		// this generates a blanket, and evaluates the function over the cell block
+
+		// this generates a blanketAr, and evaluates the function over the cell block
 		this.calcPoints(this);
+
 		// stick data into plot, and find its zScale, and anything else you can do
 		// without the canvas or gl existing
-		this.plot.attachData(this.blanket);
+		this.plot.attachData(this.blanketAr);
+
 		// use the right one.
 		graphicEvents.use(this.events);
 	}
+
 	// get ready, 'soon' we'll be rendering this new scene.
 	// calculate all that stuff.
 	static prepForNewScene(sceneIndex) {
@@ -118,28 +134,17 @@ class Webgl3D extends Component {
 		// um... stop scrolling pleeze
 		me.events.stopAnimating();
 	}
+
 	// create the data based on the function, in the shape of the cells, but science coords.
 	calcPoints() {
-		this.blanket = generateBlanket(
-			this.scene.funcs[0].func,
-			this.nXCells, this.nYCells,
-			this.xScale.invert, this.yScale.invert
+		const bkdrop = this.bkdrop;
+		this.blanketAr = generateBlanket(
+			bkdrop.funcs[0].func,
+			bkdrop.nXCells, bkdrop.nYCells,
+			bkdrop.xScale.invert, bkdrop.yScale.invert
 		);
 	}
-	// derive the X and Y scaler given the dimensions of the graph in science and cell coords.
-	// they convert from science coords to cell coords, use scale.invert for opposite
-	// call before calculating data as it needs these!
-	createXYScales() {
-		this.xScale = scaleLinear().range([0, this.nXCells])
-									.domain([this.xMin, this.xMax]);
-		this.yScale = scaleLinear().range([0, this.nYCells])
-									.domain([this.yMin, this.yMax]);
-	}
-	// scale this 3-vector science coords, by our xyz scalers, into cell coords
-	// return a 4-vector - [3] often ignored
-	scaleXYZ1(xyz) {
-		return [this.xScale(xyz[0]), this.yScale(xyz[1]), this.zScale(xyz[2]), 1];
-	}
+
 	// draw the canvas that'll show it.
 	// if this.plot is there, the state, data, and scalers must be set up.
 	// These might have changed:
@@ -157,7 +162,7 @@ class Webgl3D extends Component {
 		return (
 			<div className='webgl-chart' style={wrapperStyle}
 					ref={webglChart => this.sensitiveElement = webglChart}>
-				<AxisTics style={canvasStyle} />
+				<AxisTics style={canvasStyle} bkdrop={this.bkdrop} />
 				<canvas id={this.name + '3D'}
 					style={canvasStyle} width={props.graphWidth} height={props.graphHeight}
 					onMouseDown={this.events ? this.events.mouseDownEvt : ()=>{}}
@@ -211,7 +216,7 @@ class Webgl3D extends Component {
 	}
 	// break up big and potentially circularly-pointing data structures
 	dispose() {
-		this.blanket = this.funcs = this.vertexSeries = null;
+		this.blanketAr = this.funcs = this.vertexSeries = null;
 		this.events.dispose();
 		this.events = null;
 		this.plot.dispose();

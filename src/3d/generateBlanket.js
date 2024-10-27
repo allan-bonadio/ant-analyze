@@ -1,5 +1,5 @@
 //
-// gen complex -- generate complex arithmetic blanket plots
+// gen blanket -- generate complex arithmetic blanket array
 //
 /* eslint-disable eqeqeq, no-throw-literal  */
 
@@ -9,9 +9,9 @@
 // Unfortunately we can't map z values to cell coords yet
 // cuz we need them all to figure out the scaler
 export function generateBlanket(func, nXCells, nYCells, xCell2Science, yCell2Science) {
-	let blanket = new Array(nYCells + 1);
+	let blanketAr = new Array(nYCells + 1);
 	for (let y = 0; y <= nYCells; y++) {
-		let row = blanket[y] = new Array(nXCells + 1);
+		let row = blanketAr[y] = new Array(nXCells + 1);
 		for (let x = 0; x <= nXCells; x++) {
 			// each vertex has a value.
 			// some sort of obj with whatever we might need for the rendering.
@@ -43,8 +43,9 @@ export function generateBlanket(func, nXCells, nYCells, xCell2Science, yCell2Sci
 	}
 
 	// a few more things to remember
-	blanket.nXCells = nXCells;
-	blanket.nYCells = nYCells;
-	return blanket;
+	blanketAr.nXCells = nXCells;
+	blanketAr.nYCells = nYCells;
+	return blanketAr;
 }
 
+export default generateBlanket;
