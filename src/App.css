@@ -20,14 +20,14 @@ body {
 .outer-wrapper {
 	display: flex;
 	flex-direction: row;  /* changes to column if it's tall;
-			see graphicElements.decideGraphDimensions() */
+			see graphDimensions() */
 }
 /* the graph itself stays in upper left corner */
 .graph-wrapper {
 	flex: 1 1;
 }
 /* the box with the buttons and text is either on the right or below,
-	dep on aspect ratio of window.  See graphicEvents.decideGraphDimensions() */
+	dep on aspect ratio of window.  See graphDimensions() */
 #blurb-box {
 	flex: 0 0;
 	z-index: 20;  /* or floating above */
