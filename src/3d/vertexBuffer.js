@@ -90,3 +90,5 @@ export class vertexBuffer {
 		this.colorsBuffer = this.colors = this.positionsBuffer = this.positions = null;
 	}
 }
+
+export default vertexBuffer;
