@@ -5,38 +5,70 @@ import BlurbBox from './BlurbBox.js';
 import Svg2D from './Svg2D.js';
 import Webgl3D from './Webgl3D.js';
 import graphicEvents from './graphicEvents.js';
+import graphDimensions from './graphDimensions.js';
 import './App.css';
-
-const con = config;
-console.log(config.scenes);
 
 // for startup, use 1 for 2d, 3 for 3d
 //const INITIAL_SCENE_INDEX = 1;  // 2d sin(x)/x
 const INITIAL_SCENE_INDEX = 3;  // 3d sin(x+iy)
+
+// window resize handler.
+// runs before any instances are created.
+function resizeEvt(ev) {
+	let graphDims = graphDimensions(ev.target);
+	// now kick App and all the graphs cuz they all have to deal with it
+	// setState will cause render to give the graphElement the new h/w
+	App.adjustForResize(graphDims);
+	graphicEvents.allGraphs.forEach(graph => {
+		graph.adjustForResize(graphDims.graphWidth, graphDims.graphHeight);
+		graph.setState(graphDims);
+	});
+	console.log("resize ev", ev.target.innerWidth, ev.target.innerHeight,
+		graphDims);
+}
+
+window.addEventListener('resize', graphicEvents.resizeEvt);
+
+
+
 class App extends Component {
 	constructor(props) {
 		super(props);
 
-		App.me = this;  // singleton
-		// scene is remembered in localStorage
+		App.me = this;  // singleton.  I think I could get rid of this if I tried...
+
+		// scene is remembered in localStorage.  So, validate.
+		if (typeof config == 'undefined' || !config.scenes)
+			throw `no config, no config.scenes`;
 		let chosenSceneIndex = localStorage.sceneIndex || INITIAL_SCENE_INDEX;
+		if (!config.scenes[chosenSceneIndex])
+			chosenSceneIndex = INITIAL_SCENE_INDEX;
+		localStorage.sceneIndex = chosenSceneIndex;
 		this.scene = config.scenes[chosenSceneIndex];
+		if (!this.scene)
+			throw `no this.scene`;
+
 		// the scene index is 0...n-1 and i keep adding more
 		// this is just the initial one
+
+		const graphDims = graphDimensions(props.innerWidth? props : window);
+
 		this.state = {
 			requestedIndex: chosenSceneIndex,
 			readout: '',
 			error: null,
 			secondError: null,
-			...graphicEvents.decideGraphDimensions(props.innerWidth? props : window),
+			...graphDims,
 		};
 		this.setReadout = this.setReadout.bind(this);
 		this.hamburgerClickEvt = this.hamburgerClickEvt.bind(this);
 		this.beforeUnloadEvt = this.beforeUnloadEvt.bind(this);
 		window.addEventListener('beforeunload', this.beforeUnloadEvt);
 	}
+
 	// this intercepts exceptions from lower components during render.
 	// Supposed to return an addition to the state to indicate so.
+	// These should be one level higher to catch exceptions in this file
 	static getDerivedStateFromError(errObj) {
 		// probably already spewed a message, huh?
 // 		console.error('getDerivedStateFromError:',
@@ -52,9 +84,41 @@ class App extends Component {
 		else
 			this.setState({error: errObj});  // first render?  let it go again.
 	}
-	static adjustForResize(graphSize) {
-		App.me.setState(graphSize);
+
+	static adjustForResize(graphDims) {
+		App.me.setState(graphDims);
 	}
+
+	// ultimately called by click handlers on the nav bar, this sets the scene After
+	// the initial render(s)
+	goToScene = (sceneIndex) => {
+		this.setState({requestedIndex: sceneIndex,
+					error: null, secondError: null});
+		this.scene = config.scenes[sceneIndex];
+		Svg2D.prepForNewScene(sceneIndex);
+		Webgl3D.prepForNewScene(sceneIndex);
+		localStorage.sceneIndex = sceneIndex;  // remember as user pref
+	}
+
+	// the little text thing in the northwest corner of the graph
+	setReadout(readout) {
+		this.setState({readout});
+	}
+
+	// a click on the hamburger menu button to show the blurb
+	hamburgerClickEvt(ev) {
+		this.setState({hamburgerMenuShowing: ! this.state.hamburgerMenuShowing})
+	}
+
+	// this gets called before reload; must dispose of some stuff to avoid
+	// error messages and garbage collection problems.
+	beforeUnloadEvt(ev) {
+		////ev.preventDefault();
+		Svg2D.me.dispose();
+		Webgl3D.me.dispose();
+		////return null;
+	}
+
 	render() {
 		let s = this.state;
 		// if we've got an error attached, show it
@@ -80,6 +144,8 @@ class App extends Component {
 		let blurbStyle = {display: 'block', minWidth: 23 * s.fontSize};
 		if (s.hamburgerButtonShowing && ! s.hamburgerMenuShowing)
 			blurbStyle.display = 'none';
+		if (!this.scene)
+			throw `this.scene empty in render`;
 		return (
 			<div className='outer-wrapper' style={{flexDirection: s.flexDirection}}>
 				<div id='hamburger-button' onClick={this.hamburgerClickEvt} >
@@ -95,44 +161,20 @@ class App extends Component {
 							setReadout={this.setReadout}
 							graphWidth={s.graphWidth}
 							graphHeight={s.graphHeight}
+							goToScene={this.goToScene}
 					/>
 					<Webgl3D  requestedIndex={s.requestedIndex}
 							name='surface' show={this.scene.graphics == '3D'}
 							setReadout={this.setReadout}
 							graphWidth={s.graphWidth}
 							graphHeight={s.graphHeight}
+							goToScene={this.goToScene}
 					/>
 				</div>
 				<BlurbBox  requestedIndex={s.requestedIndex}
-					style={blurbStyle} />
+					style={blurbStyle} goToScene={this.goToScene} />
 			</div>
 		);//// the height and width of graph-wrapper above
-	}
-	// ultimately called by click handlers on the nav bar, this sets the scene After
-	// the initial render(s)
-	static goToScene(sceneIndex) {
-		App.me.setState({requestedIndex: sceneIndex,
-				error: null, secondError: null});
-		App.me.scene = config.scenes[sceneIndex];
-		Svg2D.prepForNewScene(sceneIndex);
-		Webgl3D.prepForNewScene(sceneIndex);
-		localStorage.sceneIndex = sceneIndex;  // remember as user pref
-	}
-	// the little text thing in the northwest corner of the graph
-	setReadout(readout) {
-		this.setState({readout});
-	}
-	// a click on the hamburger menu button to show the blurb
-	hamburgerClickEvt(ev) {
-		this.setState({hamburgerMenuShowing: ! this.state.hamburgerMenuShowing})
-	}
-	// this gets called before reload; must dispose of some stuff to avoid
-	// error messages and garbage collection problems.
-	beforeUnloadEvt(ev) {
-		////ev.preventDefault();
-		Svg2D.me.dispose();
-		Webgl3D.me.dispose();
-		////return null;
 	}
 }
 export default App;
