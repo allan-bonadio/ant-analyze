@@ -8,9 +8,10 @@ import {scaleLinear} from 'd3-scale';
 import {hsl} from 'd3-color';
 import {mat4, vec4} from 'gl-matrix';
 import {config} from '../config.js';
-import {vertexBuffer} from './genComplex.js';
+import vertexBuffer from './vertexBuffer.js';
 import blanketTriangles from './blanketTriangles.js';
-import {axisBars, weatherVane} from './axisBars.js';
+import axisBars from './axisBars.js';
+import weatherVane from './weatherVane.js';
 import {AxisTics, axisTicsPainter} from './AxisTics.js';
 import Webgl3D from '../Webgl3D.js';
 
@@ -44,9 +45,10 @@ let includeWeatherVane = false;
 class blanketPlot {
 	// options object: nXCells, nYCells = cell dimensions of xy area
 	// xPerCell, yPerCell, zPerCell = size of a cell in science space
-	constructor(graph, options) {
+	constructor(graph, bkdrop) {
 		this.graph = graph;  // Webgl3D
-		Object.assign(this, options);
+		//Object.assign(this, options);
+		this.bkdrop = bkdrop;
 
 		// these painters set up for the geometry, and in the constructor,
 		// calculate max number of vertices they need for each set of graphical things they draw
@@ -62,9 +64,10 @@ class blanketPlot {
 		// weatherVane diagnostic shows which way is +x, +y and +z (r g b)
 		if (includeWeatherVane)
 			this.painters.push(new weatherVane(this));
-		// total worst-case number of vertices we'll use (each is a pos and a col vertex)
+
+		// total worst-case number of vertices we'll use (each is a pos and a color vertex)
 		this.maxVertices = this.painters.reduce((sum, painter) => sum + painter.maxVertices, 0);
-		this.then = 0;
+		// ?? this.then = 0;
 
 		// only for generating frames for an ani gif
 		if (config.aniGifFrames)
@@ -105,7 +108,8 @@ class blanketPlot {
 			console.error("error code from webgl: ", err, msg);
 		}
 	}
-	//********************************************************* Programs
+
+	//**************************************************** GL Programs
 	// Initialize a shader program, so WebGL knows how to draw our data
 	initShaderProgram() {
 		let gl = this.gl;
@@ -147,6 +151,7 @@ class blanketPlot {
 				// diagnostic: change to POINTS in blanketTriangle's draw method
 			}
 		`;
+
 		// Fragment shader program
 		const fsSource = `
 			varying lowp vec4 vColor;
@@ -169,6 +174,7 @@ class blanketPlot {
 		}
 		const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
 		const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
+
 		// Create the shader program
 		const shaderProgram = gl.createProgram();
 		gl.attachShader(shaderProgram, vertexShader);
@@ -218,15 +224,16 @@ class blanketPlot {
 	deriveZScale() {
 		// find the unified extent of all of the z values on all rows
 		// At this point there should be no z values that are objects
-		let b = this.blanket;
-		if (! b)
+		let bl = this.blanketAr;
+		if (! bl)
 			throw "No Blanket Array in deriveScalers()";
 		let mini = Infinity, maxi = -Infinity, mi, mx;
+		// big is max of absolute values; mi and mx are min/max of z real
 		// eslint-disable-next-line no-unused-vars
 		let biggest = -Infinity, big, small;
-		for (let f = 0; f < b.length; f++) {
-			[mi, mx] = extent(b[f], d => d.z_science);
-			[small, big] = extent(b[f], d => d.abs);
+		for (let f = 0; f < bl.length; f++) {
+			[mi, mx] = extent(bl[f], d => d.z_science);
+			[small, big] = extent(bl[f], d => d.abs);
 			if (isNaN(mi + mx)) debugger;
 			// collect these but avoid infinity (log over complex plane)
 			if (isFinite(mi))
@@ -237,26 +244,36 @@ class blanketPlot {
 			if (isFinite(big))
 				biggest = Math.max(big, biggest);
 		}
+
+		// bkdrop holds all these numbers and makes the scales
+		let bkdrop = this.bkdrop;
+		bkdrop.biggest = biggest;
+		bkdrop.zMin = mini;
+		bkdrop.zMax = maxi;
+		bkdrop.zPerCell = (maxi - mini) / bkdrop.nZCells;
+
 		// that's min and max in science coords.  convert to cell coords.
 		// but z values converted to 'cell coords' for webgl
 		// note we're scaling z backwards
-		this.zScale = scaleLinear()
-			.domain([mini, maxi])
-			.range([0, Webgl3D.me.nZCells]);  // it's 0...1
-		this.zMin = mini;
-		this.zMax = maxi;
-		this.zPerCell = (maxi - mini) / this.nZCells;
+		bkdrop.createZScale();
+		//this.zScale = scaleLinear()
+		//	.domain([mini, maxi])
+		//	.range([0, Webgl3D.me.nZCells]);
 
 		// must also be on the graph component
 		// this way you can index the dimensions if you have to eg this[dimension +'Scale']
-		let gr = Webgl3D.me;
-		gr.zMin = this.zMin; gr.zMax = this.zMax; gr.zScale = this.zScale;
+		//let gr = Webgl3D.me;
+		//gr.zMin = this.zMin;
+		//gr.zMax = this.zMax;
+		//gr.zScale = this.zScale;
+
 		// adjust the color algorithm for larger/smaller complex magnitudes
 		// which determine lightness in the complex color
 		this.lightnessScale = scaleLinear()
 			.range([0, 1])
 			.domain([0, biggest]);
-		if (isNaN(this.zScale(1))) debugger;
+
+		if (!isFinite(bkdrop.zScale(1))) debugger;
 	}
 
 	// take a complex value for vert.z (like {re: 1, im: -1})
@@ -290,11 +307,11 @@ class blanketPlot {
 	// call this after you've figured out the Z scaling from science coords to cell coords
 	// zScale is a function that converts from z_data values to z cell coords
 	colorComplexValues() {
-		let blanket = this.blanket;
+		let blanketAr = this.blanketAr;
 		let zScale = this.zScale;
-		for (let y = 0; y <= blanket.nYCells; y++) {
-			let row = blanket[y];
-			for (let x = 0; x <= blanket.nXCells; x++) {
+		for (let y = 0; y <= blanketAr.nYCells; y++) {
+			let row = blanketAr[y];
+			for (let x = 0; x <= blanketAr.nXCells; x++) {
 				let vert = row[x];
 
 				if (typeof vert.z_data == 'object') {
@@ -302,21 +319,22 @@ class blanketPlot {
 					this.complexScaleAndColor(vert, this.lightnessScale);
 					if (isNaN(vert.z_science + vert.red + vert.green)) debugger;
 				}
-				vert.z = zScale(vert.z_science);
+				vert.z = this.bkdrop.zScale(vert.z_science);
 			}
 		}
 	}
+
 	// called by client to give the data, and generates the compact arrays
 	// to be sent to the gpu
-	// This is how you feed in your data.  blanket = nested JS arrays like
+	// This is how you feed in your data.  blanketAr = nested JS arrays like
 	//		[[el,el,el],[el,el,el],[el,el,el]]
 	// Blanket must have same dimensions as passed to blanketPlot constrctor.
 	// each value is an object like
 	// {x: 2.3, y: 4.5, z: 12.7, red: .4, green: .2, blue: .95, alpha: 1, ...misc}
 	// This can be called BEFORE the canvas and gl are created.
-	attachData(blanket) {
+	attachData(blanketAr) {
 		this.buffer = new vertexBuffer(this.maxVertices);
-		this.blanket = blanket;
+		this.blanketAr = blanketAr;
 		this.deriveZScale();
 		this.colorComplexValues();
 
@@ -381,19 +399,22 @@ class blanketPlot {
 	// returns a 3 vector, useful for tic positioning
 	findClosestCorner() {
 		let graph = this.graph;
+		const bkdrop = this.bkdrop;
 		if (! ('longitude' in this && 'latitude' in this))
-			return [graph.xMin, graph.yMin, graph.zMin];  // too early
+			return [bkdrop.xMin, bkdrop.yMin, bkdrop.zMin];  // too early
 
 		// convert to cell coords on the way out
-		return graph.scaleXYZ1([
-			Math.floor(this.longitude / π) & 1 ? graph.xMin : graph.xMax,
-			Math.floor(this.longitude / π + 1/2) & 1 ? graph.yMax : graph.yMin,
-			this.latitude < 0 ? graph.zMin : graph.zMax
+		return bkdrop.scaleXYZ1([
+			Math.floor(this.longitude / π) & 1 ? bkdrop.xMin : bkdrop.xMax,
+			Math.floor(this.longitude / π + 1/2) & 1 ? bkdrop.yMax : bkdrop.yMin,
+			this.latitude < 0 ? bkdrop.zMin : bkdrop.zMax
 		]);
 	}
 	// calculate the matrices that position and rotate it all into view
 	// attach them to this.  Mostly, just the calculation.  No GL.
 	deriveMatrices(longitude, latitude) {
+		const bkdrop = this.bkdrop;
+
 		// Create a perspective matrix, a special matrix that is
 		// used to simulate the distortion of perspective in a camera.
 		// Our field of view is 45 degrees, with a width/height
@@ -414,9 +435,9 @@ class blanketPlot {
 		// If you want to mess with the way the usual image looks to the user, work on this end.
 
 		// how far to step back to, to see it best.  see also trnslate xLength, yLength
-		let xLength = this.xPerCell * this.nXCells;  // overall dimensions in science space
-		let yLength = this.yPerCell * this.nYCells;
-		let zLength = this.zPerCell * this.nZCells;
+		let xLength = bkdrop.xPerCell * bkdrop.nXCells;  // overall dimensions in science space
+		let yLength = bkdrop.yPerCell * bkdrop.nYCells;
+		let zLength = bkdrop.zPerCell * bkdrop.nZCells;
 		mat4.translate(modelViewMatrix,		 // destination matrix
 			modelViewMatrix,		 // matrix to translate
 			[0, 0, -0.9 * (xLength + yLength)]);
@@ -441,7 +462,7 @@ class blanketPlot {
 		// now using symmetricized xyz coordinates.
 		// apply the xPerCell and yPerCell scaling
 		mat4.scale(modelViewMatrix, modelViewMatrix,
-			[this.xPerCell, this.yPerCell, this.zPerCell]);
+			[bkdrop.xPerCell, bkdrop.yPerCell, bkdrop.zPerCell]);
 
 		// ok on this end, we're talking science units.
 		// put these together on the client so the gpu doesn't have to multiply every time
@@ -482,6 +503,7 @@ class blanketPlot {
 		// this is what we need (otherwise it's all distorted)
 		this.gl.viewport(0, 0, graphWidth, graphHeight);
 	}
+
 	// trigger WebGL to execute the shaders and consume the big tables and draw it.
 	// longitude and latitude are in radians.  Typically this takes about
 	// .5 to 15 millisecond to execute, so it queues off stuff to the gpu async.
@@ -489,9 +511,6 @@ class blanketPlot {
 		let gl = this.gl;
 		this.longitude = longitude;
 		this.latitude = latitude;
-
-		// must MOVE the axis tic marks given a different long/lat
-		// no it's now done in the v shader.  axisTicsPainter.me.repeatVertices();
 
 		// set some gl variables
 		gl.clearColor(0.0, 0.0, 0.0, 1.0);	// Clear to black, fully opaque
@@ -562,6 +581,7 @@ class blanketPlot {
 			}
 		}, 1000);
 	}
+
 	// break up big and potentially circularly-pointing data structures
 	dispose() {
 		this.painters.forEach(painter => painter.dispose());
@@ -569,7 +589,7 @@ class blanketPlot {
 
 		this.buffer.dispose(this.gl);
 		this.gl.deleteProgram(this.shaderProgram);
-		this.blanket = this.buffer = this.axisTics = this.graph = null;
+		this.blanketAr = this.buffer = this.axisTics = this.graph = null;
 		this.gl.getExtension('WEBGL_lose_context').loseContext();
 		this.gl = null;
 
