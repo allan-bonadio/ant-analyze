@@ -50,22 +50,19 @@ export class AxisTics extends React.Component {
 	// called on each twitch, to trigger rerender
 	static userRotated(closestCorner, compositeMatrix) {
 		this.me.setState({closestCorner, compositeMatrix});
-		////console.log(`AxisTics.userRotated(${closestCorner}, ${compositeMatrix})`)
 	}
 
 	// calculate the location and stuff for this tic, and return React tree for it.
 	// Just the text, and the coords of the text;  the line is in webgl.
 	makeTicLab(tic, cMatrix, closestCorner) {
-		//let graph = Webgl3D.me;
 		const bkdrop = this.bkdrop;
+
 		// convert sci coords to cell coords
 		let cellBase = bkdrop.scaleXYZ1(tic.xyz);
 		let cellTip = bkdrop.scaleXYZ1(tic.tip);
 
 		// alter per closestCorner, which is also in cell coords
 		// and for which the minimum is always zero
-		////console.log(`makeTicLab(closestCorner = [${closestCorner.join(' , ')}]) `+
-		////		`cellBase/Tip=`, cellBase, cellTip);////
 		if (tic.dimension != 0) {
 			cellBase[0] += closestCorner[0];
 			cellTip[0] += closestCorner[0];
@@ -87,7 +84,6 @@ export class AxisTics extends React.Component {
 		vec4.transformMat4(clipTip, cellTip, cMatrix);
 
 		// now we can tell if we need left or right justification
-		//let justification = (clipBase[0] < clipTip[0]) ? 'left' : 'right';
 		// form the style obj for this one.  Note the label goes on left or
 		// right depending on whether tic line goes left or right.
 		// And if we use right alignment instead of left,
@@ -136,13 +132,7 @@ export class AxisTics extends React.Component {
 		return <aside style={this.props.style}> {textLabels} </aside>;
 	}
 
-	// when axis labels are all calculated, they get passed here.
-	// Note we're resposible for the closestCorner stuff.
-//	static setAxisLabels(axisLabels) {
-//		// too early?  before first render?  no prob.  nothing else is drawing anyway
-//		if (AxisTics.me)
-//			AxisTics.me.setState({axisLabels});
-//	}
+
 }
 
 /* ************************************************************** the painter */
@@ -209,7 +199,6 @@ export class axisTicsPainter {
 
 		// gimme several science values for axis dimension that are good for tics
 		let labelValues = axisScale.ticks(5);
-		//console.log("||| axisScale.ticks:", labelValues);
 
 		// what kind of increment?  see distance between the first two
 		// so we can decide number of decimal places
@@ -217,7 +206,6 @@ export class axisTicsPainter {
 		delta = Math.floor(Math.log10(delta));
 		if (delta < 0)
 			decimalPlaces = -delta;
-		// future: expand this to multiple-of-three powers and add SI prefixes
 
 		// different values get plugged in to this below.  Keep this in science
 		// coords so everybody else can use it
@@ -260,16 +248,13 @@ export class axisTicsPainter {
 		// That code in the shader depends on this being all mins.
 		const bkdrop = this.bkdrop;
 		this.minimalCorner = [bkdrop.xMin, bkdrop.yMin, bkdrop.zMin];
-		////console.log("minimalCorner-- ", this.minimalCorner);
 		// each tic with label
 		this.axisLabels = [];
 		for (let dimension = 0; dimension < 3; dimension++) {
 			let dimLetter = 'xyz'[dimension];
-			//this.axisLabels[dimension] =
 			this.generateOneAxis(dimension);
 		}
 		AxisTics.axisLabels = this.axisLabels;
-		////this.dumpAllTics();
 	}
 
 	dumpAllTics() {
@@ -278,13 +263,6 @@ export class axisTicsPainter {
 		}
 	}
 
-	// the tics are the only things that actually change in 3d from one angle to
-	// another - everything else freezes and keeps its science & cell coordinates
-//	static rotateAllTics() {
-//		alert("not supposed to be doing rotateAllTics()")
-//		if (axisTicsPainter.me)
-//			axisTicsPainter.me.generateAllTics();
-//	}
 	/* ****************************** the painter */
 	// this generates the line segments for the little tic marks for webgl.
 	// note how it's called in two different ways: first time and afterwards, per-frame
@@ -295,12 +273,10 @@ export class axisTicsPainter {
 		// x axis has tics that point in +y direction; y axis in +z direction,
 		// and z axis in +x direction
 		let axisLabels = this.axisLabels;
-		//let g = this.graph;
 		const bkdrop = this.bkdrop;
 		axisLabels.forEach((axis, dimension) => {
 			// Each is 7 minus bitvalue of that color  x=1, y=2, z=4
 			let mask4axis = [0b110, 0b101, 0b011][dimension];
-			////console.log(`Axis ${dimension} mask ${mask4axis}`, axis);////
 
 			return axis.forEach(tic => {
 				if (tic.noLine)
@@ -310,20 +286,14 @@ export class axisTicsPainter {
 				// converting to cell coords
 				let pos = bkdrop.scaleXYZ1(tic.xyz);
 				pos[3] = mask4axis;
-				////console.log(`    "${tic.text.padStart(8)}" at ${pos[0].toFixed(3)} `+
-				////	`${pos[1].toFixed(3)} ${pos[2].toFixed(3)}`);////
 				buffer.addVertex(pos, AXIS_TIC_COLOR);  // same color as axis lines
 				// and the tip
 				let tpos = bkdrop.scaleXYZ1(tic.tip);
 				tpos[3] = mask4axis;
-				////console.log(`           tip at ${tpos[0].toFixed(3)} `+
-				////	`${tpos[1].toFixed(3)} ${tpos[2].toFixed(3)}`);////
 				buffer.addVertex(tpos, AXIS_TIC_COLOR);  // same color as axis lines
 			});
 		});
 
-		// console.log("&&& finished tics, used %d of %d vertices",
-		// 		this.nVertices, this.maxVertices);
 		return this.buffer.nVertices - startVertex
 	}
 	// normal first call in prep for any drawing
@@ -341,8 +311,6 @@ export class axisTicsPainter {
 			gl.LINES,  // the correct one
 			this.startVertex, this.nVertices);
 		this.plot.checkOK();
-//		gl.drawArrays(gl.LINES, this.startVertex, this.nVertices);
-//		this.plot.checkOK();
 	}
 
 	// break up big and potentially circularly-pointing data structures

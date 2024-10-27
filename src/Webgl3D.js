@@ -84,33 +84,8 @@ class Webgl3D extends Component {
 		this.setState({scene});  // make sure some buffers are recreated
 		let bkdrop = this.bkdrop = new backdrop(scene);
 
-//		this.funcs = scene.funcs;
-//		this.xMin = scene.xMin;
-//		this.xMax = scene.xMax;
-//		this.yMin = scene.yMin;
-//		this.yMax = scene.yMax;
-//		// shape the cell block according to the mins/maxes,
-//		// so the product (len*wid) ends up being approx TARGET_CELLS,
-//		// but still in approximate proportion of x vs y
-//		// note the number of vertices in both directions is +1 more than cells
-//		this.nYCells = Math.sqrt(TARGET_CELLS *
-//			(scene.yMax - scene.yMin) / (scene.xMax - scene.xMin));
-//		this.nYCells = Math.round(this.nYCells);
-//		this.nXCells = Math.round(TARGET_CELLS / this.nYCells);
-//		this.nZCells = 1;
-//		this.createXYScales();
-
 		// gotta calculate this whole thing over
-		this.plot = new blanketPlot(this,
-//			{
-//				nXCells: bkdrop.nXCells,
-//				nYCells: bkdrop.nYCells,
-//				nZCells: 1,  // temp
-//				xPerCell: (scene.xMax - scene.xMin) / bkdrop.nXCells,
-//				yPerCell: (scene.yMax - scene.yMin) / bkdrop.nYCells,
-//			},
-			this.bkdrop,
-		);
+		this.plot = new blanketPlot(this, this.bkdrop);
 
 		// this generates a blanketAr, and evaluates the function over the cell block
 		this.calcPoints(this);
@@ -126,8 +101,6 @@ class Webgl3D extends Component {
 	// get ready, 'soon' we'll be rendering this new scene.
 	// calculate all that stuff.
 	static prepForNewScene(sceneIndex) {
-// 		if (! this.me.props.show)
-// 			return;
 		let me = Webgl3D.me;
 		me.newScene(sceneIndex);
 		graphicEvents.use(me.events);
@@ -172,6 +145,7 @@ class Webgl3D extends Component {
 			</div>
 		);
 	}
+
 	// queue off a process to draw it thru webgl.  (Only if this is show ing)
 	// everything must have been calculated before.
 	// Called in compDidUpdate() and compDidMount(), no earlier
@@ -182,6 +156,7 @@ class Webgl3D extends Component {
 		this.plot.drawOneFrame(this.events.horizPosition / HORIZ_EVENTS_FACTOR,
 			this.events.vertPosition / VERT_EVENTS_FACTOR);
 	}
+
 	componentDidUpdate(prevProps, prevState) {
 		if (! this.props.show)
 			return;
@@ -189,6 +164,7 @@ class Webgl3D extends Component {
 		// we know it does now
 		this.drawOneFrame();
 	}
+
 	// graphicEvents calls us after the rotation position changed to set the readout
 	// extra is for debugging mostly
 	setReadout(horizPosition, vertPosition, extra) {
@@ -196,24 +172,29 @@ class Webgl3D extends Component {
 		this.props.setReadout(r2d(horizPosition / HORIZ_EVENTS_FACTOR).toFixed() +'° long  '+
 				r2d(vertPosition/VERT_EVENTS_FACTOR).toFixed() +'° lat '+ (extra || ''));
 	}
+
 	/* ******************************************************* mouse/touch evts */
 	// called while user rotates graph.  abstract default; function changes 2d/3d
 	shoveFunc() {
 	}
+
 	// gets called from ge if user does a spreading gesture left & right
 	spreadHoriz(delta, lastDelta, touchMidPoint) {
 		// 'soon'
 	}
+
 	// gets called from ge if user does a spreading gesture up & down
 	spreadVert(delta, lastDelta, touchMidPoint) {
 		// 'soon'
 	}
+
 	/* ******************************************************* resize window & webgl */
 	adjustForResize(graphWidth, graphHeight) {
 		if (! this.props.show)
 			return;
 		this.plot.adjustForResize(graphWidth, graphHeight);
 	}
+
 	// break up big and potentially circularly-pointing data structures
 	dispose() {
 		this.blanketAr = this.funcs = this.vertexSeries = null;

@@ -71,8 +71,6 @@ class App extends Component {
 	// These should be one level higher to catch exceptions in this file
 	static getDerivedStateFromError(errObj) {
 		// probably already spewed a message, huh?
-// 		console.error('getDerivedStateFromError:',
-// 				errObj.stack || errObj.message || errObj);
 		debugger;
 		return {error: errObj};
 	}
@@ -113,10 +111,8 @@ class App extends Component {
 	// this gets called before reload; must dispose of some stuff to avoid
 	// error messages and garbage collection problems.
 	beforeUnloadEvt(ev) {
-		////ev.preventDefault();
 		Svg2D.me.dispose();
 		Webgl3D.me.dispose();
-		////return null;
 	}
 
 	render() {
@@ -174,7 +170,7 @@ class App extends Component {
 				<BlurbBox  requestedIndex={s.requestedIndex}
 					style={blurbStyle} goToScene={this.goToScene} />
 			</div>
-		);//// the height and width of graph-wrapper above
+		);
 	}
 }
 export default App;

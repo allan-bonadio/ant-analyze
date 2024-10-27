@@ -10,13 +10,16 @@ export class axisBars {
 		this.plot = plot;
 		this.bkdrop = plot.bkdrop;
 		this.name = 'axes';
+
 		// four axes with 8 vertices, times 3 dimensions
 		this.maxVertices = 24;
 	}
+
 	// Always 24 vertices.
 	layDownVertices() {
 		let buffer = this.buffer = this.plot.buffer;
 		this.startVertex = this.buffer.nVertices;
+
 		// these are all in cell coords
 		let bkdrop = this.bkdrop;
 		let x, y, z, xCells = bkdrop.nXCells, yCells = bkdrop.nYCells;
@@ -26,6 +29,7 @@ export class axisBars {
 		let addVertex = (x, y, z) => {
 			buffer.addVertex([x, y, z, 0], [1, 1, 1, 1]);
 		};
+
 		// these are individual line segments, drawn with gl.LINES.
 		// each pair of vertices is one line.  Each loop goes around 2ice, inner or outer.
 		for (x = 0; x <= xCells; x += xCells) {
@@ -48,13 +52,12 @@ export class axisBars {
 		}
 		this.nVertices = this.buffer.nVertices - this.startVertex;
 	}
+
 	draw(gl) {
-		// the axis bars look aliased and gunky so get rid of them
-//		if (config.aniGifFrames)
-//			return;
 		gl.drawArrays(gl.LINES, this.startVertex, this.nVertices);
 		this.plot.checkOK();
 	}
+
 	dispose() {
 		this.plot = this.buffer = null;
 	}

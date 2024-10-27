@@ -93,6 +93,7 @@ class graphicEvents {
 		graphicEvents.using = grEv;
 		grEv.stopAnimating();
 	}
+
 	/* ************************************************************ mouse events */
 	// call this exactly once upon startup
 	// to set event handlers for the body etc.  We don't remove these so I want
@@ -110,21 +111,25 @@ class graphicEvents {
 			.on('touchend', ev => ev.stopPropagation())
 			.on('touchcancel', ev => ev.stopPropagation());
 	}
+
 	static oMouseMoveEvt(ev) {
 		if (! graphicEvents.using)
 			return;
 		return graphicEvents.using.mouseMoveEvt(ev);
 	}
+
 	static oMouseUpEvt(ev) {
 		if (! graphicEvents.using)
 			return;
 		return graphicEvents.using.mouseUpEvt(ev);
 	}
+
 	static oMouseLeaveEvt(ev) {
 		if (! graphicEvents.using)
 			return;
 		return graphicEvents.using.mouseLeaveEvt(ev);
 	}
+
 	// in case arithmetic fumbles, we can get NaNs that spread everywhere.
 	confirmSanity() {
 		if (!isNaN(this.horizPosition + this.vertPosition +
@@ -135,6 +140,7 @@ class graphicEvents {
 		this.horizPosition = this.vertPosition =
 		this.horizVelocity = this.vertVelocity = 0
 	}
+
 	// sets event handlers on the canvas or svg dom element
 	// called by componentDidMount().  Note at this point the canvas should be there
 	attachEventHandlers() {
@@ -152,6 +158,7 @@ class graphicEvents {
 			.on('touchend', this.touchEndEvt)
 			.on('touchcancel', this.touchCancelEvt)
 	}
+
 	// this handles incremental moves from mouse/touch/gesture events.
 	// Eventually calls some shove functions on the graph
 	mouseShove(ev) {
@@ -288,7 +295,6 @@ class graphicEvents {
 
 	// one (or more?) touches has moved
 	touchMoveEvt(ev) {
-		//console.log("touchMoveEvt", ev.touches[0].pageX, ev.touches[0].pageY, ev.touches);
 		if (ev.touches.length == 1)
 			this.mouseMoveEvt(this.touchToEvent(ev));
 		else
@@ -297,7 +303,6 @@ class graphicEvents {
 
 	// one fingertip releases
 	touchEndEvt(ev) {
-		console.log("touchEndEvt", ev.touches);
 		if (ev.touches.length == 1)
 			this.mouseUpEvt(this.touchToEvent(ev));
 		else
@@ -306,7 +311,6 @@ class graphicEvents {
 
 	// this is rare stuff like the program quits out from under your fingers
 	touchCancelEvt(ev) {
-		console.log("touchCancelEvt", ev.touches);
 		if (ev.touches.length == 1)
 			this.mouseUpEvt(this.touchToEvent(ev));
 		else
@@ -362,10 +366,8 @@ class graphicEvents {
 	touchMoveHandler(ev) {
 		// eslint-disable-next-line
 		let delta, mid, factor, xMin, xMax, yMin, yMax;
-// 		let s = this.state;
-// 		let midi = this.touchMidPoint;
 		this.calcTouchFingers(ev.touches);
-		//delta = this.calcTouchFingers(ev.touches)[0];
+
 		// is it a vertical or horizontal gesture?
 		if (this.spread == 'horiz') {
 			// horizontal - stretch the x axis in 2d
@@ -446,10 +448,12 @@ class graphicEvents {
 	// requestAnimationFrame calls it as long as animation or coasting is happening.
 	animateOneFrame(now) {
 		now *= 0.001;  // convert to seconds
+
 		// maybe if we're going backwards in time, we can just blow off this time around
 		if (now < this.then)
 			return;
 		this.confirmSanity();
+
 		// the first time, then is undefined so punt
 		let deltaTime = this.then ? (now - this.then) : .1;
 		this.then = now;
@@ -459,7 +463,6 @@ class graphicEvents {
 		// or during debugging deltaTime can also be way big
 		// so just snuff out all that stuff and don't act upon it
 		if (Math.abs(deltaTime) < 1e4 && now > 0) {
-// 		if (deltaTime > 0 && Math.abs(deltaTime) < 1e4 && now > 0) {
 			// at this point, a negative delta time is possible.  Maybe whenI drag and
 			// let go.  maybe other times, unclear.  I don't think I should draw going
 			// backwards, though
@@ -467,12 +470,14 @@ class graphicEvents {
 				this.graph.setReadout(this.horizPosition, this.vertPosition);
 				this.drawFunc(this.horizPosition, this.vertPosition);
  			}
+
 			// Update for the next draw
 			let dh = this.horizVelocity * deltaTime;
 			this.horizPosition = this.horizPosition + dh;
 			let dv = this.vertVelocity * deltaTime;
 			this.vertPosition = this.vertPosition + dv;
 			this.shoveFunc(this.horizPosition, this.vertPosition, dh, dv);
+
 			// and some friction please.  All time in units of seconds.
 			// this is why a big deltaTime is a problem
 			let factor = (1 - FRICTION) ** deltaTime;
@@ -489,6 +494,7 @@ class graphicEvents {
 			this.confirmSanity();
 		}
 	}
+
 	// break up big and potentially circularly-pointing data structures
 	dispose() {
 		this.stopAnimating();
@@ -501,8 +507,11 @@ class graphicEvents {
 		this.shoveFunc = this.drawFunc = null;
 	}
 }
+
 export default graphicEvents;
+
 // this will collect all graphs on the page so resizing the window can squish them
 graphicEvents.allGraphs = [];
+
 // this is the one time it's called
 graphicEvents.setOuterHandlers();

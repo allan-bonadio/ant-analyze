@@ -3,9 +3,11 @@
 	background-color: black;
 	color: white;
 }
+
 .svg-chart:active {
 	cursor: grabbing;
 }
+
 .line-paths {
 	fill: none;
 	stroke: #009;

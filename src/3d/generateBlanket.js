@@ -29,8 +29,7 @@ export function generateBlanket(func, nXCells, nYCells, xCell2Science, yCell2Sci
 			// z_science is the ultimate height on the 3d surface, science units,
 			// whether complex or not
 			if (typeof vert.z_data == 'object') {
-				// complex number
-				// the abs is used for complex coloring
+				// complex number    the abs is used for complex coloring
 				vert.abs = Math.hypot(vert.z_data.re, vert.z_data.im);
 				vert.z_science = vert.z_data.re;
 			}

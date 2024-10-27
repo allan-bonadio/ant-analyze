@@ -7,17 +7,21 @@
 	color: white;
 	cursor: default;
 }
+
 .blurb-title {
 	font-size: 1.5em;
 }
+
 .blurb-text {
 	padding: 1em;
 }
+
 /* ******************************************************* nav bar */
 /* one of those little square gray buttons, or the Next button which is wider */
 div.nav-bar {
 	margin-left: -.167em
 }
+
 /* each button */
 div.nav-bar div {
 	display: inline-block;
@@ -28,11 +32,13 @@ div.nav-bar div {
 	cursor: default;
 	background: #444;
 }
+
 /* extra for current scene */
 div.nav-bar div.selected {
 	font-weight: bold;
 	background: #999;
 }
+
 /* ******************************************************* instructions */
 .desktop-instructions, .mobile-instructions, .3D-instructions {
 	width: 11em;
@@ -42,12 +48,14 @@ div.nav-bar div.selected {
 	background-color: #662;
 	border: white 1px solid;
 }
+
 /* italic style used for variables in function formulas */
 #blurb-box v {
 	display: inline;
 	font-family: times, serif;
 	font-style: italic;
 }
+
 /* ******************************************************* responsive */
 /* this decides two general layouts of the screen:
 	* smaller screens: hamburger menu button shows up, blurb becomes menu

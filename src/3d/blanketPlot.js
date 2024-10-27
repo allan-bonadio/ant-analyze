@@ -47,7 +47,6 @@ class blanketPlot {
 	// xPerCell, yPerCell, zPerCell = size of a cell in science space
 	constructor(graph, bkdrop) {
 		this.graph = graph;  // Webgl3D
-		//Object.assign(this, options);
 		this.bkdrop = bkdrop;
 
 		// these painters set up for the geometry, and in the constructor,
@@ -67,7 +66,6 @@ class blanketPlot {
 
 		// total worst-case number of vertices we'll use (each is a pos and a color vertex)
 		this.maxVertices = this.painters.reduce((sum, painter) => sum + painter.maxVertices, 0);
-		// ?? this.then = 0;
 
 		// only for generating frames for an ani gif
 		if (config.aniGifFrames)
@@ -211,7 +209,6 @@ class blanketPlot {
 	//********************************************************* Data Layout
 	// list out ALL the vertices and their colors
 	dumpBuffer() {
-
 		console.info("actual data put into vertex buffer")
 		this.painters.forEach(painter =>
 			this.buffer.dump(painter.name, painter.startVertex, painter.nVertices));
@@ -256,16 +253,6 @@ class blanketPlot {
 		// but z values converted to 'cell coords' for webgl
 		// note we're scaling z backwards
 		bkdrop.createZScale();
-		//this.zScale = scaleLinear()
-		//	.domain([mini, maxi])
-		//	.range([0, Webgl3D.me.nZCells]);
-
-		// must also be on the graph component
-		// this way you can index the dimensions if you have to eg this[dimension +'Scale']
-		//let gr = Webgl3D.me;
-		//gr.zMin = this.zMin;
-		//gr.zMax = this.zMax;
-		//gr.zScale = this.zScale;
 
 		// adjust the color algorithm for larger/smaller complex magnitudes
 		// which determine lightness in the complex color
@@ -366,6 +353,7 @@ class blanketPlot {
 				"Your browser or machine may not support it.");
 		}
 		this.initShaderProgram();
+
 		// preps the buffer, attaches it to attributes
 		this.buffer.attachToGL(this.gl, this.programInfo.attribLocations);
 	}

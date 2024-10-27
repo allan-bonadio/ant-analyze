@@ -43,9 +43,6 @@ class backdrop {
 									.domain([this.xMin, this.xMax]);
 		this.yScale = scaleLinear().range([0, this.nYCells])
 									.domain([this.yMin, this.yMax]);
-		// no this is done in blanketPlot
-		//this.zScale = scaleLinear().range([0, this.nZCells])
-		//							.domain([this.zMin, this.zMax]);
 	}
 
 	createZScale() {

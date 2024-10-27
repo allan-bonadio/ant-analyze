@@ -83,14 +83,18 @@ class Svg2D extends Component {
 		this.scene = scene;  // even if it's not for us
 		if (scene.graphics == '2D') {
 			this.xScale.domain([scene.xMin, scene.xMax]);
+
 			// set this up for this scene.  xMin...xMax go into state
 			let stateAdditions = this.claimSceneState(sceneIndex);
 			this.setState(stateAdditions);
+
 			// but we won't see those for a while.  But we can calc.
 			this.ensureCalcPoints(stateAdditions);
+
 			// now we have the mins/maxes and can set the Y ranges.
 			// Which also involve state changes.
 			this.setState(this.reRangeYAxis());
+
 			// which graphicEvents do I want to use?  my own of course.
 			graphicEvents.use(this.events);
 		}
@@ -110,6 +114,7 @@ class Svg2D extends Component {
 		let vertexSeries = [];  // no series
 		for (let f = 0; f < this.funcs.length; f++) {
 			let func = this.funcs[f];
+
 			// x units per k increment.  min, max, n can change upon every redraw.
 			const xPerK = (state.xMax - state.xMin) / (func.nPoints - 1);
 			if (isNaN(xPerK)) debugger;
@@ -132,6 +137,7 @@ class Svg2D extends Component {
 	ensureCalcPoints(stateAdditions = {}) {
 		let s = {...this.state, ...stateAdditions};
 		this.calcPoints(s);
+
 		// save these so we can tell if calc needs to be redone
 		this.lastCalcIndex = this.props.requestedIndex;
 		this.lastCalcXMin = s.xMin;
@@ -165,6 +171,7 @@ class Svg2D extends Component {
 			mini = Math.min(mi, mini);
 			maxi = Math.max(mx, maxi);
 		}
+
 		// domain here refers to the y scaler, which takes the science y
 		// values and converts to pix coords.
 		this.yScale.domain([mini, maxi]);
@@ -290,11 +297,11 @@ class Svg2D extends Component {
 	spreadHoriz(delta, lastDelta, touchMidPoint) {
 		let midi = this.xScale.invert(touchMidPoint[0]);
 		let factor = lastDelta[0] / delta[0];
-		////console.log("horiz, factor=", factor, lastDelta, delta);
+
 		let xMin = (this.state.xMin - midi) * factor +  midi;
 		let xMax = (this.state.xMax - midi) * factor +  midi;
 		this.setState({xMin , xMax});
-		////console.log("xmin/max:", xMin, xMax);
+
 		this.xScale.domain([xMin, xMax]);
 	}
 
@@ -302,18 +309,18 @@ class Svg2D extends Component {
 	spreadVert(delta, lastDelta, touchMidPoint) {
 		let midi = this.yScale.invert(touchMidPoint[1]);
 		let factor = lastDelta[1] /  delta[1];
-		////console.log("vertical, factor=", factor, lastDelta, delta);
+
 		let s = this.state;
 		let yMin = (s.yMin - midi) * factor +  midi;
 		let yMax = (s.yMax - midi) * factor +  midi;
 		this.setState({yMin, yMax});
-		////console.log("ymin/max:", this.yMin, this.yMax);
+
 		this.yScale.domain([yMin, yMax]);
 	}
 
 	mouseWheelEvt(ev) {
 		console.log("mouseWheelEvt x y z", ev);
-		////console.log( ev.deltaX, ev.deltaY, ev.deltaZ);
+
 		//this.mouseUpEvt(ev);
 		// ??? this gives error message
 		// react-dom.development.js:4944 [Intervention] Unable to preventDefault

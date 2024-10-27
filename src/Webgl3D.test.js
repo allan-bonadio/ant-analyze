@@ -16,6 +16,7 @@ function makeASvg() {
 		<Svg2D requestedIndex='0' innerWidth='600' innerHeight='500' />
 	).childAt(0);
 }
+
 // check the pixel locations of the margin rectangle, slightly inside the svg itself
 function checkMargins(instance) {
 	expect(instance.marginLeft).toEqual(axisMargin);
@@ -23,6 +24,7 @@ function checkMargins(instance) {
 	expect(instance.marginTop).toEqual(axisMargin);
 	expect(instance.marginBottom).toEqual(instance.state.svgHeight - axisMargin);
 }
+
 let preventDefault = () => {};
 describe('Svg2D ', () => {
 	// mostly based on the initial render and method calls leading up to it

@@ -18,6 +18,7 @@ export class vertexBuffer {
 		this.colOffset = 0;
 		this.nVertices = 0;
 	}
+
 	// call this with an array of the three x y z, and the four r g b a
 	addVertex(posArray4, colArray4) {
 		let p = this.positions;
@@ -48,6 +49,7 @@ export class vertexBuffer {
 				4, gl.FLOAT,  // xyz & f (fields) per vertex, n type
 				false, 0, 0);  // normalize, stride, offset
 		gl.enableVertexAttribArray(attribLocations.vertexPosition);
+
 		// Tell WebGL how to pull out the Colors from the color buffer
 		// into the vertexColor attribute.
 		this.colorsBuffer = gl.createBuffer();

@@ -1,5 +1,5 @@
 //
-// graphDimensions -- decide htem and handle window resize
+// graphDimensions -- decide them and handle window resize
 //
 /* eslint-disable eqeqeq, no-throw-literal  */
 
@@ -31,15 +31,11 @@ export function graphDimensions(win) {
 		hamburgerButtonShowing = false;
 		if (graphWidth > graphHeight) {
 			// landscape orientation - place blurb to right side
-			// if (blurbBox$.length)
-			// 	blurbWidth = blurbBox$[0].offsetWidth;
 			graphWidth -= blurbWidth + 4;
 			flexDirection = 'row';
 		}
 		else {
 			// portrait orientation - place blurb below
-			// if (blurbBox$.length)
-			// 	blurbHeight = blurbBox$[0].offsetHeight;
 			graphHeight -= blurbHeight + 4;
 			flexDirection = 'column';
 		}
