@@ -53,4 +53,7 @@ Cell and clip coords don't exist for 2d; the scales convert from science coords 
 * AxisTics.js - calculates and maintains axis tic positions, and paints the tics in GL and the labels in HTML
 * axisBars.js - paints the twelve edges of the rectangle domain+range
 * blanketTriangles.js - paints the 3d surface itself; all made of triangles
-* genComplex.js - misc code for 3d/complex that will eventually go into some other file
+* vertexBuffer.js - stores the values to draw for 3d
+* generateBlanket.js - generates the values to draw for 3d
+
+

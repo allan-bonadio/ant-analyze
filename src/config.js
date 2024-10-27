@@ -83,15 +83,17 @@ export let config = {
 			xMax: 5.1,
 			yMin: -2,
 			yMax: 2,
+			//zMin: -4,
+			//zMax: 4,
 		},
 
 		{
 			title: "Natural Logarithm over Complex Plane",
 			formula: "log(<v>x</v>+<v>iy<v>)",
-			blurb: "Logarithm is actually multi-valued, over complex numbers.  You can add or subtract π i, or integer multiples, from any value to get other values that are also correct.  The results actually spiral in the imaginary direction.  The dividing line between two layers, here, is along the negative real axis.  Near zero, of course, the logarithm shoots down to – ∞.",
+			blurb: "Logarithm is actually multi-valued, over complex numbers.  You can add or subtract 2π i, or integer multiples, from any value of the logarithm to get equvalent other values.  The results actually spiral in the imaginary direction.  The dividing line between two layers, here, is along the negative real axis.  Near zero, of course, the logarithm shoots down to – ∞.",
 			graphics: '3D',
 			funcs: [{
-				// sin(x+iy) = sin(x) cosh(y) + i cos(x) sinh(y)
+				// log(x+iy) = log(sqrt(x^2 + y^2)) + i (cos y / sin x + 2πk) where k is any integer
 				func: (x, y) => ({
 					re: Math.log(x*x + y*y) * .5,  // log(sqrt(x^2 + y^2))
 					im: Math.atan2(y, x),
@@ -102,6 +104,8 @@ export let config = {
 			xMax: 3.1,
 			yMin: -3.1,
 			yMax: 3.1,
+			//zMin: -3,
+			//zMax: 1,
 		},
 
 //		{
