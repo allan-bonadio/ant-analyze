@@ -69,10 +69,10 @@ class Svg2D extends Component {
 
 	// look up this scene and set us up for it.
 	// DOESN'T set the state, instead returns the changes needed to the state,
-	// including xMin/Max.  The scene and funcs are attached immediately.
+	// including xMin/Max.  The scene and sheets are attached immediately.
 	claimSceneState(sceneIndex) {
 		this.scene = config.scenes[sceneIndex];
-		this.funcs = this.scene.funcs;
+		this.sheets = this.scene.sheets;
 		return {xMin: this.scene.xMin, xMax: this.scene.xMax};
 	}
 
@@ -112,8 +112,8 @@ class Svg2D extends Component {
 	// state passed in is the state you should use instead of this.state
 	calcPoints(state) {
 		let vertexSeries = [];  // no series
-		for (let f = 0; f < this.funcs.length; f++) {
-			let func = this.funcs[f];
+		for (let f = 0; f < this.sheets.length; f++) {
+			let func = this.sheets[f];
 
 			// x units per k increment.  min, max, n can change upon every redraw.
 			const xPerK = (state.xMax - state.xMin) / (func.nPoints - 1);
@@ -228,7 +228,7 @@ class Svg2D extends Component {
 			// ready for sticking into an svg.
 			linePaths = this.vertexSeries.map((series, ix) =>
 					<path className='series' d={lineSeries(series)} key={ix}
-						stroke={this.funcs[ix].color} />);
+						stroke={this.sheets[ix].color} />);
 		}
 		let viewBox = `0 0 ${props.graphWidth} ${props.graphHeight}`;
 		// react doesnt recognize touch events (doesn't list) - needed for gestures
@@ -330,7 +330,7 @@ class Svg2D extends Component {
 	}
 	// break up big and potentially circularly-pointing data structures
 	dispose() {
-		this.funcs = this.vertexSeries = null;
+		this.sheets = this.vertexSeries = null;
 		if (this.events)
 			this.events.dispose();
 		this.events = null;

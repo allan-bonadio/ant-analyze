@@ -11,7 +11,7 @@ const TARGET_CELLS = 6000;
 // mostly for coordinates and conversions
 class backdrop {
 	constructor(scene) {
-		this.funcs = scene.funcs;
+		this.sheets = scene.sheets;
 		this.xMin = scene.xMin;
 		this.xMax = scene.xMax;
 		this.yMin = scene.yMin;
