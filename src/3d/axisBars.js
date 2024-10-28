@@ -1,5 +1,5 @@
 //
-// axis bars - axis lines and tic marks for a blanket plot.
+// axis bars - GL drawing of axis lines and tic marks for a blanket plot.
 //
 /* eslint-disable eqeqeq, no-throw-literal  */
 
@@ -17,17 +17,17 @@ export class axisBars {
 
 	// Always 24 vertices.
 	layDownVertices() {
-		let buffer = this.buffer = this.plot.buffer;
-		this.startVertex = this.buffer.nVertices;
+		let vBuffer = this.vBuffer = this.plot.vBuffer;
+		this.startVertex = this.vBuffer.nVertices;
 
-		// these are all in cell coords
+		// these are all in cell coords.  Note cells, n vertices is one more.
 		let bkdrop = this.bkdrop;
 		let x, y, z, xCells = bkdrop.nXCells, yCells = bkdrop.nYCells;
 		let zMin = 0;
 		let zMax = bkdrop.nZCells;
 		let zSize = bkdrop.nZCells;
 		let addVertex = (x, y, z) => {
-			buffer.addVertex([x, y, z, 0], [1, 1, 1, 1]);
+			vBuffer.addVertex([x, y, z, 0], [1, 1, 1, 1]);
 		};
 
 		// these are individual line segments, drawn with gl.LINES.
@@ -50,7 +50,7 @@ export class axisBars {
 				addVertex(x, yCells, z);
 			}
 		}
-		this.nVertices = this.buffer.nVertices - this.startVertex;
+		this.nVertices = this.vBuffer.nVertices - this.startVertex;
 	}
 
 	draw(gl) {
@@ -59,7 +59,7 @@ export class axisBars {
 	}
 
 	dispose() {
-		this.plot = this.buffer = null;
+		this.plot = this.vBuffer = null;
 	}
 };
 export default axisBars;

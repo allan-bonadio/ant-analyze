@@ -18,11 +18,12 @@ const HI_LABEL = 6;
 // decided
 
 /* ************************************************************** the Component */
-// React component for the tic text itself.  Just text, no tic lines.
-// webgl doesn't really have text; you have to make your own pixel buffer and
-// draw the text in it and then hand that to webgl.  Forget it.
-// Instead, draw the text in HTML with absolutely positioned text nodes.
-// downside is that nothing draws in front of the text.
+// React component for the tic text itself.  Just text, no tic lines. webgl
+// doesn't really have text; you have to make your own pixel buffer and draw the
+// text in it and then hand that to webgl.  Forget it. Instead, draw the text in
+// HTML with absolutely positioned text nodes. downside is that nothing draws in
+// front of the text.  So we have to only label the axes that are closest to the
+// user.
 export class AxisTics extends React.Component {
 	constructor(props) {
 		super(props);
@@ -54,9 +55,7 @@ export class AxisTics extends React.Component {
 
 	// calculate the location and stuff for this tic, and return React tree for it.
 	// Just the text, and the coords of the text;  the line is in webgl.
-	makeTicLab(tic, cMatrix, closestCorner) {
-		const bkdrop = this.bkdrop;
-
+	makeTicLab(bkdrop, tic, cMatrix, closestCorner) {
 		// convert sci coords to cell coords
 		let cellBase = bkdrop.scaleXYZ1(tic.xyz);
 		let cellTip = bkdrop.scaleXYZ1(tic.tip);
@@ -116,10 +115,12 @@ export class AxisTics extends React.Component {
 	}
 
 	render() {
-		if (! axisTicsPainter.me || ! AxisTics.axisLabels || !this.bkdrop)
+		if (! axisTicsPainter.me || ! AxisTics.axisLabels)
 			return '';  // too early
 
-		let plot = axisTicsPainter.me.plot
+		let plot = axisTicsPainter.me.plot;
+		let bkdrop = plot.bkdrop;
+
 		//let canvas = Webgl3D.me.graphElement;
 		let cMatrix = plot.compositeMatrix;
 		let closestCorner = this.state.closestCorner;
@@ -127,7 +128,7 @@ export class AxisTics extends React.Component {
 			return '';
 
 		let textLabels = AxisTics.axisLabels.map((axis) => {
-			return axis.map(tic => this.makeTicLab(tic, cMatrix, closestCorner));
+			return axis.map(tic => this.makeTicLab(bkdrop, tic, cMatrix, closestCorner));
 		});
 		return <aside style={this.props.style}> {textLabels} </aside>;
 	}
@@ -267,7 +268,7 @@ export class axisTicsPainter {
 	// this generates the line segments for the little tic marks for webgl.
 	// note how it's called in two different ways: first time and afterwards, per-frame
 	depositVertices(startVertex) {
-		let buffer = this.buffer;
+		let vBuffer = this.vBuffer;
 
 		// each one starts on the axis line but then goes off perpendicular
 		// x axis has tics that point in +y direction; y axis in +z direction,
@@ -286,20 +287,20 @@ export class axisTicsPainter {
 				// converting to cell coords
 				let pos = bkdrop.scaleXYZ1(tic.xyz);
 				pos[3] = mask4axis;
-				buffer.addVertex(pos, AXIS_TIC_COLOR);  // same color as axis lines
+				vBuffer.addVertex(pos, AXIS_TIC_COLOR);  // same color as axis lines
 				// and the tip
 				let tpos = bkdrop.scaleXYZ1(tic.tip);
 				tpos[3] = mask4axis;
-				buffer.addVertex(tpos, AXIS_TIC_COLOR);  // same color as axis lines
+				vBuffer.addVertex(tpos, AXIS_TIC_COLOR);  // same color as axis lines
 			});
 		});
 
-		return this.buffer.nVertices - startVertex
+		return this.vBuffer.nVertices - startVertex
 	}
 	// normal first call in prep for any drawing
 	layDownVertices() {
-		let buffer = this.buffer = this.plot.buffer;
-		this.startVertex = buffer.nVertices;
+		let vBuffer = this.vBuffer = this.plot.vBuffer;
+		this.startVertex = vBuffer.nVertices;
 		this.nVertices = this.depositVertices(this.startVertex);
 	}
 	draw(gl) {
@@ -315,7 +316,7 @@ export class axisTicsPainter {
 
 	// break up big and potentially circularly-pointing data structures
 	dispose() {
-		this.plot = this.buffer = this.axisLabels = AxisTics.axisLabels = this.bkdrop = null;
+		this.plot = this.vBuffer = this.axisLabels = AxisTics.axisLabels = this.bkdrop = null;
 		AxisTics.me = axisTicsPainter.me = null;
 	}
 }
