@@ -43,33 +43,28 @@ class Webgl3D extends Component {
 		};
 
 		this.shoveFunc = this.shoveFunc.bind(this);
+
 		// these are on 'this', just added later
 		// events - points to graphicEvents object
 		// plot - points to blanketPlot object
-		// blanketAr - raw science coords in n x m array
+		// sheets - describes each sheet of the 3d plot
+		// sheets[ix].blanketVerts - raw science coords in n x m array
+		// sheets[ix].func - function to calc values in blanketVerts
+		// sheets[ix]. .. others
 		// for each x y z:
 		// xMin, xMax, nXCells
 		// xScale -  convert science coords to cell coords
 		// xPerCell - slope of scale
 
-		// ok to call this in constructor cuz it just triggers WebGL
-		this.drawOneFrame = this.drawOneFrame.bind(this);
+		// don't call this in constructor cuz stuff not set up yet
+		this.paintOneFrame = this.paintOneFrame.bind(this);
 	}
 
 	componentDidMount() {
 		// with the dom stuff in place, we can set up click and drag stuff
 		this.newScene(this.props.requestedIndex);
 		this.events = new graphicEvents(this, this.sensitiveElement,
-				this.drawOneFrame, this.shoveFunc, this.props.goToScene);
-		if (this.props.show) {
-			// now that the canvas is created, we can grab it for 3d
-			// do the other part of blanketAr initialization
-			//done in render by ref this.plot.attachCanvas(this.graphElement);
-			// webgl needs the canvas to exist in order to draw into it
-			// we know it does now
-			// ok so this is too erly no gl yet
-			//this.drawOneFrame();
-		}
+				this.paintOneFrame, this.shoveFunc, this.props.goToScene);
 	}
 
 	// re-calibrate this to the scene passed in.
@@ -83,16 +78,21 @@ class Webgl3D extends Component {
 			return;
 		this.setState({scene});  // make sure some buffers are recreated
 		let bkdrop = this.bkdrop = new backdrop(scene);
+		this.plot = new blanketPlot(this, bkdrop);
 
-		// gotta calculate this whole thing over
-		this.plot = new blanketPlot(this, this.bkdrop);
-
-		// this generates a blanketAr, and evaluates the function over the cell block
-		this.calcPoints(this);
+		// for each sheet...
+		bkdrop.sheets.forEach((sheet, sheetIndex) => {
+			// this generates a blanketVerts, and evaluates the function over the vertex block
+			sheet.blanketVerts = generateBlanket(
+				sheet,
+				bkdrop.nXCells, bkdrop.nYCells,
+				bkdrop.xScale.invert, bkdrop.yScale.invert
+			);
+		});
 
 		// stick data into plot, and find its zScale, and anything else you can do
 		// without the canvas or gl existing
-		this.plot.attachData(this.blanketAr);
+		this.plot.attachData();
 
 		// use the right one.
 		graphicEvents.use(this.events);
@@ -108,22 +108,12 @@ class Webgl3D extends Component {
 		me.events.stopAnimating();
 	}
 
-	// create the data based on the function, in the shape of the cells, but science coords.
-	calcPoints() {
-		const bkdrop = this.bkdrop;
-		this.blanketAr = generateBlanket(
-			bkdrop.funcs[0].func,
-			bkdrop.nXCells, bkdrop.nYCells,
-			bkdrop.xScale.invert, bkdrop.yScale.invert
-		);
-	}
-
 	// draw the canvas that'll show it.
 	// if this.plot is there, the state, data, and scalers must be set up.
 	// These might have changed:
 	// x/y max/min  graphWidth/Height
 	// note render is NOT called when the 3d drawing is needed;
-	// that's done in drawOneFrame()
+	// that's done in paintOneFrame()
 	render() {
 		// if 3d isn't on, forget it.  Otherwise, enforce wid & height with iron fist.
 		let props = this.props;
@@ -131,11 +121,12 @@ class Webgl3D extends Component {
 		let wrapperStyle = {display: (this.props.show ? 'block' : 'none'),
 				...canvasStyle};
 		let plot = this.plot;
-		// react doesnt recognize touch events - needed for gestures
+
+		// no, you cannot pass the bkdrop as a prop to AxisTics here
 		return (
 			<div className='webgl-chart' style={wrapperStyle}
 					ref={webglChart => this.sensitiveElement = webglChart}>
-				<AxisTics style={canvasStyle} bkdrop={this.bkdrop} />
+				<AxisTics style={canvasStyle}  />
 				<canvas id={this.name + '3D'}
 					style={canvasStyle} width={props.graphWidth} height={props.graphHeight}
 					onMouseDown={this.events ? this.events.mouseDownEvt : ()=>{}}
@@ -149,11 +140,11 @@ class Webgl3D extends Component {
 	// queue off a process to draw it thru webgl.  (Only if this is show ing)
 	// everything must have been calculated before.
 	// Called in compDidUpdate() and compDidMount(), no earlier
-	drawOneFrame() {
+	paintOneFrame() {
 		// if not supposed to be shown, or not mature, drop it
 		if (! this.props.show || ! this.events || ! this.plot)
 			return;
-		this.plot.drawOneFrame(this.events.horizPosition / HORIZ_EVENTS_FACTOR,
+		this.plot.paintOneFrame(this.events.horizPosition / HORIZ_EVENTS_FACTOR,
 			this.events.vertPosition / VERT_EVENTS_FACTOR);
 	}
 
@@ -162,7 +153,7 @@ class Webgl3D extends Component {
 			return;
 		// webgl needs the canvas to exist in order to draw into it
 		// we know it does now
-		this.drawOneFrame();
+		this.paintOneFrame();
 	}
 
 	// graphicEvents calls us after the rotation position changed to set the readout
@@ -197,7 +188,7 @@ class Webgl3D extends Component {
 
 	// break up big and potentially circularly-pointing data structures
 	dispose() {
-		this.blanketAr = this.funcs = this.vertexSeries = null;
+		this.blanketVerts = this.sheets = this.vertexSeries = null;
 		this.events.dispose();
 		this.events = null;
 		this.plot.dispose();

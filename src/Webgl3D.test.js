@@ -92,7 +92,7 @@ describe('Svg2D ', () => {
 
 			// when changing scene
 			dState = Svg2D.getDerivedStateFromProps({requestedIndex: 1}, {requestedIndex: 0});
-			expect(instance.funcs).toBe(config.scenes[1].funcs);
+			expect(instance.sheets).toBe(config.scenes[1].sheets);
 			expect(dState.xMin).toEqual(-20);
 			expect(dState.xMax).toEqual(20);
 		});
