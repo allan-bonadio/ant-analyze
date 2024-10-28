@@ -26,6 +26,7 @@ div.nav-bar {
 div.nav-bar div {
 	display: inline-block;
 	line-height: 1.5em;
+	font-family: palatino, georgia, publico text, times new roman, serif;
 	padding: .5em;
 	margin: .167em;
 	border: none;
@@ -55,6 +56,22 @@ div.nav-bar div.selected {
 	font-family: times, serif;
 	font-style: italic;
 }
+
+.colorExample {
+	width: 7em;
+	line-height: 2em;
+	border: 2px #aaa outset;
+	color: black;
+	text-align: center;
+	font-family: Times New Roman, serif;
+	margin: 2px 0;
+}
+
+.red {background-color: #f00}
+.chartreuce {background-color: #8f0}
+.cyan {background-color: #0ff}
+.purple {background-color: #80f}
+
 
 /* ******************************************************* responsive */
 /* this decides two general layouts of the screen:
