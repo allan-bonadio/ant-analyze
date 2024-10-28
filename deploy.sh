@@ -1,12 +1,10 @@
 #!/bin/bash
 cd `dirname $0`
 # of course build it first!
-npm run build
+npm run build || exit 11
 # upload the build directory to my website
 # sorry I couldn't get recursive to work with scp or sftp
-# use something like this ofr your SFTP_LOGIN_INFO:
-#   -i ../myServersSecretKey   allan@nakoda
-sftp $SFTP_LOGIN_INFO   << APPLETREE
+sftp allan@nakoda  << APPLETREE
 cd /var/www/ant
 pwd
 lcd build
