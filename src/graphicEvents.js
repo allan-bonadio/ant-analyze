@@ -5,7 +5,6 @@
 /* eslint-disable eqeqeq, no-throw-literal  */
 import $ from 'jquery';
 import {config} from './config.js';
-//import App from './App.js';
 
 // coasting rate of slowing down.  Adjust to taste.
 // .20 is almost like none.  1.0 stops everything immediately

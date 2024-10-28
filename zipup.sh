@@ -1,6 +1,7 @@
 #!/bin/bash
 # Pack up the sources for moving to another machine or system
 # make sure cur dir is the one above this script
+# NOT part of deployment; see deploy.sh for that
 cd `dirname $0`
 cd ..
 zip -r ant-analyze/ant-analyze.zip  \

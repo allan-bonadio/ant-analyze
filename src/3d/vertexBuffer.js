@@ -9,6 +9,9 @@
 // Finally, call attachToGL() to get ready to use it drawing.
 export class vertexBuffer {
 	constructor(nVertices) {
+		// yes this is actually two parallel Float32 typed arrays, holding all the vertex
+		// locations, and vertex colors, for every vertex (point) in every
+		// triangle and every line segmenet in the whole GL image.
 		this.allocatedVertices = nVertices
 		this.positions = new Float32Array(nVertices * 4);
 		this.colors = new Float32Array(nVertices * 4);

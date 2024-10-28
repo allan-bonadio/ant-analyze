@@ -15,8 +15,8 @@ export class weatherVane {
 	}
 
 	layDownVertices() {
-		let buffer = this.buffer = this.plot.buffer;
-		this.startVertex = this.buffer.nVertices;
+		let vBuffer = this.vBuffer = this.plot.vBuffer;
+		this.startVertex = this.vBuffer.nVertices;
 		let g = Webgl3D.me;
 		const bkdrop = g.bkdrop;
 		let zero = bkdrop.scaleXYZ1([0, 0, 0]);
@@ -24,12 +24,12 @@ export class weatherVane {
 		////{x: bkdrop.xScale(0), y: bkdrop.yScale(0), z: p.zScale(0)};
 		//.let one = {x: bkdrop.xScale(1), y: bkdrop.yScale(1), z: p.zScale(1)};
 		// we want to use a triangle fan with the white corner at 0,0,0
-		buffer.addVertex([zero[0], zero[1], zero[2], 0], [1, 1, 1, 1]);  // origin is white
-		buffer.addVertex([ one[0], zero[1], zero[2], 0], [1, 0, 0, 1]);  // x direction is red
-		buffer.addVertex([zero[0],  one[1], zero[2], 0], [0, 1, 0, 1]);  // y green
-		buffer.addVertex([zero[0], zero[1],  one[2], 0], [0, 0, 1, 1]);  // z blue
-		buffer.addVertex([ one[0], zero[1], zero[2], 0], [1, 0, 0, 1]);  // return again
-		this.nVertices = this.buffer.nVertices - this.startVertex;
+		vBuffer.addVertex([zero[0], zero[1], zero[2], 0], [1, 1, 1, 1]);  // origin is white
+		vBuffer.addVertex([ one[0], zero[1], zero[2], 0], [1, 0, 0, 1]);  // x direction is red
+		vBuffer.addVertex([zero[0],  one[1], zero[2], 0], [0, 1, 0, 1]);  // y green
+		vBuffer.addVertex([zero[0], zero[1],  one[2], 0], [0, 0, 1, 1]);  // z blue
+		vBuffer.addVertex([ one[0], zero[1], zero[2], 0], [1, 0, 0, 1]);  // return again
+		this.nVertices = this.vBuffer.nVertices - this.startVertex;
 	}
 
 	draw(gl) {
